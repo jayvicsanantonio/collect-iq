@@ -21,6 +21,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
+import { usePullToRefresh } from '@/hooks/use-pull-to-refresh';
+import { PullToRefreshIndicator } from '@/components/ui/pull-to-refresh';
 
 // ============================================================================
 // Types
@@ -241,6 +243,14 @@ export default function VaultPage() {
   const [deleteCardId, setDeleteCardId] = React.useState<string | null>(null);
   const [isDeleting, setIsDeleting] = React.useState(false);
 
+  // Pull to refresh (mobile only)
+  const { isRefreshing: isPullRefreshing, pullDistance } = usePullToRefresh({
+    onRefresh: async () => {
+      await fetchCards();
+    },
+    enabled: typeof window !== 'undefined' && window.innerWidth <= 768,
+  });
+
   // Handle delete - show confirmation dialog
   const handleDelete = (cardId: string) => {
     setDeleteCardId(cardId);
@@ -320,9 +330,15 @@ export default function VaultPage() {
   const availableTypes: string[] = []; // Types not in current schema
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8 pull-to-refresh-container">
+      {/* Pull to Refresh Indicator */}
+      <PullToRefreshIndicator
+        pullDistance={pullDistance}
+        isRefreshing={isPullRefreshing}
+      />
+
       {/* Header */}
-      <div className="mb-8">
+      <header className="mb-8">
         <h1
           className="text-4xl font-bold mb-2"
           style={{ fontFamily: 'var(--font-display)' }}
@@ -332,36 +348,38 @@ export default function VaultPage() {
         <p className="text-[var(--muted-foreground)]">
           Manage and track your Pokémon card collection
         </p>
-      </div>
+      </header>
 
       {/* Portfolio Summary */}
       {portfolioStats && (
-        <div className="mb-8">
+        <section className="mb-8" aria-label="Portfolio summary">
           <PortfolioSummary
             totalValue={portfolioStats.totalValue}
             totalCards={portfolioStats.totalCards}
             change={portfolioStats.change}
             sparklineData={portfolioStats.sparklineData}
           />
-        </div>
+        </section>
       )}
 
       {/* Filters */}
-      <div className="mb-6">
+      <section className="mb-6" aria-label="Filter and sort options">
         <VaultFilters
           filters={filters}
           onFiltersChange={setFilters}
           availableSets={availableSets}
           availableTypes={availableTypes}
         />
-      </div>
+      </section>
 
       {/* Card Grid */}
-      <VaultGrid
-        cards={filteredCards}
-        onRefresh={handleRefresh}
-        onDelete={handleDelete}
-      />
+      <section aria-label="Card collection">
+        <VaultGrid
+          cards={filteredCards}
+          onRefresh={handleRefresh}
+          onDelete={handleDelete}
+        />
+      </section>
 
       {/* Load More Button */}
       {hasMore && (

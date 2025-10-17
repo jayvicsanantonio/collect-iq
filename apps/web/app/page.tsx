@@ -93,15 +93,15 @@ export default function HomePage() {
       </div>
       {/* Header */}
       <header
-        className="w-full relative z-10"
+        className="w-full relative z-10 safe-area-top"
         style={{
-          paddingTop: '32px',
-          paddingBottom: '32px',
-          paddingLeft: '32px',
-          paddingRight: '32px',
+          paddingTop: '24px',
+          paddingBottom: '24px',
+          paddingLeft: '16px',
+          paddingRight: '16px',
         }}
       >
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between max-w-7xl mx-auto">
           <div
             className="text-2xl font-medium tracking-tight"
             style={{
@@ -150,12 +150,12 @@ export default function HomePage() {
       </header>
 
       {/* Main Content - Centered */}
-      <main className="flex-1 flex items-center justify-center px-6 py-24 relative z-10">
+      <main className="flex-1 flex items-center justify-center px-4 sm:px-6 py-12 sm:py-24 relative z-10">
         <div className="max-w-4xl w-full text-center">
           {/* Title */}
-          <div style={{ marginBottom: '48px' }}>
+          <div className="mb-8 sm:mb-12">
             <h1
-              className="text-4xl md:text-5xl font-medium tracking-tight"
+              className="text-3xl sm:text-4xl md:text-5xl font-medium tracking-tight"
               style={{
                 fontFamily: 'var(--font-display)',
                 letterSpacing: '-0.02em',
@@ -166,17 +166,14 @@ export default function HomePage() {
           </div>
 
           {/* Card Buttons - Pokémon Card Style */}
-          <div
-            className="flex flex-col md:flex-row gap-8 justify-center items-center"
-            style={{ marginBottom: '48px' }}
-          >
+          <div className="flex flex-col sm:flex-row gap-6 sm:gap-8 justify-center items-center mb-8 sm:mb-12">
             {/* Upload Card */}
             <button
               onClick={handleUpload}
-              className="group relative overflow-hidden rounded-2xl transition-all duration-300 hover:scale-105"
+              className="group relative overflow-hidden rounded-2xl transition-all duration-300 hover:scale-105 w-full sm:w-64 touch-target"
               style={{
-                width: '280px',
-                height: '380px',
+                maxWidth: '280px',
+                height: '320px',
                 background:
                   'linear-gradient(135deg, var(--color-vault-blue) 0%, var(--color-holo-cyan) 100%)',
                 boxShadow: '0 20px 40px rgba(0, 0, 0, 0.15)',
@@ -252,10 +249,10 @@ export default function HomePage() {
             {/* Use Camera Card */}
             <button
               onClick={handleCamera}
-              className="group relative overflow-hidden rounded-2xl transition-all duration-300 hover:scale-105"
+              className="group relative overflow-hidden rounded-2xl transition-all duration-300 hover:scale-105 w-full sm:w-64 touch-target"
               style={{
-                width: '280px',
-                height: '380px',
+                maxWidth: '280px',
+                height: '320px',
                 background:
                   'linear-gradient(135deg, var(--color-holo-cyan) 0%, var(--color-vault-blue) 100%)',
                 boxShadow: '0 20px 40px rgba(0, 0, 0, 0.15)',
@@ -330,7 +327,7 @@ export default function HomePage() {
           </div>
 
           {/* Features */}
-          <div className="grid md:grid-cols-3 gap-12 pt-12">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 sm:gap-12 pt-8 sm:pt-12">
             {/* AI Identification */}
             <div className="flex flex-col items-center space-y-4">
               <div
@@ -410,7 +407,7 @@ export default function HomePage() {
       </main>
 
       {/* Footer */}
-      <footer className="py-12 relative z-10">
+      <footer className="py-8 sm:py-12 relative z-10 safe-area-bottom">
         <div className="w-full flex justify-center">
           <p
             className="text-xs tracking-wide text-center"

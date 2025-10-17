@@ -137,7 +137,11 @@ export function FeedbackModal({
                 <label className="text-sm font-medium">
                   What&apos;s the issue?
                 </label>
-                <div className="space-y-2">
+                <div
+                  className="space-y-2"
+                  role="radiogroup"
+                  aria-label="Feedback reason"
+                >
                   {FEEDBACK_REASONS.map((reason) => (
                     <button
                       key={reason.value}
@@ -148,6 +152,8 @@ export function FeedbackModal({
                           ? 'border-[var(--vault-blue)] bg-blue-50 dark:bg-blue-950/20'
                           : 'border-[var(--border)] hover:border-[var(--muted-foreground)]'
                       }`}
+                      role="radio"
+                      aria-checked={selectedReason === reason.value}
                     >
                       <div className="font-medium text-sm">{reason.label}</div>
                       <div className="text-xs text-[var(--muted-foreground)] mt-1">

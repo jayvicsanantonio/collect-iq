@@ -4,6 +4,7 @@ import './globals.css';
 import { ThemeProvider } from '@/components/theme-provider';
 import { SWRProvider } from '@/components/providers';
 import { Toaster } from '@/components/ui/toaster';
+import { SkipLink } from '@/components/ui/skip-link';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -39,6 +40,7 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable} antialiased`}
       >
+        <SkipLink />
         <ThemeProvider defaultTheme="light" storageKey="collectiq-theme">
           <SWRProvider>
             {children}

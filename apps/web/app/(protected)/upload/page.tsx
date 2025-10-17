@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
-import { Camera } from 'lucide-react';
+import { Camera, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { UploadDropzone } from '@/components/upload/UploadDropzone';
 import { CameraCapture } from '@/components/upload/CameraCapture';
@@ -253,9 +253,9 @@ export default function UploadPage() {
   const hasUpload = uploadState.file !== null;
 
   return (
-    <div className="container mx-auto max-w-4xl px-4 py-8">
+    <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
       {/* Header */}
-      <div className="mb-8 text-center">
+      <header className="mb-8 text-center">
         <h1
           className="mb-2 text-4xl font-bold"
           style={{ fontFamily: 'var(--font-display)' }}
@@ -265,11 +265,11 @@ export default function UploadPage() {
         <p className="text-[var(--muted-foreground)]">
           Take a photo or upload an image of your trading card
         </p>
-      </div>
+      </header>
 
       {/* Upload Progress */}
       {hasUpload && (
-        <div className="mb-6">
+        <section className="mb-6" aria-label="Upload progress">
           <UploadProgress
             file={uploadState.file!}
             progress={uploadState.progress}
@@ -280,44 +280,101 @@ export default function UploadPage() {
               uploadState.status === 'error' ? handleRetryUpload : undefined
             }
           />
-        </div>
+        </section>
       )}
 
       {/* Upload Options */}
       {!hasUpload && (
-        <>
-          {/* Camera Button */}
-          <div className="mb-6">
+        <section aria-label="Upload options">
+          {/* Mobile: Show buttons side by side */}
+          <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:hidden">
             <Button
               variant="gradient"
               size="lg"
               onClick={() => setShowCamera(true)}
-              className="w-full"
+              className="w-full touch-target"
             >
               <Camera className="mr-2 h-5 w-5" />
-              Take Photo
+              Camera
+            </Button>
+            <Button
+              variant="outline"
+              size="lg"
+              onClick={() => {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = 'image/jpeg,image/png,image/heic';
+                input.capture = 'environment'; // Prefer rear camera on mobile
+                input.onchange = (e) => {
+                  const files = (e.target as HTMLInputElement).files;
+                  if (files && files.length > 0) {
+                    handleFileSelected(Array.from(files));
+                  }
+                };
+                input.click();
+              }}
+              className="w-full touch-target"
+            >
+              <Upload className="mr-2 h-5 w-5" />
+              Gallery
             </Button>
           </div>
 
-          {/* Divider */}
-          <div className="relative mb-6">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-[var(--border)]" />
+          {/* Desktop: Show camera button and dropzone */}
+          <div className="hidden sm:block">
+            <div className="mb-6">
+              <Button
+                variant="gradient"
+                size="lg"
+                onClick={() => setShowCamera(true)}
+                className="w-full"
+              >
+                <Camera className="mr-2 h-5 w-5" />
+                Take Photo
+              </Button>
             </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-[var(--background)] px-2 text-[var(--muted-foreground)]">
-                Or
-              </span>
+
+            {/* Divider */}
+            <div className="relative mb-6">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-[var(--border)]" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-[var(--background)] px-2 text-[var(--muted-foreground)]">
+                  Or
+                </span>
+              </div>
             </div>
+
+            {/* Dropzone */}
+            <UploadDropzone
+              onSelected={handleFileSelected}
+              onError={handleUploadError}
+              disabled={isUploading}
+            />
           </div>
 
-          {/* Dropzone */}
-          <UploadDropzone
-            onSelected={handleFileSelected}
-            onError={handleUploadError}
-            disabled={isUploading}
-          />
-        </>
+          {/* Mobile: Show dropzone below buttons */}
+          <div className="sm:hidden">
+            <div className="relative mb-6">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-[var(--border)]" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-[var(--background)] px-2 text-[var(--muted-foreground)]">
+                  Or drag and drop
+                </span>
+              </div>
+            </div>
+
+            <UploadDropzone
+              onSelected={handleFileSelected}
+              onError={handleUploadError}
+              disabled={isUploading}
+              autoCompress={true}
+            />
+          </div>
+        </section>
       )}
 
       {/* Camera Capture Modal */}

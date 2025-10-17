@@ -401,7 +401,7 @@
   - Test chart lazy loading
   - _Requirements: 15.1, 15.6_
 
-- [ ] 11. Error handling and user feedback
+- [x] 11. Error handling and user feedback
 - [x] 11.1 Create ProblemDetails error handler
   - Create error handler in apps/web/lib/errors.ts
   - Use ProblemDetails type and schema from @collectiq/shared
@@ -442,8 +442,8 @@
   - E2E tests for error flows
   - _Requirements: 15.1, 15.2_
 
-- [ ] 12. Responsive design and mobile optimization
-- [ ] 12.1 Implement responsive layouts
+- [x] 12. Responsive design and mobile optimization
+- [x] 12.1 Implement responsive layouts
   - Create mobile-first CSS with Tailwind breakpoints
   - Implement single-column layouts for mobile
   - Add responsive grid columns (1-4 based on screen)
@@ -451,14 +451,14 @@
   - Test on various screen sizes (320px to 1920px)
   - _Requirements: 8.1, 8.5_
 
-- [ ] 12.2 Optimize mobile upload experience
+- [x] 12.2 Optimize mobile upload experience
   - Integrate native camera on mobile devices
   - Implement file picker for mobile
   - Add image compression for large files on mobile
   - Test on iOS Safari and Android Chrome
   - _Requirements: 8.2_
 
-- [ ] 12.3 Implement mobile-specific UI patterns
+- [x] 12.3 Implement mobile-specific UI patterns
   - Use bottom sheets for filters and modals
   - Implement swipe gestures where appropriate
   - Add pull-to-refresh for vault
@@ -473,8 +473,8 @@
   - Test landscape and portrait orientations
   - _Requirements: 15.6_
 
-- [ ] 13. Accessibility implementation
-- [ ] 13.1 Implement keyboard navigation
+- [x] 13. Accessibility implementation
+- [x] 13.1 Implement keyboard navigation
   - Ensure all interactive elements are keyboard accessible
   - Add visible focus indicators (2px Holo Cyan ring)
   - Implement roving tabindex for card grids
@@ -482,7 +482,7 @@
   - Test tab order on all pages
   - _Requirements: 9.1, 9.2, 9.9_
 
-- [ ] 13.2 Implement ARIA attributes
+- [x] 13.2 Implement ARIA attributes
   - Add aria-live regions for async status updates
   - Add aria-labels for icon buttons
   - Add aria-descriptions for complex widgets
@@ -490,28 +490,28 @@
   - Add aria-expanded for collapsible sections
   - _Requirements: 9.3, 9.4_
 
-- [ ] 13.3 Ensure semantic HTML
+- [x] 13.3 Ensure semantic HTML
   - Use semantic elements (nav, main, article, section)
   - Proper heading hierarchy (h1-h6)
   - Use button elements for actions (not divs)
   - Use form elements with labels
   - _Requirements: 9.8_
 
-- [ ] 13.4 Implement color accessibility
+- [x] 13.4 Implement color accessibility
   - Ensure all color combinations meet WCAG AA contrast (4.5:1)
   - Never rely solely on color to convey information
   - Add patterns or icons alongside color coding
   - Test with color blindness simulators
   - _Requirements: 9.6_
 
-- [ ] 13.5 Implement motion accessibility
+- [x] 13.5 Implement motion accessibility
   - Respect prefers-reduced-motion media query
   - Disable animations when reduced motion is preferred
   - Use instant transitions instead of animations
   - Test with reduced motion enabled
   - _Requirements: 9.7_
 
-- [ ] 13.6 Add descriptive alt text
+- [x] 13.6 Add descriptive alt text
   - Write descriptive alt text for all card images
   - Use empty alt for decorative images
   - Provide context in alt text

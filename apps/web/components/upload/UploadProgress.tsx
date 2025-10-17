@@ -70,6 +70,9 @@ export function UploadProgress({
           : 'border-[var(--border)] bg-[var(--card)]',
         className
       )}
+      role="status"
+      aria-live="polite"
+      aria-atomic="true"
     >
       {/* Thumbnail */}
       <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg bg-[var(--muted)]">
