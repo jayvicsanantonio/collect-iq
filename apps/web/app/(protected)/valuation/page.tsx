@@ -387,13 +387,36 @@ export default function ValuationPage() {
         {activeSection === 'valuation' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Left: Valuation Panel */}
-            <div>
+            <div className="space-y-4">
               <ValuationPanel
-                value={state.valuation}
-                onRefresh={handleRefresh}
-                onSave={handleSaveToVault}
-                isRefreshing={isRefreshing}
+                low={state.valuation?.low || 0}
+                median={state.valuation?.median || 0}
+                high={state.valuation?.high || 0}
+                trend={state.valuation?.trend}
+                confidence={state.valuation?.confidence || 0}
+                compsCount={state.valuation?.compsCount || 0}
+                sources={state.valuation?.sources}
+                lastUpdated={state.valuation?.lastUpdated}
               />
+
+              {/* Action Buttons */}
+              <div className="flex gap-2">
+                <Button
+                  onClick={handleRefresh}
+                  disabled={isRefreshing}
+                  variant="outline"
+                  className="flex-1"
+                >
+                  {isRefreshing ? 'Refreshing...' : 'Refresh Valuation'}
+                </Button>
+                <Button
+                  onClick={handleSaveToVault}
+                  disabled={isSaving}
+                  className="flex-1"
+                >
+                  {isSaving ? 'Saving...' : 'Save to Vault'}
+                </Button>
+              </div>
             </div>
 
             {/* Right: Summary Card */}

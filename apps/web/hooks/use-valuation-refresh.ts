@@ -3,7 +3,7 @@
  */
 
 import { useState } from 'react';
-import { refreshValuation } from '@/lib/api';
+import { revalueCard } from '@/lib/api';
 import { toast } from '@/hooks/use-toast';
 import type { RevalueResponse } from '@collectiq/shared';
 
@@ -24,7 +24,7 @@ export function useValuationRefresh({
     setIsRefreshing(true);
 
     try {
-      const response = await refreshValuation(cardId, forceRefresh);
+      const response = await revalueCard(cardId, { forceRefresh });
 
       // Show success toast
       toast({
