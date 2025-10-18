@@ -1,0 +1,23 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build outputs
+.next/
+out/
+dist/
+build/
+lib/
+
+# Amplify build artifacts
+.amplify-hosting/
+
+# Test coverage
+coverage/
+
+# Turbo
+.turbo/
+
+# Cache
+.eslintcache
+*.tsbuildinfo
