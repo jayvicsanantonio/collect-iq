@@ -229,12 +229,12 @@ export function UploadDropzone({
       aria-label="Upload card image"
       aria-disabled={disabled}
       className={cn(
-        'relative flex flex-col items-center justify-center rounded-xl border-2 border-dashed p-8 transition-all',
-        'min-h-[280px] cursor-pointer',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--holo-cyan)] focus-visible:ring-offset-2',
+        'relative flex flex-col items-center justify-center rounded-xl border-2 border-dashed transition-all',
+        'cursor-pointer',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-emerald-glow)] focus-visible:ring-offset-2',
         isDragging && !disabled
-          ? 'border-[var(--holo-cyan)] bg-[var(--holo-cyan)]/10 scale-[1.02]'
-          : 'border-[var(--border)] hover:border-[var(--vault-blue)] hover:bg-[var(--muted)]/50',
+          ? 'border-[var(--color-emerald-glow)] bg-[var(--color-emerald-glow)]/10 scale-[1.02]'
+          : 'border-[var(--border)] hover:border-[var(--color-emerald-glow)]',
         disabled && 'cursor-not-allowed opacity-50',
         className
       )}
@@ -259,43 +259,48 @@ export function UploadDropzone({
       {/* Icon */}
       <div
         className={cn(
-          'mb-4 rounded-full p-4 transition-colors',
+          'mb-6 rounded-full p-6 transition-colors',
           isDragging && !disabled
-            ? 'bg-[var(--holo-cyan)]/20'
-            : 'bg-[var(--muted)]'
+            ? 'bg-[var(--color-emerald-glow)]/20'
+            : 'bg-[var(--color-emerald-glow)]/10'
         )}
       >
         {isDragging ? (
           <ImageIcon
-            className="h-8 w-8 text-[var(--holo-cyan)]"
+            className="h-14 w-14 text-[var(--color-emerald-glow)]"
+            strokeWidth={1.5}
             aria-hidden="true"
           />
         ) : (
           <Upload
-            className="h-8 w-8 text-[var(--muted-foreground)]"
+            className="h-14 w-14 text-[var(--color-emerald-glow)]"
+            strokeWidth={1.5}
             aria-hidden="true"
           />
         )}
       </div>
 
       {/* Text */}
-      <div className="text-center">
-        <p className="mb-2 text-base font-medium text-[var(--foreground)]">
+      <div className="text-center space-y-3">
+        <h3 className="text-2xl font-bold font-display">
+          {isDragging ? 'Drop Here' : 'Upload File'}
+        </h3>
+        <p className="text-base text-[var(--muted-foreground)] leading-relaxed px-4">
           {isDragging
-            ? 'Drop your image here'
-            : 'Drag and drop your card image'}
+            ? 'Release to upload'
+            : 'Drag and drop or click to browse'}
         </p>
-        <p className="mb-4 text-sm text-[var(--muted-foreground)]">
-          or click to browse
-        </p>
-        <p className="text-xs text-[var(--muted-foreground)]">
-          Supports JPG, PNG, HEIC • Max {maxSizeMB} MB
+        <p className="text-sm text-[var(--muted-foreground)] pt-2">
+          JPG, PNG, HEIC • Max {maxSizeMB} MB
         </p>
       </div>
 
-      {/* Mobile hint */}
-      <div className="mt-4 text-xs text-[var(--muted-foreground)] sm:hidden">
-        Tap to upload from your device
+      {/* Action hint */}
+      <div className="pt-4">
+        <div className="inline-flex items-center gap-2 text-sm font-medium text-[var(--color-emerald-glow)] group-hover:gap-3 transition-all">
+          Choose File
+          <span className="text-base">→</span>
+        </div>
       </div>
     </div>
   );
