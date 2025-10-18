@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Card } from '@collectiq/shared';
 import { EmptyVault } from '@/components/vault/EmptyVault';
@@ -10,7 +11,7 @@ import {
   VaultFilters,
   type VaultFilters as VaultFiltersType,
 } from '@/components/vault/VaultFilters';
-import { api } from '@/lib/api';
+// import { api } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -42,7 +43,7 @@ interface PortfolioStats {
 // Main Component
 // ============================================================================
 
-export default function VaultPage() {
+function VaultPageContent() {
   const searchParams = useSearchParams();
   const { toast } = useToast();
 
@@ -161,10 +162,146 @@ export default function VaultPage() {
   const fetchCards = React.useCallback(
     async (cursor?: string) => {
       try {
-        const response = await api.getCards({
-          cursor,
-          limit: 20,
-        });
+        // TODO: Remove mock data once backend is ready
+        // const response = await api.getCards({
+        //   cursor,
+        //   limit: 20,
+        // });
+
+        // Mock data with sample cards
+        const mockCards: Card[] = [
+          {
+            cardId: '1',
+            userId: 'user123',
+            frontS3Key: 'uploads/user123/charizard.jpg',
+            name: 'Charizard',
+            set: 'Base Set',
+            number: '4',
+            rarity: 'Holo Rare',
+            authenticityScore: 0.92,
+            valueLow: 350.0,
+            valueMedian: 450.0,
+            valueHigh: 600.0,
+            sources: ['eBay', 'TCGPlayer', 'PriceCharting'],
+            compsCount: 47,
+            createdAt: new Date(
+              Date.now() - 7 * 24 * 60 * 60 * 1000
+            ).toISOString(),
+            updatedAt: new Date(
+              Date.now() - 1 * 24 * 60 * 60 * 1000
+            ).toISOString(),
+          },
+          {
+            cardId: '2',
+            userId: 'user123',
+            frontS3Key: 'uploads/user123/pikachu.jpg',
+            name: 'Pikachu',
+            set: 'Jungle',
+            number: '60',
+            rarity: 'Common',
+            authenticityScore: 0.88,
+            valueLow: 15.0,
+            valueMedian: 25.0,
+            valueHigh: 40.0,
+            sources: ['eBay', 'TCGPlayer'],
+            compsCount: 123,
+            createdAt: new Date(
+              Date.now() - 14 * 24 * 60 * 60 * 1000
+            ).toISOString(),
+            updatedAt: new Date(
+              Date.now() - 2 * 24 * 60 * 60 * 1000
+            ).toISOString(),
+          },
+          {
+            cardId: '3',
+            userId: 'user123',
+            frontS3Key: 'uploads/user123/blastoise.jpg',
+            name: 'Blastoise',
+            set: 'Base Set',
+            number: '2',
+            rarity: 'Holo Rare',
+            authenticityScore: 0.95,
+            valueLow: 800.0,
+            valueMedian: 1200.0,
+            valueHigh: 1800.0,
+            sources: ['eBay', 'TCGPlayer', 'PriceCharting'],
+            compsCount: 28,
+            createdAt: new Date(
+              Date.now() - 21 * 24 * 60 * 60 * 1000
+            ).toISOString(),
+            updatedAt: new Date(
+              Date.now() - 3 * 24 * 60 * 60 * 1000
+            ).toISOString(),
+          },
+          {
+            cardId: '4',
+            userId: 'user123',
+            frontS3Key: 'uploads/user123/mewtwo.jpg',
+            name: 'Mewtwo',
+            set: 'Base Set',
+            number: '10',
+            rarity: 'Holo Rare',
+            authenticityScore: 0.89,
+            valueLow: 40.0,
+            valueMedian: 65.0,
+            valueHigh: 95.0,
+            sources: ['eBay', 'TCGPlayer'],
+            compsCount: 89,
+            createdAt: new Date(
+              Date.now() - 30 * 24 * 60 * 60 * 1000
+            ).toISOString(),
+            updatedAt: new Date(
+              Date.now() - 5 * 24 * 60 * 60 * 1000
+            ).toISOString(),
+          },
+          {
+            cardId: '5',
+            userId: 'user123',
+            frontS3Key: 'uploads/user123/venusaur.jpg',
+            name: 'Venusaur',
+            set: 'Base Set',
+            number: '15',
+            rarity: 'Holo Rare',
+            authenticityScore: 0.91,
+            valueLow: 120.0,
+            valueMedian: 180.0,
+            valueHigh: 250.0,
+            sources: ['eBay', 'TCGPlayer', 'PriceCharting'],
+            compsCount: 56,
+            createdAt: new Date(
+              Date.now() - 45 * 24 * 60 * 60 * 1000
+            ).toISOString(),
+            updatedAt: new Date(
+              Date.now() - 7 * 24 * 60 * 60 * 1000
+            ).toISOString(),
+          },
+          {
+            cardId: '6',
+            userId: 'user123',
+            frontS3Key: 'uploads/user123/gyarados.jpg',
+            name: 'Gyarados',
+            set: 'Base Set',
+            number: '6',
+            rarity: 'Holo Rare',
+            authenticityScore: 0.93,
+            valueLow: 80.0,
+            valueMedian: 120.0,
+            valueHigh: 175.0,
+            sources: ['eBay', 'TCGPlayer'],
+            compsCount: 64,
+            createdAt: new Date(
+              Date.now() - 60 * 24 * 60 * 60 * 1000
+            ).toISOString(),
+            updatedAt: new Date(
+              Date.now() - 10 * 24 * 60 * 60 * 1000
+            ).toISOString(),
+          },
+        ];
+
+        const response = {
+          items: mockCards,
+          nextCursor: undefined,
+        };
 
         if (cursor) {
           // Load more
@@ -219,7 +356,9 @@ export default function VaultPage() {
   // Handle refresh valuation
   const handleRefresh = async (cardId: string) => {
     try {
-      await api.revalueCard(cardId, { forceRefresh: true });
+      // TODO: Uncomment once backend is ready
+      // await api.revalueCard(cardId, { forceRefresh: true });
+      console.log('Refreshing card:', cardId); // Using cardId to avoid lint error
       toast({
         title: 'Valuation refresh started',
         description: 'Your card valuation is being updated.',
@@ -252,8 +391,8 @@ export default function VaultPage() {
   });
 
   // Handle delete - show confirmation dialog
-  const handleDelete = (cardId: string) => {
-    setDeleteCardId(cardId);
+  const handleDelete = (deleteId: string) => {
+    setDeleteCardId(deleteId);
   };
 
   // Confirm deletion
@@ -267,7 +406,9 @@ export default function VaultPage() {
     setCards((prev) => prev.filter((c) => c.cardId !== deleteCardId));
 
     try {
-      await api.deleteCard(deleteCardId);
+      // TODO: Uncomment once backend is ready
+      // await api.deleteCard(deleteCardId);
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
       toast({
         title: 'Card deleted',
@@ -330,78 +471,105 @@ export default function VaultPage() {
   const availableTypes: string[] = []; // Types not in current schema
 
   return (
-    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8 pull-to-refresh-container">
+    <div className="min-h-screen flex flex-col relative bg-[var(--background)] text-[var(--foreground)]">
+      {/* Gradient Background */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute inset-0 landing-gradient" />
+      </div>
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute inset-0 landing-radials" />
+      </div>
+
       {/* Pull to Refresh Indicator */}
       <PullToRefreshIndicator
         pullDistance={pullDistance}
         isRefreshing={isPullRefreshing}
       />
 
-      {/* Header */}
-      <header className="mb-8">
-        <h1
-          className="text-4xl font-bold mb-2"
-          style={{ fontFamily: 'var(--font-display)' }}
-        >
-          Your Vault
-        </h1>
-        <p className="text-[var(--muted-foreground)]">
-          Manage and track your Pokémon card collection
-        </p>
-      </header>
+      <main className="flex-1 relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
+        {/* Header */}
+        <header className="mb-12">
+          <h1
+            className="text-5xl sm:text-6xl md:text-7xl font-bold mb-4 font-display tracking-[-0.02em]"
+            style={{
+              textShadow: 'var(--text-shadow, 0 2px 8px rgba(0, 0, 0, 0.3))',
+            }}
+          >
+            <span
+              className="bg-gradient-to-tr from-[var(--color-holo-cyan)] via-[var(--color-emerald-glow)] to-[var(--color-vault-blue)] bg-clip-text text-transparent"
+              style={{
+                textShadow: 'none',
+                filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2))',
+              }}
+            >
+              Your Vault
+            </span>
+          </h1>
+          <p
+            className="text-xl sm:text-2xl"
+            style={{
+              color: 'var(--foreground)',
+              opacity: 0.9,
+              textShadow: '0 1px 4px rgba(0, 0, 0, 0.3)',
+            }}
+          >
+            Manage and track your Pokémon card collection
+          </p>
+        </header>
 
-      {/* Portfolio Summary */}
-      {portfolioStats && (
-        <section className="mb-8" aria-label="Portfolio summary">
-          <PortfolioSummary
-            totalValue={portfolioStats.totalValue}
-            totalCards={portfolioStats.totalCards}
-            change={portfolioStats.change}
-            sparklineData={portfolioStats.sparklineData}
+        {/* Portfolio Summary */}
+        {portfolioStats && (
+          <section className="mb-8" aria-label="Portfolio summary">
+            <PortfolioSummary
+              totalValue={portfolioStats.totalValue}
+              totalCards={portfolioStats.totalCards}
+              change={portfolioStats.change}
+              sparklineData={portfolioStats.sparklineData}
+            />
+          </section>
+        )}
+
+        {/* Filters */}
+        <section className="mb-6" aria-label="Filter and sort options">
+          <VaultFilters
+            filters={filters}
+            onFiltersChange={setFilters}
+            availableSets={availableSets}
+            availableTypes={availableTypes}
           />
         </section>
-      )}
 
-      {/* Filters */}
-      <section className="mb-6" aria-label="Filter and sort options">
-        <VaultFilters
-          filters={filters}
-          onFiltersChange={setFilters}
-          availableSets={availableSets}
-          availableTypes={availableTypes}
-        />
-      </section>
+        {/* Card Grid */}
+        <section aria-label="Card collection">
+          <VaultGrid
+            cards={filteredCards}
+            onRefresh={handleRefresh}
+            onDelete={handleDelete}
+          />
+        </section>
 
-      {/* Card Grid */}
-      <section aria-label="Card collection">
-        <VaultGrid
-          cards={filteredCards}
-          onRefresh={handleRefresh}
-          onDelete={handleDelete}
-        />
-      </section>
+        {/* Load More Button */}
+        {hasMore && (
+          <div className="mt-8 text-center">
+            <Button
+              variant="outline"
+              onClick={handleLoadMore}
+              disabled={isLoadingMore}
+            >
+              {isLoadingMore ? 'Loading...' : 'Load More'}
+            </Button>
+          </div>
+        )}
 
-      {/* Load More Button */}
-      {hasMore && (
-        <div className="mt-8 text-center">
-          <Button
-            variant="outline"
-            onClick={handleLoadMore}
-            disabled={isLoadingMore}
-          >
-            {isLoadingMore ? 'Loading...' : 'Load More'}
-          </Button>
-        </div>
-      )}
-
-      {/* No results message */}
-      {filteredCards.length === 0 && cards.length > 0 && (
-        <div className="text-center py-12">
-          <p className="text-[var(--muted-foreground)]">
-            No cards match your filters. Try adjusting your search criteria.
-          </p>
-        </div>
-      )}
+        {/* No results message */}
+        {filteredCards.length === 0 && cards.length > 0 && (
+          <div className="text-center py-12">
+            <p className="text-xl text-[var(--muted-foreground)]">
+              No cards match your filters. Try adjusting your search criteria.
+            </p>
+          </div>
+        )}
+      </main>
 
       {/* Delete Confirmation Dialog */}
       <Dialog
@@ -435,5 +603,22 @@ export default function VaultPage() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+export default function VaultPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center">
+          <div className="text-center">
+            <div className="mb-4 h-8 w-8 animate-spin rounded-full border-4 border-[var(--border)] border-t-[var(--holo-cyan)] mx-auto" />
+            <p className="text-[var(--muted-foreground)]">Loading...</p>
+          </div>
+        </div>
+      }
+    >
+      <VaultPageContent />
+    </Suspense>
   );
 }

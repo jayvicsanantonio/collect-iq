@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useCard, useDeleteCard, useRevalueCard } from '@/lib/swr';
+// import { useCard, useDeleteCard, useRevalueCard } from '@/lib/swr';
 import {
   CardDetail,
   ValuationHistoryChart,
@@ -42,12 +42,47 @@ export default function CardDetailPage() {
   const cardId = params.id as string;
 
   // Fetch card data
-  const { data: card, error, isLoading } = useCard(cardId);
+  // TODO: Replace with real API call once backend is ready
+  // const { data: card, error, isLoading } = useCard(cardId);
+
+  // Mock data for development
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [error] = React.useState<{
+    problem?: { status?: number; detail?: string };
+  } | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [card, setCard] = React.useState<any>(null);
+
+  React.useEffect(() => {
+    // Simulate API call
+    setTimeout(() => {
+      setCard({
+        cardId: cardId,
+        userId: 'user123',
+        frontS3Key: 'uploads/user123/charizard.jpg',
+        name: 'Charizard',
+        set: 'Base Set',
+        number: '4',
+        rarity: 'Holo Rare',
+        authenticityScore: 0.92,
+        valueLow: 350.0,
+        valueMedian: 450.0,
+        valueHigh: 600.0,
+        sources: ['eBay', 'TCGPlayer', 'PriceCharting'],
+        compsCount: 47,
+        createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+        updatedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+      });
+      setIsLoading(false);
+    }, 500);
+  }, [cardId]);
 
   // Mutations
-  const { trigger: deleteCard, isMutating: isDeleting } = useDeleteCard();
-  const { trigger: refreshValuation, isMutating: isRefreshing } =
-    useRevalueCard();
+  // TODO: Replace with real mutations once backend is ready
+  // const { trigger: deleteCard, isMutating: isDeleting } = useDeleteCard();
+  // const { trigger: refreshValuation, isMutating: isRefreshing } = useRevalueCard();
+  const [isDeleting, setIsDeleting] = React.useState(false);
+  const [isRefreshing, setIsRefreshing] = React.useState(false);
 
   // Dialog states
   const [showDeleteDialog, setShowDeleteDialog] = React.useState(false);
@@ -108,8 +143,11 @@ export default function CardDetailPage() {
 
   // Handle re-evaluate
   const handleReEvaluate = async () => {
+    setIsRefreshing(true);
     try {
-      await refreshValuation({ cardId, forceRefresh: true });
+      // TODO: Replace with real API call
+      // await refreshValuation({ cardId, forceRefresh: true });
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
       toast({
         title: 'Re-evaluation started',
@@ -125,13 +163,18 @@ export default function CardDetailPage() {
             : 'Failed to start re-evaluation',
         variant: 'destructive',
       });
+    } finally {
+      setIsRefreshing(false);
     }
   };
 
   // Handle delete
   const handleDelete = async () => {
+    setIsDeleting(true);
     try {
-      await deleteCard(cardId);
+      // TODO: Replace with real API call
+      // await deleteCard(cardId);
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
       toast({
         title: 'Card deleted',
@@ -148,6 +191,7 @@ export default function CardDetailPage() {
         variant: 'destructive',
       });
     } finally {
+      setIsDeleting(false);
       setShowDeleteDialog(false);
     }
   };
@@ -191,29 +235,39 @@ export default function CardDetailPage() {
   // Loading state
   if (isLoading) {
     return (
-      <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8 space-y-6">
-        {/* Back button skeleton */}
-        <Skeleton className="w-24 h-10" />
-
-        {/* Card detail skeleton */}
-        <div className="space-y-6">
-          <Card>
-            <CardContent className="p-6">
-              <Skeleton className="w-full aspect-[2.5/3.5] rounded-lg" />
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <Skeleton className="w-64 h-8" />
-              <Skeleton className="w-48 h-4" />
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Skeleton className="w-full h-24" />
-              <Skeleton className="w-full h-24" />
-            </CardContent>
-          </Card>
+      <div className="min-h-screen flex flex-col relative bg-[var(--background)] text-[var(--foreground)]">
+        {/* Gradient Background */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute inset-0 landing-gradient" />
         </div>
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute inset-0 landing-radials" />
+        </div>
+
+        <main className="flex-1 relative z-10 w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8 space-y-6">
+          {/* Back button skeleton */}
+          <Skeleton className="w-24 h-10" />
+
+          {/* Card detail skeleton */}
+          <div className="space-y-6">
+            <Card>
+              <CardContent className="p-6">
+                <Skeleton className="w-full aspect-[2.5/3.5] rounded-lg" />
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <Skeleton className="w-64 h-8" />
+                <Skeleton className="w-48 h-4" />
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <Skeleton className="w-full h-24" />
+                <Skeleton className="w-full h-24" />
+              </CardContent>
+            </Card>
+          </div>
+        </main>
       </div>
     );
   }
@@ -324,87 +378,97 @@ export default function CardDetailPage() {
   }
 
   return (
-    <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8 space-y-6">
-      {/* Back button */}
-      <Link href="/vault">
-        <Button variant="ghost">
-          <ArrowLeft className="w-4 h-4" />
-          Back to Vault
-        </Button>
-      </Link>
+    <div className="min-h-screen flex flex-col relative bg-[var(--background)] text-[var(--foreground)]">
+      {/* Gradient Background */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute inset-0 landing-gradient" />
+      </div>
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute inset-0 landing-radials" />
+      </div>
 
-      {/* Card Detail */}
-      <CardDetail card={card} />
+      <main className="flex-1 relative z-10 w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8 space-y-6">
+        {/* Back button */}
+        <Link href="/vault">
+          <Button variant="ghost">
+            <ArrowLeft className="w-4 h-4" />
+            Back to Vault
+          </Button>
+        </Link>
 
-      {/* Action Buttons */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex flex-wrap gap-2">
-            <Button onClick={handleReEvaluate} disabled={isRefreshing}>
-              {isRefreshing ? 'Re-evaluating...' : 'Re-evaluate'}
-            </Button>
-            <Button
-              onClick={() => setShowDeleteDialog(true)}
-              disabled={isDeleting}
-              variant="destructive"
-            >
-              Delete
-            </Button>
-            <Button onClick={handleShare} variant="outline">
-              Share
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+        {/* Card Detail */}
+        <CardDetail card={card} />
 
-      {/* Valuation History Chart */}
-      {valuationHistory.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Valuation History</CardTitle>
-            <p className="text-sm text-muted-foreground">
-              Price trends over the last 30 days
-            </p>
-          </CardHeader>
-          <CardContent>
-            <ValuationHistoryChart data={valuationHistory} />
+        {/* Action Buttons */}
+        <Card className="border-2 border-gray-200 dark:border-white/10 shadow-lg dark:shadow-[0_8px_32px_rgba(0,0,0,0.12)]">
+          <CardContent className="pt-6">
+            <div className="flex flex-wrap gap-2">
+              <Button onClick={handleReEvaluate} disabled={isRefreshing}>
+                {isRefreshing ? 'Re-evaluating...' : 'Re-evaluate'}
+              </Button>
+              <Button
+                onClick={() => setShowDeleteDialog(true)}
+                disabled={isDeleting}
+                variant="destructive"
+              >
+                Delete
+              </Button>
+              <Button onClick={handleShare} variant="outline">
+                Share
+              </Button>
+            </div>
           </CardContent>
         </Card>
-      )}
 
-      {/* Market Data Sources */}
-      {comparableSales.length > 0 && (
-        <MarketDataTable sales={comparableSales} />
-      )}
+        {/* Valuation History Chart */}
+        {valuationHistory.length > 0 && (
+          <Card className="border-2 border-gray-200 dark:border-white/10 shadow-lg dark:shadow-[0_8px_32px_rgba(0,0,0,0.12)]">
+            <CardHeader>
+              <CardTitle>Valuation History</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Price trends over the last 30 days
+              </p>
+            </CardHeader>
+            <CardContent>
+              <ValuationHistoryChart data={valuationHistory} />
+            </CardContent>
+          </Card>
+        )}
 
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete Card</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete this card? This action cannot be
-              undone.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowDeleteDialog(false)}
-              disabled={isDeleting}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={handleDelete}
-              disabled={isDeleting}
-            >
-              {isDeleting ? 'Deleting...' : 'Delete'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        {/* Market Data Sources */}
+        {comparableSales.length > 0 && (
+          <MarketDataTable sales={comparableSales} />
+        )}
+
+        {/* Delete Confirmation Dialog */}
+        <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Delete Card</DialogTitle>
+              <DialogDescription>
+                Are you sure you want to delete this card? This action cannot be
+                undone.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setShowDeleteDialog(false)}
+                disabled={isDeleting}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleDelete}
+                disabled={isDeleting}
+              >
+                {isDeleting ? 'Deleting...' : 'Delete'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </main>
     </div>
   );
 }

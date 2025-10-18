@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { AlertCircle, ArrowLeft, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -37,7 +38,7 @@ interface IdentificationState {
 // Component
 // ============================================================================
 
-export default function IdentifyPage() {
+function IdentifyPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
@@ -208,31 +209,58 @@ export default function IdentifyPage() {
   // Loading State
   if (state.status === 'loading') {
     return (
-      <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
-        <div className="mb-8 text-center">
-          <h1
-            className="mb-2 text-4xl font-bold"
-            style={{ fontFamily: 'var(--font-display)' }}
-          >
-            Identifying Card
-          </h1>
-          <p className="text-[var(--muted-foreground)]">
-            Analyzing your card with AI...
-          </p>
+      <div className="min-h-screen flex flex-col relative bg-[var(--background)] text-[var(--foreground)]">
+        {/* Gradient Background */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute inset-0 landing-gradient" />
+        </div>
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute inset-0 landing-radials" />
         </div>
 
-        <Card>
-          <CardContent className="p-12">
-            <div className="flex flex-col items-center justify-center space-y-4">
-              <div className="relative">
-                <div className="h-16 w-16 animate-spin rounded-full border-4 border-[var(--muted)] border-t-[var(--vault-blue)]" />
+        <main className="flex-1 relative z-10 w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
+          <div className="mb-12 text-center">
+            <h1
+              className="text-5xl sm:text-6xl md:text-7xl font-bold mb-4 font-display tracking-[-0.02em]"
+              style={{
+                textShadow: 'var(--text-shadow, 0 2px 8px rgba(0, 0, 0, 0.3))',
+              }}
+            >
+              <span
+                className="bg-gradient-to-tr from-[var(--color-holo-cyan)] via-[var(--color-emerald-glow)] to-[var(--color-vault-blue)] bg-clip-text text-transparent"
+                style={{
+                  textShadow: 'none',
+                  filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2))',
+                }}
+              >
+                Identifying Card
+              </span>
+            </h1>
+            <p
+              className="text-xl sm:text-2xl"
+              style={{
+                color: 'var(--foreground)',
+                opacity: 0.9,
+                textShadow: '0 1px 4px rgba(0, 0, 0, 0.3)',
+              }}
+            >
+              Analyzing your card with AI...
+            </p>
+          </div>
+
+          <Card className="border-2 border-gray-200 dark:border-white/10 shadow-lg dark:shadow-[0_8px_32px_rgba(0,0,0,0.12)]">
+            <CardContent className="p-12">
+              <div className="flex flex-col items-center justify-center space-y-4">
+                <div className="relative">
+                  <div className="h-16 w-16 animate-spin rounded-full border-4 border-[var(--muted)] border-t-[var(--vault-blue)]" />
+                </div>
+                <p className="text-sm text-[var(--muted-foreground)]">
+                  This may take a few moments...
+                </p>
               </div>
-              <p className="text-sm text-[var(--muted-foreground)]">
-                This may take a few moments...
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </main>
       </div>
     );
   }
@@ -240,48 +268,68 @@ export default function IdentifyPage() {
   // Error State
   if (state.status === 'error') {
     return (
-      <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
-        <div className="mb-8">
-          <Button variant="ghost" onClick={handleBack} className="mb-4">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Upload
-          </Button>
-          <h1
-            className="mb-2 text-4xl font-bold"
-            style={{ fontFamily: 'var(--font-display)' }}
-          >
-            Identification Failed
-          </h1>
+      <div className="min-h-screen flex flex-col relative bg-[var(--background)] text-[var(--foreground)]">
+        {/* Gradient Background */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute inset-0 landing-gradient" />
+        </div>
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute inset-0 landing-radials" />
         </div>
 
-        <Card className="border-[var(--crimson-red)]">
-          <CardHeader>
-            <div className="flex items-start gap-3">
-              <AlertCircle className="h-5 w-5 text-[var(--crimson-red)] mt-0.5" />
-              <div>
-                <CardTitle>Unable to Identify Card</CardTitle>
-                <CardDescription className="mt-2">
-                  {state.error ||
-                    'An error occurred while processing your image.'}
-                </CardDescription>
+        <main className="flex-1 relative z-10 w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
+          <div className="mb-12">
+            <Button variant="ghost" onClick={handleBack} className="mb-6">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Upload
+            </Button>
+            <h1
+              className="text-5xl sm:text-6xl font-bold mb-4 font-display tracking-[-0.02em]"
+              style={{
+                textShadow: 'var(--text-shadow, 0 2px 8px rgba(0, 0, 0, 0.3))',
+              }}
+            >
+              <span
+                className="bg-gradient-to-tr from-[var(--color-holo-cyan)] via-[var(--color-emerald-glow)] to-[var(--color-vault-blue)] bg-clip-text text-transparent"
+                style={{
+                  textShadow: 'none',
+                  filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2))',
+                }}
+              >
+                Identification Failed
+              </span>
+            </h1>
+          </div>
+
+          <Card className="border-2 border-[var(--crimson-red)] shadow-lg dark:shadow-[0_8px_32px_rgba(0,0,0,0.12)]">
+            <CardHeader>
+              <div className="flex items-start gap-3">
+                <AlertCircle className="h-5 w-5 text-[var(--crimson-red)] mt-0.5" />
+                <div>
+                  <CardTitle>Unable to Identify Card</CardTitle>
+                  <CardDescription className="mt-2">
+                    {state.error ||
+                      'An error occurred while processing your image.'}
+                  </CardDescription>
+                </div>
               </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <Button onClick={handleRetry} variant="primary">
-                <RefreshCw className="mr-2 h-4 w-4" />
-                Try Again
-              </Button>
-              <Button onClick={handleBack} variant="outline">
-                Upload Different Image
-              </Button>
-              <Button onClick={handleManualEntry} variant="ghost">
-                Enter Manually
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Button onClick={handleRetry} variant="primary">
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                  Try Again
+                </Button>
+                <Button onClick={handleBack} variant="outline">
+                  Upload Different Image
+                </Button>
+                <Button onClick={handleManualEntry} variant="ghost">
+                  Enter Manually
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </main>
       </div>
     );
   }
@@ -289,116 +337,180 @@ export default function IdentifyPage() {
   // No Results State
   if (state.status === 'no-results') {
     return (
-      <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
-        <div className="mb-8">
-          <Button variant="ghost" onClick={handleBack} className="mb-4">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Upload
-          </Button>
-          <h1
-            className="mb-2 text-4xl font-bold"
-            style={{ fontFamily: 'var(--font-display)' }}
-          >
-            No Matches Found
-          </h1>
+      <div className="min-h-screen flex flex-col relative bg-[var(--background)] text-[var(--foreground)]">
+        {/* Gradient Background */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute inset-0 landing-gradient" />
+        </div>
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute inset-0 landing-radials" />
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>We couldn&apos;t find any matching cards</CardTitle>
-            <CardDescription>
-              The image might be unclear or the card might not be in our
-              database yet.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <Button onClick={handleRetry} variant="primary">
-                <RefreshCw className="mr-2 h-4 w-4" />
-                Try Again
-              </Button>
-              <Button onClick={handleBack} variant="outline">
-                Upload Different Image
-              </Button>
-              <Button onClick={handleManualEntry} variant="ghost">
-                Enter Manually
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        <main className="flex-1 relative z-10 w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
+          <div className="mb-12">
+            <Button variant="ghost" onClick={handleBack} className="mb-6">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Upload
+            </Button>
+            <h1
+              className="text-5xl sm:text-6xl font-bold mb-4 font-display tracking-[-0.02em]"
+              style={{
+                textShadow: 'var(--text-shadow, 0 2px 8px rgba(0, 0, 0, 0.3))',
+              }}
+            >
+              <span
+                className="bg-gradient-to-tr from-[var(--color-holo-cyan)] via-[var(--color-emerald-glow)] to-[var(--color-vault-blue)] bg-clip-text text-transparent"
+                style={{
+                  textShadow: 'none',
+                  filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2))',
+                }}
+              >
+                No Matches Found
+              </span>
+            </h1>
+          </div>
+
+          <Card className="border-2 border-gray-200 dark:border-white/10 shadow-lg dark:shadow-[0_8px_32px_rgba(0,0,0,0.12)]">
+            <CardHeader>
+              <CardTitle>We couldn&apos;t find any matching cards</CardTitle>
+              <CardDescription>
+                The image might be unclear or the card might not be in our
+                database yet.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Button onClick={handleRetry} variant="primary">
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                  Try Again
+                </Button>
+                <Button onClick={handleBack} variant="outline">
+                  Upload Different Image
+                </Button>
+                <Button onClick={handleManualEntry} variant="ghost">
+                  Enter Manually
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </main>
       </div>
     );
   }
 
   // Success State (with candidates)
   return (
-    <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
-      <div className="mb-8">
-        <Button variant="ghost" onClick={handleBack} className="mb-4">
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Upload
-        </Button>
-        <h1
-          className="mb-2 text-4xl font-bold"
-          style={{ fontFamily: 'var(--font-display)' }}
-        >
-          Select Your Card
-        </h1>
-        <p className="text-[var(--muted-foreground)]">
-          {state.status === 'low-confidence'
-            ? 'We found some possible matches. Please confirm which card this is.'
-            : 'We found the following matches. Select the correct one to continue.'}
-        </p>
+    <div className="min-h-screen flex flex-col relative bg-[var(--background)] text-[var(--foreground)]">
+      {/* Gradient Background */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute inset-0 landing-gradient" />
+      </div>
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute inset-0 landing-radials" />
       </div>
 
-      {/* Low Confidence Warning */}
-      {state.status === 'low-confidence' && (
-        <Card className="mb-6 border-[var(--amber-pulse)]">
-          <CardContent className="p-4">
-            <div className="flex items-start gap-3">
-              <AlertCircle className="h-5 w-5 text-[var(--amber-pulse)] mt-0.5 flex-shrink-0" />
-              <div>
-                <p className="font-medium text-sm">Low Confidence Match</p>
-                <p className="text-sm text-[var(--muted-foreground)] mt-1">
-                  The identification confidence is lower than usual. Please
-                  verify the selection carefully or try uploading a clearer
-                  image.
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Candidate List */}
-      <div className="mb-6">
-        <CandidateList
-          candidates={state.candidates}
-          onSelect={handleSelectCandidate}
-          selectedId={state.selectedCandidate?.id}
-        />
-      </div>
-
-      {/* Action Buttons */}
-      <div className="flex flex-col sm:flex-row gap-3 justify-between">
-        <div className="flex flex-col sm:flex-row gap-3">
-          <Button
-            onClick={handleConfirmSelection}
-            variant="primary"
-            size="lg"
-            disabled={!state.selectedCandidate}
-          >
-            Continue with Selection
+      <main className="flex-1 relative z-10 w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
+        <div className="mb-12">
+          <Button variant="ghost" onClick={handleBack} className="mb-6">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Upload
           </Button>
-          <Button onClick={handleManualEntry} variant="outline" size="lg">
-            Enter Manually
+          <h1
+            className="text-5xl sm:text-6xl md:text-7xl font-bold mb-4 font-display tracking-[-0.02em]"
+            style={{
+              textShadow: 'var(--text-shadow, 0 2px 8px rgba(0, 0, 0, 0.3))',
+            }}
+          >
+            <span
+              className="bg-gradient-to-tr from-[var(--color-holo-cyan)] via-[var(--color-emerald-glow)] to-[var(--color-vault-blue)] bg-clip-text text-transparent"
+              style={{
+                textShadow: 'none',
+                filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2))',
+              }}
+            >
+              Select Your Card
+            </span>
+          </h1>
+          <p
+            className="text-xl sm:text-2xl"
+            style={{
+              color: 'var(--foreground)',
+              opacity: 0.9,
+              textShadow: '0 1px 4px rgba(0, 0, 0, 0.3)',
+            }}
+          >
+            {state.status === 'low-confidence'
+              ? 'We found some possible matches. Please confirm which card this is.'
+              : 'We found the following matches. Select the correct one to continue.'}
+          </p>
+        </div>
+
+        {/* Low Confidence Warning */}
+        {state.status === 'low-confidence' && (
+          <Card className="mb-6 border-2 border-[var(--amber-pulse)] shadow-lg dark:shadow-[0_8px_32px_rgba(0,0,0,0.12)]">
+            <CardContent className="p-4">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="h-5 w-5 text-[var(--amber-pulse)] mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="font-medium text-sm">Low Confidence Match</p>
+                  <p className="text-sm text-[var(--muted-foreground)] mt-1">
+                    The identification confidence is lower than usual. Please
+                    verify the selection carefully or try uploading a clearer
+                    image.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Candidate List */}
+        <div className="mb-6">
+          <CandidateList
+            candidates={state.candidates}
+            onSelect={handleSelectCandidate}
+            selectedId={state.selectedCandidate?.id}
+          />
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex flex-col sm:flex-row gap-3 justify-between">
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Button
+              onClick={handleConfirmSelection}
+              variant="primary"
+              size="lg"
+              disabled={!state.selectedCandidate}
+            >
+              Continue with Selection
+            </Button>
+            <Button onClick={handleManualEntry} variant="outline" size="lg">
+              Enter Manually
+            </Button>
+          </div>
+          <Button onClick={handleRetry} variant="ghost" size="lg">
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Retry
           </Button>
         </div>
-        <Button onClick={handleRetry} variant="ghost" size="lg">
-          <RefreshCw className="mr-2 h-4 w-4" />
-          Retry
-        </Button>
-      </div>
+      </main>
     </div>
+  );
+}
+
+export default function IdentifyPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center">
+          <div className="text-center">
+            <div className="mb-4 h-8 w-8 animate-spin rounded-full border-4 border-[var(--border)] border-t-[var(--holo-cyan)] mx-auto" />
+            <p className="text-[var(--muted-foreground)]">Loading...</p>
+          </div>
+        </div>
+      }
+    >
+      <IdentifyPageContent />
+    </Suspense>
   );
 }
