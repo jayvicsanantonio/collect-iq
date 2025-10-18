@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useCard, useDeleteCard, useRefreshValuation } from '@/lib/swr';
+import { useCard, useDeleteCard, useRevalueCard } from '@/lib/swr';
 import {
   CardDetail,
   ValuationHistoryChart,
@@ -47,7 +47,7 @@ export default function CardDetailPage() {
   // Mutations
   const { trigger: deleteCard, isMutating: isDeleting } = useDeleteCard();
   const { trigger: refreshValuation, isMutating: isRefreshing } =
-    useRefreshValuation();
+    useRevalueCard();
 
   // Dialog states
   const [showDeleteDialog, setShowDeleteDialog] = React.useState(false);
@@ -69,9 +69,7 @@ export default function CardDetailPage() {
 
       history.push({
         date: date.toISOString(),
-        low: (card.valueLow || 0) * variance,
-        median: (card.valueMedian || 0) * variance,
-        high: (card.valueHigh || 0) * variance,
+        value: (card.valueMedian || 0) * variance,
       });
     }
 
@@ -336,17 +334,28 @@ export default function CardDetailPage() {
       </Link>
 
       {/* Card Detail */}
-      <CardDetail
-        card={card}
-        onReEvaluate={handleReEvaluate}
-        onDelete={() => setShowDeleteDialog(true)}
-        onShare={handleShare}
-        isLoading={{
-          reEvaluate: isRefreshing,
-          delete: isDeleting,
-          share: false,
-        }}
-      />
+      <CardDetail card={card} />
+
+      {/* Action Buttons */}
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex flex-wrap gap-2">
+            <Button onClick={handleReEvaluate} disabled={isRefreshing}>
+              {isRefreshing ? 'Re-evaluating...' : 'Re-evaluate'}
+            </Button>
+            <Button
+              onClick={() => setShowDeleteDialog(true)}
+              disabled={isDeleting}
+              variant="destructive"
+            >
+              Delete
+            </Button>
+            <Button onClick={handleShare} variant="outline">
+              Share
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Valuation History Chart */}
       {valuationHistory.length > 0 && (
@@ -365,7 +374,7 @@ export default function CardDetailPage() {
 
       {/* Market Data Sources */}
       {comparableSales.length > 0 && (
-        <MarketDataTable comparables={comparableSales} />
+        <MarketDataTable sales={comparableSales} />
       )}
 
       {/* Delete Confirmation Dialog */}
