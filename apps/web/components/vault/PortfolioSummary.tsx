@@ -29,33 +29,35 @@ export function PortfolioSummary({
   const isPositive = change.value >= 0;
 
   return (
-    <Card>
-      <CardContent className="p-6">
-        <div className="grid gap-6 md:grid-cols-3">
-          <div>
-            <p className="text-sm text-[var(--muted-foreground)] mb-1">
+    <Card className="border-2 border-gray-200 dark:border-white/10 shadow-lg dark:shadow-[0_8px_32px_rgba(0,0,0,0.12)]">
+      <CardContent className="p-8">
+        <div className="grid gap-8 md:grid-cols-3">
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-[var(--muted-foreground)] uppercase tracking-wider">
               Total Value
             </p>
-            <p className="text-3xl font-bold">{formatCurrency(totalValue)}</p>
+            <p className="text-4xl font-bold font-display bg-gradient-to-r from-[var(--color-vault-blue)] to-[var(--color-holo-cyan)] bg-clip-text text-transparent">
+              {formatCurrency(totalValue)}
+            </p>
           </div>
-          <div>
-            <p className="text-sm text-[var(--muted-foreground)] mb-1">
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-[var(--muted-foreground)] uppercase tracking-wider">
               Total Cards
             </p>
-            <p className="text-3xl font-bold">{totalCards}</p>
+            <p className="text-4xl font-bold font-display">{totalCards}</p>
           </div>
-          <div>
-            <p className="text-sm text-[var(--muted-foreground)] mb-1">
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-[var(--muted-foreground)] uppercase tracking-wider">
               14-Day Change
             </p>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               {isPositive ? (
-                <TrendingUp className="h-5 w-5 text-[var(--emerald-glow)]" />
+                <TrendingUp className="h-6 w-6 text-[var(--emerald-glow)]" />
               ) : (
-                <TrendingDown className="h-5 w-5 text-[var(--crimson-red)]" />
+                <TrendingDown className="h-6 w-6 text-[var(--crimson-red)]" />
               )}
               <span
-                className={`text-2xl font-bold ${
+                className={`text-3xl font-bold font-display ${
                   isPositive
                     ? 'text-[var(--emerald-glow)]'
                     : 'text-[var(--crimson-red)]'

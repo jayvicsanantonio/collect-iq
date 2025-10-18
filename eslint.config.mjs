@@ -7,6 +7,7 @@ import prettier from 'eslint-plugin-prettier';
 import eslintConfigPrettier from 'eslint-config-prettier';
 // @ts-expect-error - No type definitions available for @next/eslint-plugin-next
 import nextPlugin from '@next/eslint-plugin-next';
+import globals from 'globals';
 
 export default [
   {
@@ -37,6 +38,15 @@ export default [
     plugins: { prettier },
     rules: {
       'prettier/prettier': 'error',
+    },
+  },
+  // Node.js config files
+  {
+    files: ['**/*.config.{js,mjs,cjs}', '**/eslint.config.mjs'],
+    languageOptions: {
+      globals: {
+        ...globals.node,
+      },
     },
   },
   // Next.js rules for the web app

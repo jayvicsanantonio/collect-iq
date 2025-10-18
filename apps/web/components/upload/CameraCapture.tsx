@@ -72,12 +72,13 @@ export function CameraCapture({
           return;
         }
 
-        // Request camera permission
+        // Request camera permission with mobile-optimized constraints
         const constraints: MediaStreamConstraints = {
           video: {
-            facingMode: mode,
-            width: { ideal: 1920 },
-            height: { ideal: 1080 },
+            facingMode: { ideal: mode },
+            width: { ideal: 1920, max: 3840 },
+            height: { ideal: 1080, max: 2160 },
+            aspectRatio: { ideal: 16 / 9 },
           },
           audio: false,
         };
@@ -90,6 +91,9 @@ export function CameraCapture({
         // Attach stream to video element
         if (videoRef.current) {
           videoRef.current.srcObject = mediaStream;
+          // Ensure video plays on iOS
+          videoRef.current.setAttribute('playsinline', 'true');
+          videoRef.current.setAttribute('webkit-playsinline', 'true');
         }
       } catch (error) {
         console.error('Camera access error:', error);

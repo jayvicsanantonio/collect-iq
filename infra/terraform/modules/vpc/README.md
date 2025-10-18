@@ -28,25 +28,25 @@ module "vpc" {
 
 ## Inputs
 
-| Name | Description | Type | Default | Required |
-|------|-------------|------|---------|----------|
-| project_name | Name of the project | string | - | yes |
-| environment | Environment name | string | - | yes |
-| vpc_cidr | CIDR block for VPC | string | "10.0.0.0/16" | no |
-| public_subnet_count | Number of public subnets to create | number | 2 | no |
-| private_subnet_count | Number of private subnets to create | number | 2 | no |
+| Name                 | Description                         | Type   | Default       | Required |
+| -------------------- | ----------------------------------- | ------ | ------------- | -------- |
+| project_name         | Name of the project                 | string | -             | yes      |
+| environment          | Environment name                    | string | -             | yes      |
+| vpc_cidr             | CIDR block for VPC                  | string | "10.0.0.0/16" | no       |
+| public_subnet_count  | Number of public subnets to create  | number | 2             | no       |
+| private_subnet_count | Number of private subnets to create | number | 2             | no       |
 
 ## Outputs
 
-| Name | Description |
-|------|-------------|
-| vpc_id | ID of the VPC |
-| vpc_cidr | CIDR block of the VPC |
-| public_subnet_ids | IDs of public subnets |
-| private_subnet_ids | IDs of private subnets |
-| internet_gateway_id | ID of the Internet Gateway |
-| nat_gateway_id | ID of the NAT Gateway |
-| public_route_table_id | ID of the public route table |
+| Name                   | Description                   |
+| ---------------------- | ----------------------------- |
+| vpc_id                 | ID of the VPC                 |
+| vpc_cidr               | CIDR block of the VPC         |
+| public_subnet_ids      | IDs of public subnets         |
+| private_subnet_ids     | IDs of private subnets        |
+| internet_gateway_id    | ID of the Internet Gateway    |
+| nat_gateway_id         | ID of the NAT Gateway         |
+| public_route_table_id  | ID of the public route table  |
 | private_route_table_id | ID of the private route table |
 
 ## Subnet CIDR Allocation

@@ -9,12 +9,12 @@ export interface ValuationPanelProps {
   median: number;
   high: number;
   trend?: {
-    direction: 'up' | 'down' | 'stable';
-    percentage: number;
+    direction?: 'up' | 'down' | 'stable';
+    percentage?: number;
   };
   confidence: number;
   compsCount: number;
-  sources?: Array<{ name: string; logo: string }>;
+  sources?: Array<{ name?: string; logo?: string }>;
   lastUpdated?: string;
 }
 

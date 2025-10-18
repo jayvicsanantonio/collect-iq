@@ -19,11 +19,13 @@ Amplify requires a GitHub personal access token to access your repository. Creat
 ### Setting the Token
 
 **Option 1: Environment Variable (Recommended)**
+
 ```bash
 export TF_VAR_github_access_token="ghp_your_token_here"
 ```
 
 **Option 2: terraform.tfvars**
+
 ```hcl
 github_access_token = "ghp_your_token_here"
 ```
@@ -82,27 +84,27 @@ module "amplify_hosting" {
 
 ## Inputs
 
-| Name | Description | Type | Default | Required |
-|------|-------------|------|---------|----------|
-| app_name | Name of the Amplify application | string | - | yes |
-| repository | GitHub repository URL | string | - | yes |
-| access_token | GitHub personal access token | string | "" | yes* |
-| build_spec | Build specification for Next.js | string | - | yes |
-| environment_variables | Environment variables for the app | map(string) | {} | no |
-| main_branch_name | Name of the main branch | string | "main" | no |
-| enable_develop_branch | Create a develop branch | bool | false | no |
-| enable_auto_branch_creation | Enable PR preview branches | bool | true | no |
-| custom_domain | Custom domain name | string | "" | no |
+| Name                        | Description                       | Type        | Default | Required |
+| --------------------------- | --------------------------------- | ----------- | ------- | -------- |
+| app_name                    | Name of the Amplify application   | string      | -       | yes      |
+| repository                  | GitHub repository URL             | string      | -       | yes      |
+| access_token                | GitHub personal access token      | string      | ""      | yes\*    |
+| build_spec                  | Build specification for Next.js   | string      | -       | yes      |
+| environment_variables       | Environment variables for the app | map(string) | {}      | no       |
+| main_branch_name            | Name of the main branch           | string      | "main"  | no       |
+| enable_develop_branch       | Create a develop branch           | bool        | false   | no       |
+| enable_auto_branch_creation | Enable PR preview branches        | bool        | true    | no       |
+| custom_domain               | Custom domain name                | string      | ""      | no       |
 
-*Required for private repositories
+\*Required for private repositories
 
 ## Outputs
 
-| Name | Description |
-|------|-------------|
-| app_id | Amplify app ID |
-| default_domain | Amplify default domain |
-| main_branch_url | Main branch URL |
+| Name            | Description            |
+| --------------- | ---------------------- |
+| app_id          | Amplify app ID         |
+| default_domain  | Amplify default domain |
+| main_branch_url | Main branch URL        |
 
 ## Notes
 

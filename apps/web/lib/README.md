@@ -40,14 +40,22 @@ try {
 
 ### `swr.ts`
 
-SWR configuration and custom hooks for data fetching.
+SWR configuration and custom hooks for data fetching with stale-while-revalidate caching.
 
 **Features:**
 - Global SWR configuration with optimized settings
+- Specialized cache configurations for different data types (vault lists, card details, valuations)
 - Custom hooks for common queries (`useCards`, `useCard`)
 - Mutation hooks with optimistic updates (`useDeleteCard`, `useRefreshValuation`)
 - Cache key generators for consistent caching
 - Cache invalidation helpers
+- Automatic background revalidation
+
+**Cache TTL Configuration:**
+- Vault lists: 5 minutes (frequently updated)
+- Card details: 10 minutes (less frequently updated)
+- Valuation data: 1 hour (expensive to compute)
+- User session: 15 minutes (security-sensitive)
 
 **Usage:**
 ```typescript
@@ -58,6 +66,34 @@ function VaultPage() {
   const { trigger: deleteCard } = useDeleteCard();
 
   // ... component logic
+}
+```
+
+### `cache-headers.ts`
+
+HTTP cache header utilities for API routes.
+
+**Features:**
+- Standard cache presets (NO_CACHE, SHORT_CACHE, MEDIUM_CACHE, LONG_CACHE, STATIC_CACHE)
+- Cache-Control header generation
+- Stale-while-revalidate support
+- Next.js route handler helpers
+- Cache validation utilities
+
+**Cache Presets:**
+- `NO_CACHE` - No caching (auth endpoints, mutations)
+- `SHORT_CACHE` - 1 minute max-age, 5 minutes stale-while-revalidate (vault lists)
+- `MEDIUM_CACHE` - 5 minutes max-age, 10 minutes stale-while-revalidate (card details)
+- `LONG_CACHE` - 1 hour max-age, 2 hours stale-while-revalidate (valuations)
+- `STATIC_CACHE` - 1 year max-age (static assets)
+
+**Usage:**
+```typescript
+import { jsonWithCache, CACHE_PRESETS } from '@/lib/cache-headers';
+
+export async function GET() {
+  const data = await fetchData();
+  return jsonWithCache(data, CACHE_PRESETS.MEDIUM_CACHE);
 }
 ```
 
@@ -116,12 +152,20 @@ Common error status codes:
 Default SWR settings:
 - `revalidateOnFocus: false` - Don't revalidate when window regains focus
 - `revalidateOnReconnect: true` - Revalidate when network reconnects
+- `revalidateIfStale: true` - Revalidate if data is stale
 - `dedupingInterval: 2000` - Dedupe requests within 2 seconds
 - `focusThrottleInterval: 5000` - Throttle focus revalidation to 5 seconds
 - `errorRetryCount: 3` - Retry failed requests up to 3 times
 - `errorRetryInterval: 5000` - Wait 5 seconds between retries
+- `keepPreviousData: true` - Keep previous data while fetching new data
 
 ## Cache Strategy
+
+**Stale-While-Revalidate:**
+The application implements aggressive stale-while-revalidate caching:
+1. Serve cached data immediately (stale)
+2. Revalidate in background
+3. Update UI when fresh data arrives
 
 **User-scoped caching:**
 - All card data is scoped to the authenticated user
@@ -136,3 +180,27 @@ Default SWR settings:
 - `/cards` - All cards for current user
 - `/cards?limit=20&cursor=abc123` - Paginated cards
 - `/cards/{cardId}` - Single card detail
+
+**Cache invalidation helpers:**
+```typescript
+import { invalidateCardsCache, invalidateCardCache, updateCardInCache } from '@/lib/swr';
+import { useSWRConfig } from 'swr';
+
+function MyComponent() {
+  const { mutate } = useSWRConfig();
+  
+  // Invalidate all cards caches
+  invalidateCardsCache(mutate);
+  
+  // Invalidate specific card
+  invalidateCardCache(mutate, cardId);
+  
+  // Optimistically update card
+  updateCardInCache(mutate, cardId, (card) => ({
+    ...card,
+    valueMedian: newValue,
+  }));
+}
+```
+
+For detailed caching documentation, see [CACHING_STRATEGY.md](../CACHING_STRATEGY.md).

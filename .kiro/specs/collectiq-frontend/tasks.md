@@ -407,7 +407,7 @@
   - Test chart lazy loading
   - _Requirements: 15.1, 15.6_
 
-- [ ] 11. Error handling and user feedback
+- [x] 11. Error handling and user feedback
 - [x] 11.1 Create ProblemDetails error handler
   - Create error handler in apps/web/lib/errors.ts
   - Use ProblemDetails type and schema from @collectiq/shared
@@ -448,8 +448,8 @@
   - E2E tests for error flows
   - _Requirements: 15.1, 15.2_
 
-- [ ] 12. Responsive design and mobile optimization
-- [ ] 12.1 Implement responsive layouts
+- [x] 12. Responsive design and mobile optimization
+- [x] 12.1 Implement responsive layouts
   - Create mobile-first CSS with Tailwind breakpoints
   - Implement single-column layouts for mobile
   - Add responsive grid columns (1-4 based on screen)
@@ -457,14 +457,14 @@
   - Test on various screen sizes (320px to 1920px)
   - _Requirements: 8.1, 8.5_
 
-- [ ] 12.2 Optimize mobile upload experience
+- [x] 12.2 Optimize mobile upload experience
   - Integrate native camera on mobile devices
   - Implement file picker for mobile
   - Add image compression for large files on mobile
   - Test on iOS Safari and Android Chrome
   - _Requirements: 8.2_
 
-- [ ] 12.3 Implement mobile-specific UI patterns
+- [x] 12.3 Implement mobile-specific UI patterns
   - Use bottom sheets for filters and modals
   - Implement swipe gestures where appropriate
   - Add pull-to-refresh for vault
@@ -479,8 +479,8 @@
   - Test landscape and portrait orientations
   - _Requirements: 15.6_
 
-- [ ] 13. Accessibility implementation
-- [ ] 13.1 Implement keyboard navigation
+- [x] 13. Accessibility implementation
+- [x] 13.1 Implement keyboard navigation
   - Ensure all interactive elements are keyboard accessible
   - Add visible focus indicators (2px Holo Cyan ring)
   - Implement roving tabindex for card grids
@@ -488,7 +488,7 @@
   - Test tab order on all pages
   - _Requirements: 9.1, 9.2, 9.9_
 
-- [ ] 13.2 Implement ARIA attributes
+- [x] 13.2 Implement ARIA attributes
   - Add aria-live regions for async status updates
   - Add aria-labels for icon buttons
   - Add aria-descriptions for complex widgets
@@ -496,28 +496,28 @@
   - Add aria-expanded for collapsible sections
   - _Requirements: 9.3, 9.4_
 
-- [ ] 13.3 Ensure semantic HTML
+- [x] 13.3 Ensure semantic HTML
   - Use semantic elements (nav, main, article, section)
   - Proper heading hierarchy (h1-h6)
   - Use button elements for actions (not divs)
   - Use form elements with labels
   - _Requirements: 9.8_
 
-- [ ] 13.4 Implement color accessibility
+- [x] 13.4 Implement color accessibility
   - Ensure all color combinations meet WCAG AA contrast (4.5:1)
   - Never rely solely on color to convey information
   - Add patterns or icons alongside color coding
   - Test with color blindness simulators
   - _Requirements: 9.6_
 
-- [ ] 13.5 Implement motion accessibility
+- [x] 13.5 Implement motion accessibility
   - Respect prefers-reduced-motion media query
   - Disable animations when reduced motion is preferred
   - Use instant transitions instead of animations
   - Test with reduced motion enabled
   - _Requirements: 9.7_
 
-- [ ] 13.6 Add descriptive alt text
+- [x] 13.6 Add descriptive alt text
   - Write descriptive alt text for all card images
   - Use empty alt for decorative images
   - Provide context in alt text
@@ -531,8 +531,8 @@
   - Fix all critical and serious issues
   - _Requirements: 15.8_
 
-- [ ] 14. Performance optimization
-- [ ] 14.1 Implement code splitting
+- [x] 14. Performance optimization
+- [x] 14.1 Implement code splitting
   - Configure route-based code splitting (automatic with Next.js)
   - Lazy load Recharts library
   - Dynamic import for CameraCapture component
@@ -540,7 +540,7 @@
   - Analyze bundle size with @next/bundle-analyzer
   - _Requirements: 10.4, 10.5_
 
-- [ ] 14.2 Optimize images
+- [x] 14.2 Optimize images
   - Use Next.js Image component for all images
   - Add blur placeholders for smooth loading
   - Implement responsive images with srcset
@@ -548,14 +548,14 @@
   - Constrain aspect ratios to prevent layout shift
   - _Requirements: 10.6_
 
-- [ ] 14.3 Implement caching strategies
+- [x] 14.3 Implement caching strategies
   - Configure SWR with appropriate revalidation settings
   - Implement stale-while-revalidate for vault lists
   - Add cache invalidation on mutations
   - Use HTTP cache headers
   - _Requirements: 10.7_
 
-- [ ] 14.4 Optimize animations
+- [x] 14.4 Optimize animations
   - Use CSS transforms and opacity for animations
   - Avoid expensive reflows (layout thrashing)
   - Add will-change sparingly
@@ -563,7 +563,7 @@
   - Throttle heavy JavaScript operations
   - _Requirements: 10.8_
 
-- [ ] 14.5 Implement virtualization
+- [x] 14.5 Implement virtualization
   - Add virtualization for vault grid when > 200 items
   - Use react-window or similar library
   - Implement dynamic row heights
@@ -579,36 +579,36 @@
   - Fix performance issues blocking thresholds
   - _Requirements: 10.1, 10.2, 10.3, 15.10_
 
-- [ ] 15. Security hardening
-- [ ] 15.1 Implement secure authentication
+- [x] 15. Security hardening
+- [x] 15.1 Implement secure authentication
   - Store JWT in HTTP-only, Secure, SameSite=Lax cookies
   - Never store tokens in localStorage
   - Implement automatic token refresh
   - Clear all cookies on logout
   - _Requirements: 12.1_
 
-- [ ] 15.2 Configure Content Security Policy
-  - Set strict CSP headers
+- [x] 15.2 Configure Content Security Policy
+  - Set strict CSP headers in next.config.mjs or middleware
   - Disallow inline scripts
-  - Whitelist trusted domains
+  - Whitelist trusted domains (API, Cognito, S3, CloudFront)
   - Set frame-ancestors to 'none'
   - _Requirements: 12.2_
 
-- [ ] 15.3 Implement security headers
-  - Add Referrer-Policy: strict-origin-when-cross-origin
+- [x] 15.3 Implement security headers
+  - Add Referrer-Policy: strict-origin-when-cross-origin in next.config.mjs
   - Add X-Frame-Options: DENY
   - Add X-Content-Type-Options: nosniff
   - Add Permissions-Policy
   - _Requirements: 12.3_
 
-- [ ] 15.4 Implement input validation
+- [x] 15.4 Implement input validation
   - Use Zod schemas from @collectiq/shared for client-side validation
   - Validate file types and sizes before upload
   - Sanitize user input in forms
   - Prevent XSS attacks
   - _Requirements: 12.5_
 
-- [ ] 15.5 Implement privacy protections
+- [x] 15.5 Implement privacy protections
   - Never log PII in analytics or errors
   - Respect Do Not Track (DNT) header
   - Implement GDPR-compliant data handling
@@ -622,8 +622,8 @@
   - Verify no tokens in client-side storage
   - _Requirements: 12.1, 12.2, 12.3, 12.4, 12.5, 12.6, 12.7, 12.8_
 
-- [ ] 16. Analytics and telemetry
-- [ ] 16.1 Implement event tracking
+- [x] 16. Analytics and telemetry
+- [x] 16.1 Implement event tracking
   - Create analytics utility in apps/web/lib/analytics.ts
   - Consider using telemetry utilities from packages/telemetry if applicable
   - Implement upload_started event
@@ -634,14 +634,14 @@
   - Implement valuation_refreshed event
   - _Requirements: 14.1, 14.2, 14.3, 14.4, 14.5, 14.6_
 
-- [ ] 16.2 Implement privacy-safe logging
+- [x] 16.2 Implement privacy-safe logging
   - Never include PII in events
   - Include requestId for traceability
   - Add event timestamp
   - Implement event batching
   - _Requirements: 14.7, 14.8_
 
-- [ ] 16.3 Implement feature flags
+- [x] 16.3 Implement feature flags
   - Create feature flag system
   - Add flags for pricing, authenticity, charts
   - Guard risky features behind flags
@@ -695,7 +695,7 @@
   - _Requirements: 15.10_
 
 - [ ] 18. Documentation and deployment
-- [ ] 18.1 Write developer documentation
+- [x] 18.1 Write developer documentation
   - Create comprehensive README with setup instructions
   - Document environment variables
   - Document common development scripts
@@ -703,7 +703,7 @@
   - Document component API contracts
   - _Requirements: All_
 
-- [ ] 18.2 Configure CI/CD pipeline
+- [x] 18.2 Configure CI/CD pipeline
   - Set up GitHub Actions workflow
   - Add lint and typecheck steps
   - Add test execution step
@@ -713,10 +713,10 @@
 
 - [ ] 18.3 Configure production deployment
   - Set up AWS Amplify or Vercel hosting
-  - Configure environment variables
+  - Configure environment variables in deployment platform
   - Set up custom domain with SSL
   - Configure CDN distribution
-  - Set up error tracking (Sentry)
+  - Set up error tracking (Sentry or CloudWatch)
   - _Requirements: All_
 
 - [ ] 18.4 Create demo and user documentation
