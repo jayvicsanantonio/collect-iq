@@ -526,7 +526,7 @@
   - _Requirements: 15.8_
 
 - [ ] 14. Performance optimization
-- [ ] 14.1 Implement code splitting
+- [x] 14.1 Implement code splitting
   - Configure route-based code splitting (automatic with Next.js)
   - Lazy load Recharts library
   - Dynamic import for CameraCapture component
@@ -534,7 +534,7 @@
   - Analyze bundle size with @next/bundle-analyzer
   - _Requirements: 10.4, 10.5_
 
-- [ ] 14.2 Optimize images
+- [x] 14.2 Optimize images
   - Use Next.js Image component for all images
   - Add blur placeholders for smooth loading
   - Implement responsive images with srcset
@@ -542,14 +542,14 @@
   - Constrain aspect ratios to prevent layout shift
   - _Requirements: 10.6_
 
-- [ ] 14.3 Implement caching strategies
+- [x] 14.3 Implement caching strategies
   - Configure SWR with appropriate revalidation settings
   - Implement stale-while-revalidate for vault lists
   - Add cache invalidation on mutations
   - Use HTTP cache headers
   - _Requirements: 10.7_
 
-- [ ] 14.4 Optimize animations
+- [x] 14.4 Optimize animations
   - Use CSS transforms and opacity for animations
   - Avoid expensive reflows (layout thrashing)
   - Add will-change sparingly
@@ -557,7 +557,7 @@
   - Throttle heavy JavaScript operations
   - _Requirements: 10.8_
 
-- [ ] 14.5 Implement virtualization
+- [x] 14.5 Implement virtualization
   - Add virtualization for vault grid when > 200 items
   - Use react-window or similar library
   - Implement dynamic row heights
