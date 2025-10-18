@@ -19,6 +19,7 @@
   - Define border radius, shadow, and motion tokens
   - Implement light/dark mode CSS variables
   - _Requirements: 13.4, 13.5, 13.6, 13.7, 13.8_
+  - Maintenance (2025-10-17): Moved global base reset into `@layer base` and removed `* { padding: 0 }` which was overriding Tailwind utilities (e.g., `px-*`). Verified Tailwind v4 setup with `@tailwindcss/postcss` and `@import 'tailwindcss'` is correct.
 
 - [x] 2.2 Create base UI components (shadcn/ui)
   - Install and configure shadcn/ui CLI
@@ -38,6 +39,8 @@
   - Add theme switching logic without page reload
   - Test theme persistence across sessions
   - _Requirements: 13.1, 13.2, 13.3_
+  - Maintenance (2025-10-17): Replaced inline styles with Tailwind utilities where feasible (Header, Sidebar, Landing, SignInButton spinner). Standardized colors via CSS variables with text-[var(--...)]/bg-[var(--...)] and gradients via bg-gradient-to-_. This ensures spacing utilities like px-_ are not overridden.
+  - Maintenance (2025-10-17): Themed Landing backgrounds. Added `.landing-gradient` and `.landing-radials` classes in `globals.css` with light/dark variants and switched frosted cards to token-based backgrounds/borders (`bg-[color-mix(...var(--card)...)], border-[var(--border)]`). Removed remaining inline styles from Landing.
 
 - [x] 3. Authentication infrastructure
 - [x] 3.1 Set up Cognito Hosted UI integration
@@ -105,14 +108,15 @@
   - _Requirements: 11.1_
 
 - [x] 4.3 Implement API endpoints
-  - Implement getPresignedUrl() for S3 upload in apps/web/lib/api.ts
-  - Implement createCard() for card creation using Card type from @collectiq/shared
-  - Implement getCards() with pagination support
-  - Implement getCard() for single card retrieval
-  - Implement deleteCard() for card deletion
-  - Implement refreshValuation() for valuation updates
-  - Use TypeScript types from @collectiq/shared for all request/response payloads
+  - Implement getPresignedUrl() for POST /upload/presign in apps/web/lib/api.ts
+  - Implement createCard() for POST /cards with Idempotency-Key header
+  - Implement getCards() for GET /cards with cursor-based pagination
+  - Implement getCard() for GET /cards/{id}
+  - Implement deleteCard() for DELETE /cards/{id} (returns 204 No Content)
+  - Implement revalueCard() for POST /cards/{id}/revalue with Idempotency-Key header
+  - Use TypeScript types from @collectiq/shared (PresignRequest, CreateCardRequest, Card, ListCardsResponse, RevalueRequest, RevalueResponse)
   - Validate all responses with Zod schemas from @collectiq/shared
+  - Generate UUID for Idempotency-Key header on POST operations
   - _Requirements: 2.4, 5.8, 6.9, 7.6_
 
 - [x] 4.4 Set up SWR for data fetching
@@ -131,8 +135,8 @@
   - Mock API responses for integration tests
   - _Requirements: 15.1_
 
-- [x] 5. Upload flow implementation
-- [x] 5.1 Create UploadDropzone component
+- [ ] 5. Upload flow implementation
+- [ ] 5.1 Create UploadDropzone component with validation
   - Create component in apps/web/components/upload/UploadDropzone.tsx
   - Implement drag-and-drop area with visual feedback
   - Add file picker integration
@@ -141,9 +145,10 @@
   - Add hover and active states
   - Display inline error messages for validation failures
   - Create mobile-optimized version with tap-to-upload
+  - **See detailed spec**: `.kiro/specs/collectiq-frontend/image-upload-validation.md`
   - _Requirements: 2.1, 2.2, 2.3_
 
-- [x] 5.2 Create CameraCapture component
+- [ ] 5.2 Create CameraCapture component
   - Create component in apps/web/components/upload/CameraCapture.tsx
   - Implement getUserMedia API integration
   - Add camera permission request handling
@@ -154,7 +159,7 @@
   - Add camera preview with capture button
   - _Requirements: 2.6, 2.7_
 
-- [x] 5.3 Create UploadProgress component
+- [ ] 5.3 Create UploadProgress component
   - Create component in apps/web/components/upload/UploadProgress.tsx
   - Implement progress bar with percentage display
   - Add thumbnail preview of uploading image
@@ -163,17 +168,19 @@
   - Implement error state display
   - _Requirements: 2.8, 2.9_
 
-- [x] 5.4 Implement upload workflow
+- [ ] 5.4 Implement upload workflow
   - Create apps/web/app/(protected)/upload/page.tsx with UploadDropzone
-  - Implement presigned URL request flow using API client
-  - Add direct S3 upload with progress tracking
+  - Implement presigned URL request flow using POST /upload/presign
+  - Add direct S3 upload with progress tracking using XMLHttpRequest
+  - After successful S3 upload, call POST /cards with frontS3Key to create card record
+  - Generate Idempotency-Key for POST /cards to prevent duplicate card creation
   - Create object URLs for image previews
   - Implement cleanup on unmount (revoke object URLs)
-  - Add automatic redirect to identification screen on success
+  - Add automatic redirect to card processing/detail screen after card creation
   - Handle upload errors with retry option
   - _Requirements: 2.4, 2.5, 2.8, 2.9, 2.10_
 
-- [x] 5.5 Create first-run empty state
+- [ ] 5.5 Create first-run empty state
   - Design hero layout for empty vault
   - Add "Let's scan your first card" headline
   - Create CTAs for camera and file upload
@@ -188,107 +195,105 @@
   - Test error handling and retry logic
   - _Requirements: 15.2, 15.5_
 
-- [x] 6. Card identification interface
-- [x] 6.1 Create CandidateList component
-  - Design card list layout with top-k results
-  - Display card name, set, rarity for each candidate
-  - Implement confidence bar visualization
-  - Add card thumbnail images
-  - Create selection interaction (click/tap)
-  - Add loading skeleton state
-  - _Requirements: 3.2, 3.3_
+- [ ] 6. Card processing and analysis interface
+- [ ] 6.1 Create CardProcessing component
+  - Design processing screen with status indicators
+  - Display progress for: feature extraction, authenticity analysis, valuation
+  - Show animated loading states for each stage
+  - Add estimated time remaining indicator
+  - Create error state with retry option
+  - _Requirements: 3.1, 3.2_
 
-- [x] 6.2 Create identification page
-  - Create /identify route (or modal)
-  - Integrate CandidateList component
-  - Add loading state while backend processes image
-  - Implement candidate selection handler
-  - Add manual confirmation option for low confidence
-  - Create error state for no candidates found
-  - Add retry and manual entry options
-  - _Requirements: 3.1, 3.4, 3.5, 3.6_
+- [ ] 6.2 Create card processing page
+  - Create /cards/{id}/processing route or use card detail with loading state
+  - Poll GET /cards/{id} to check for updated analysis results
+  - Display processing status while authenticityScore or valueLow are undefined
+  - Automatically redirect to card detail view when analysis completes
+  - Add manual refresh button to check status
+  - Handle analysis failures with retry via POST /cards/{id}/revalue
+  - _Requirements: 3.3, 3.4, 3.5, 3.6, 3.7_
 
-- [ ]\* 6.3 Write identification tests
-  - Unit tests for CandidateList component
-  - Integration test for identification flow
-  - Test low confidence scenarios
-  - Test error states
+- [ ]\* 6.3 Write processing tests
+  - Unit tests for CardProcessing component
+  - Integration test for polling logic
+  - Test automatic redirect on completion
+  - Test error states and retry
   - _Requirements: 15.1_
 
 - [x] 7. Authenticity analysis interface
 - [x] 7.1 Create AuthenticityBadge component
-  - Design rounded pill badge with score display
+  - Design rounded pill badge with authenticityScore display (0-1 scale)
   - Implement color coding based on score (green > 0.8, yellow 0.5-0.8, red < 0.5)
-  - Create tooltip with detailed breakdown
-  - Display visual hash, text match, and holo pattern scores
-  - Add warning indicator for low scores
+  - Create tooltip with detailed breakdown from authenticitySignals
+  - Display visualHashConfidence, textMatchConfidence, holoPatternConfidence, borderConsistency, fontValidation
+  - Add warning indicator for fakeDetected flag
   - Ensure accessibility (not relying solely on color)
   - _Requirements: 4.2, 4.3, 4.5, 4.7_
 
-- [x] 7.2 Create authenticity analysis page/section
-  - Design split-view layout (image + metrics)
-  - Display card image with zoom capability
-  - Integrate AuthenticityBadge component
-  - Create visual fingerprint graph
-  - Create text validation results display
-  - Create holographic signal analysis visualization
-  - Add rationale text from AI analysis
+- [x] 7.2 Create authenticity analysis section in card detail
+  - Display card image from frontS3Key with zoom capability
+  - Integrate AuthenticityBadge component with card.authenticityScore
+  - Display authenticitySignals breakdown in visual format
+  - Show rationale text from AuthenticityResult (if available from backend)
+  - Create visual representations of border consistency and font validation scores
+  - Display holographic pattern confidence with visual indicator
   - _Requirements: 4.1, 4.4_
 
-- [x] 7.3 Implement feedback reporting
+- [ ] 7.3 Implement feedback reporting (future enhancement)
   - Create "Report Incorrect Result" button
   - Design feedback modal with reason selection
-  - Implement feedback submission to backend
+  - Implement feedback submission to backend (endpoint TBD)
   - Add confirmation toast on successful submission
   - _Requirements: 4.6_
 
 - [ ]\* 7.4 Write authenticity tests
   - Unit tests for AuthenticityBadge component
   - Test score color coding logic
-  - Test tooltip display
+  - Test tooltip display with authenticitySignals
   - Test accessibility compliance
   - _Requirements: 15.1, 15.8_
 
 - [x] 8. Valuation interface
 - [x] 8.1 Create ValuationPanel component
-  - Design panel layout with price range display
+  - Design panel layout with price range display from card.valueLow, card.valueMedian, card.valueHigh
   - Implement low/median/high price visualization
-  - Create trend indicator with arrow and percentage
-  - Add data source logos (eBay, TCGPlayer, PriceCharting)
-  - Display confidence score with visual indicator
-  - Show comparable sales count and time window
-  - Add last updated timestamp
-  - Create "Save to Vault" CTA button
+  - Create trend indicator (future enhancement - requires historical data)
+  - Add data source display from card.sources array
+  - Display confidence score (future enhancement - not in current Card schema)
+  - Show comparable sales count from card.compsCount
+  - Add last updated timestamp from card.updatedAt
   - _Requirements: 5.2, 5.3, 5.4, 5.5_
 
 - [x] 8.2 Implement valuation refresh functionality
-  - Add refresh button to ValuationPanel
+  - Add refresh button that calls POST /cards/{id}/revalue with forceRefresh=true
+  - Generate Idempotency-Key for revalue request
+  - Display 202 Accepted response with executionArn and status
   - Implement loading state during refresh
-  - Update display with new valuation data
+  - Poll GET /cards/{id} to check for updated valuation data
   - Handle errors with retry option
-  - Show toast notification on successful refresh
+  - Show toast notification when new valuation data is available
   - _Requirements: 5.8_
 
 - [x] 8.3 Handle unavailable valuation data
-  - Display last cached valuation with timestamp
-  - Add "Data unavailable" indicator
+  - Display message when valueLow, valueMedian, or valueHigh are undefined
+  - Show "Analysis in progress" if card was recently created
+  - Add "Refresh" button to trigger POST /cards/{id}/revalue
   - Provide explanation and retry option
   - _Requirements: 5.6_
 
-- [x] 8.4 Create valuation workflow page
-  - Integrate authenticity and valuation sections
-  - Create progressive disclosure flow
-  - Add navigation between sections
-  - Implement "Save to Vault" action
-  - Add success confirmation and redirect to vault
+- [x] 8.4 Integrate valuation in card detail page
+  - Display ValuationPanel in card detail view
+  - Show authenticity and valuation sections together
+  - Add refresh action for revaluation
+  - Display processing state if analysis is incomplete
   - _Requirements: 5.7_
 
 - [ ]\* 8.5 Write valuation tests
   - Unit tests for ValuationPanel component
-  - Test price range display
-  - Test trend calculations
-  - Test refresh functionality
-  - Test cached data display
+  - Test price range display from Card object
+  - Test refresh functionality with POST /cards/{id}/revalue
+  - Test polling logic for updated data
+  - Test unavailable data states
   - _Requirements: 15.1_
 
 - [x] 9. Vault and portfolio management
@@ -330,11 +335,11 @@
 
 - [x] 9.5 Implement card deletion
   - Add delete confirmation dialog
-  - Implement optimistic UI update
-  - Call deleteCard API endpoint
-  - Handle errors with rollback
+  - Implement optimistic UI update (remove card from list immediately)
+  - Call DELETE /cards/{id} endpoint (returns 204 No Content)
+  - Handle errors with rollback (restore card to list)
   - Show success toast notification
-  - Update portfolio summary after deletion
+  - Update portfolio summary after deletion (recalculate from remaining cards)
   - _Requirements: 6.7_
 
 - [ ]\* 9.6 Write vault tests
@@ -385,9 +390,10 @@
   - _Requirements: 7.1, 7.8, 7.9_
 
 - [x] 10.5 Implement card actions
-  - Implement re-evaluate action (refresh valuation)
-  - Implement delete action with confirmation
-  - Implement share action (copy link or native share)
+  - Implement re-evaluate action via POST /cards/{id}/revalue with Idempotency-Key
+  - Display 202 Accepted response and poll for updates
+  - Implement delete action via DELETE /cards/{id} with confirmation dialog
+  - Implement share action (copy link or native share API)
   - Add loading states for actions
   - Show success/error notifications
   - _Requirements: 7.6_

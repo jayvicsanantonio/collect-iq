@@ -2,9 +2,9 @@
 
 ## Overview
 
-The CollectIQ DevOps infrastructure is a fully serverless, multi-region AWS architecture designed to support an AI-powered Pokémon TCG card identification, authentication, and valuation platform. The infrastructure is provisioned entirely through Terraform infrastructure-as-code, enabling reproducible deployments across development and production environments.
+The CollectIQ DevOps infrastructure is a fully serverless AWS architecture designed to support an AI-powered Pokémon TCG card identification, authentication, and valuation platform. The infrastructure is provisioned entirely through Terraform infrastructure-as-code, enabling reproducible deployments for the hackathon environment.
 
-The architecture follows AWS Well-Architected Framework principles with emphasis on operational excellence, security, reliability, performance efficiency, and cost optimization. The system scales automatically from hackathon prototype (~$50/month, 100k API calls) to production growth stage (50k+ users, 10M+ API calls, ~$1,500-2,000/month).
+The architecture follows AWS Well-Architected Framework principles with emphasis on operational excellence, security, reliability, performance efficiency, and cost optimization. As a hackathon project, the system is designed for a single environment with a target budget of ~$50/month and support for 100k API calls/month.
 
 The infrastructure supports a pnpm workspace monorepo with backend services in `services/backend/`, frontend in `apps/web/`, and shared packages in `packages/` (shared types/schemas, config, telemetry). Lambda functions are built from the backend service code and deployed with esbuild bundling.
 
@@ -106,12 +106,7 @@ infra/terraform/
 │   ├── ssm_secrets/              # External API keys
 │   └── xray/                     # Distributed tracing
 ├── envs/
-│   ├── dev/
-│   │   ├── main.tf
-│   │   ├── variables.tf
-│   │   ├── outputs.tf
-│   │   └── terraform.tfvars
-│   └── prod/
+│   └── hackathon/
 │       ├── main.tf
 │       ├── variables.tf
 │       ├── outputs.tf
@@ -149,18 +144,17 @@ Lambda functions built with esbuild will automatically bundle dependencies from 
 module "amplify_hosting" {
   source = "../../modules/amplify_hosting"
 
-  app_name          = "collectiq-${var.environment}"
+  app_name          = "collectiq-hackathon"
   repository        = var.github_repo_url
-  branch_name       = var.environment == "prod" ? "main" : "develop"
-  custom_domain     = var.environment == "prod" ? "app.collectiq.com" : "dev.collectiq.com"
+  branch_name       = "main"
 
   environment_variables = {
     NEXT_PUBLIC_REGION                    = var.aws_region
     NEXT_PUBLIC_COGNITO_USER_POOL_ID      = module.cognito.user_pool_id
     NEXT_PUBLIC_COGNITO_USER_POOL_CLIENT_ID = module.cognito.client_id
     NEXT_PUBLIC_COGNITO_DOMAIN            = module.cognito.hosted_ui_domain
-    NEXT_PUBLIC_OAUTH_REDIRECT_URI        = "https://${var.custom_domain}/auth/callback"
-    NEXT_PUBLIC_OAUTH_LOGOUT_URI          = "https://${var.custom_domain}"
+    NEXT_PUBLIC_OAUTH_REDIRECT_URI        = "https://${module.amplify_hosting.default_domain}/auth/callback"
+    NEXT_PUBLIC_OAUTH_LOGOUT_URI          = "https://${module.amplify_hosting.default_domain}"
     NEXT_PUBLIC_API_BASE                  = module.api_gateway.api_endpoint
   }
 
@@ -202,7 +196,7 @@ module "amplify_hosting" {
 module "cognito" {
   source = "../../modules/cognito_user_pool"
 
-  user_pool_name = "collectiq-${var.environment}"
+  user_pool_name = "collectiq-hackathon"
 
   password_policy = {
     minimum_length    = 8
@@ -215,20 +209,18 @@ module "cognito" {
   auto_verified_attributes = ["email"]
   mfa_configuration        = "OPTIONAL"
 
-  app_client_name = "collectiq-web-${var.environment}"
+  app_client_name = "collectiq-web-hackathon"
   callback_urls   = [
-    "https://${var.amplify_domain}/auth/callback",
-    "https://${var.custom_domain}/auth/callback"
+    "https://${module.amplify_hosting.default_domain}/auth/callback"
   ]
   logout_urls = [
-    "https://${var.amplify_domain}",
-    "https://${var.custom_domain}"
+    "https://${module.amplify_hosting.default_domain}"
   ]
 
   allowed_oauth_flows  = ["code"]
   allowed_oauth_scopes = ["openid", "email", "profile"]
 
-  hosted_ui_domain_prefix = "collectiq-${var.environment}"
+  hosted_ui_domain_prefix = "collectiq-hackathon"
 }
 ```
 
@@ -318,7 +310,7 @@ module "cognito" {
 terraform {
   backend "s3" {
     bucket         = "collectiq-terraform-state-${account_id}"
-    key            = "${environment}/terraform.tfstate"
+    key            = "hackathon/terraform.tfstate"
     region         = "us-east-1"
     encrypt        = true
     dynamodb_table = "collectiq-terraform-locks"
@@ -337,7 +329,7 @@ All resources tagged with:
 ```hcl
 tags = {
   Project     = "CollectIQ"
-  Environment = var.environment
+  Environment = "hackathon"
   Owner       = "DevOps"
   ManagedBy   = "Terraform"
   CostCenter  = "Engineering"
@@ -523,37 +515,20 @@ tags = {
 **Hackathon Phase ($20-50/month):**
 
 1. Use 256-512MB Lambda memory
-2. Disable debug logging
-3. Mock Bedrock/Rekognition in dev
-4. Use Express Step Functions
-5. Set AWS Budget alert at $30
-
-**Production Phase ($400-700/month at 10k users):**
-
-1. Compute Savings Plans for Lambda (17-30% discount)
-2. DynamoDB autoscaling or provisioned capacity
-3. S3 Intelligent-Tiering for uploads
-4. CloudWatch log retention: 30 days
-5. Bedrock prompt optimization (shorter prompts, reuse context)
-
-**Growth Phase ($1,500-2,000/month at 50k+ users):**
-
-1. Reserved capacity for predictable workloads
-2. S3 Glacier Deep Archive for old data (90% savings)
-3. Cost Anomaly Detection
-4. Resource tagging for cost allocation
-5. Quarterly cost reviews and optimization
+2. Use info-level logging
+3. Use Express Step Functions
+4. Set AWS Budget alert at $50
+5. Maximize free tier usage
 
 ### Cost Monitoring
 
 **AWS Budgets:**
 
-- Dev: $50/month (alert at 80% and 100%)
-- Prod: $500/month (alert at 80% and 100%)
+- Hackathon: $50/month (alert at 80% and 100%)
 
 **Cost Allocation Tags:**
 
-- Environment (dev, prod)
+- Environment (hackathon)
 - Service (lambda, dynamodb, s3, etc.)
 - Feature (upload, valuation, authenticity)
 
@@ -617,7 +592,7 @@ jobs:
 
 **Frontend Pipeline (Amplify):**
 
-- Auto-triggered on git push to apps/web/\*\*
+- Auto-triggered on git push to main branch
 - Build Next.js app from apps/web/
 - Deploy to Amplify
 - PR previews for feature branches
@@ -748,8 +723,7 @@ terraform apply
 
 **Log Retention:**
 
-- Dev: 30 days
-- Prod: 90 days
+- Hackathon: 30 days
 
 **Log Insights Queries:**
 
@@ -853,48 +827,26 @@ terraform apply
 
 ## Environment Configuration
 
-### Development Environment
+### Hackathon Environment
 
-**Purpose:** Testing and development
+**Purpose:** Hackathon demonstration and testing
 
 **Configuration:**
 
-- AWS Account: Separate dev account or isolated region
-- Domain: dev.collectiq.com
+- AWS Account: Single account
+- Domain: Amplify default domain
 - Budget: $50/month
-- Cognito: dev-collectiq user pool
-- DynamoDB: dev-CollectIQ table (on-demand)
-- Lambda: 512MB memory, debug logging enabled
-- Step Functions: Standard workflows for debugging
-- Amplify: Auto-deploy from develop branch
+- Cognito: hackathon-collectiq user pool
+- DynamoDB: hackathon-CollectIQ table (on-demand)
+- Lambda: 512MB memory, info logging
+- Step Functions: Express workflows for cost efficiency
+- Amplify: Auto-deploy from main branch
 
 **Access Control:**
 
-- All developers have full access
-- No manual approval for deployments
-- Terraform state in dev/ folder
-
-### Production Environment
-
-**Purpose:** Live user traffic
-
-**Configuration:**
-
-- AWS Account: Dedicated prod account
-- Domain: app.collectiq.com
-- Budget: $500/month
-- Cognito: prod-collectiq user pool with MFA
-- DynamoDB: prod-CollectIQ table (on-demand with autoscaling)
-- Lambda: 1024MB memory, info logging only
-- Step Functions: Express workflows for performance
-- Amplify: Auto-deploy from main branch with approval
-
-**Access Control:**
-
-- Limited to DevOps and senior engineers
-- Manual approval required for all deployments
-- Terraform state in prod/ folder
-- CloudTrail audit logging enabled
+- Team members have full access
+- Optional manual approval for deployments
+- Terraform state in hackathon/ folder
 
 ### Environment Outputs
 
@@ -944,14 +896,14 @@ output "cognito_client_id" {
 
 ## Conclusion
 
-The CollectIQ DevOps infrastructure provides a production-ready, scalable, and cost-optimized foundation for an AI-powered TCG card platform. Through Terraform infrastructure-as-code, automated CI/CD pipelines, comprehensive observability, and security best practices, the system can scale from hackathon prototype to production growth stage while maintaining operational excellence.
+The CollectIQ DevOps infrastructure provides a hackathon-ready, scalable, and cost-optimized foundation for an AI-powered TCG card platform. Through Terraform infrastructure-as-code, automated CI/CD pipelines, comprehensive observability, and security best practices, the system delivers a functional prototype within budget constraints.
 
 Key achievements:
 
 - **Fully Serverless**: Automatic scaling with zero server management
-- **Cost-Optimized**: $20-50/month (hackathon) to $1,500-2,000/month (50k+ users)
+- **Cost-Optimized**: $20-50/month for hackathon demonstration
 - **Secure by Default**: Least-privilege IAM, encryption, JWT authentication
 - **Observable**: CloudWatch dashboards, X-Ray tracing, structured logging
 - **Automated**: CI/CD pipelines, canary deployments, automatic rollback
 - **Multi-Agent AI**: Rekognition → Bedrock orchestration via Step Functions
-- **Production-Ready**: Disaster recovery, runbooks, monitoring, cost controls
+- **Hackathon-Ready**: Single environment, simplified deployment, monitoring, cost controls

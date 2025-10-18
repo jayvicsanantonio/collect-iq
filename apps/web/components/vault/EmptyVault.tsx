@@ -30,10 +30,7 @@ export function EmptyVault() {
         </div>
 
         {/* Headline */}
-        <h1
-          className="mb-3 text-4xl font-bold md:text-5xl"
-          style={{ fontFamily: 'var(--font-display)' }}
-        >
+        <h1 className="mb-3 text-4xl font-bold md:text-5xl font-display">
           Let&apos;s scan your first card
         </h1>
 

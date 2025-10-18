@@ -4,10 +4,13 @@
 
 import { SecretsManagerClient, GetSecretValueCommand } from '@aws-sdk/client-secrets-manager';
 import { logger } from './logger.js';
+import { tracing } from './tracing.js';
 
-const client = new SecretsManagerClient({
-  region: process.env.AWS_REGION || 'us-east-1',
-});
+const client = tracing.captureAWSv3Client(
+  new SecretsManagerClient({
+    region: process.env.AWS_REGION || 'us-east-1',
+  }),
+);
 
 // In-memory cache for Lambda execution lifetime
 const secretCache = new Map<string, { value: string; timestamp: number }>();
@@ -28,7 +31,9 @@ export async function getSecret(secretName: string): Promise<string> {
       SecretId: secretName,
     });
 
-    const response = await client.send(command);
+    const response = await tracing.trace('secretsmanager_get_secret', () => client.send(command), {
+      secretName,
+    });
 
     if (!response.SecretString) {
       throw new Error(`Secret ${secretName} has no string value`);

@@ -1,37 +1,17 @@
 'use client';
 
 import * as React from 'react';
-import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
-import { Camera, Upload } from 'lucide-react';
+import type { Route } from 'next';
+import { Camera } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { UploadDropzone } from '@/components/upload/UploadDropzone';
+import { CameraCapture } from '@/components/upload/CameraCapture';
 import { UploadProgress } from '@/components/upload/UploadProgress';
 import { api, ApiError } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 import type { UploadError } from '@/components/upload/UploadDropzone';
 import type { CameraError } from '@/components/upload/CameraCapture';
-
-// Dynamically import CameraCapture component for code splitting
-const CameraCapture = dynamic(
-  () =>
-    import('@/components/upload/CameraCapture').then((mod) => ({
-      default: mod.CameraCapture,
-    })),
-  {
-    ssr: false, // Camera requires browser APIs
-    loading: () => (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
-        <div className="text-center">
-          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]" />
-          <p className="mt-2 text-sm text-muted-foreground">
-            Loading camera...
-          </p>
-        </div>
-      </div>
-    ),
-  }
-);
 
 // ============================================================================
 // Types
@@ -150,9 +130,9 @@ export default function UploadPage() {
 
         // Navigate to identification page with the S3 key
         setTimeout(() => {
-          router.push(
-            `/identify?key=${encodeURIComponent(presignResponse.key)}`
-          );
+          const identifyUrl =
+            `/identify?key=${encodeURIComponent(presignResponse.key)}` as Route;
+          router.push(identifyUrl);
         }, 500);
       } catch (error) {
         console.error('Upload error:', error);
@@ -173,7 +153,8 @@ export default function UploadPage() {
         // Handle API errors
         let errorMessage = 'Failed to upload file. Please try again.';
         if (error instanceof ApiError) {
-          errorMessage = error.problem.detail || error.problem.title;
+          errorMessage =
+            error.problem?.detail || error.problem?.title || error.message;
         } else if (error instanceof Error) {
           errorMessage = error.message;
         }
@@ -274,23 +255,18 @@ export default function UploadPage() {
   const hasUpload = uploadState.file !== null;
 
   return (
-    <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
+    <div className="container mx-auto max-w-4xl px-4 py-8">
       {/* Header */}
-      <header className="mb-8 text-center">
-        <h1
-          className="mb-2 text-4xl font-bold"
-          style={{ fontFamily: 'var(--font-display)' }}
-        >
-          Upload Card
-        </h1>
+      <div className="mb-8 text-center">
+        <h1 className="mb-2 text-4xl font-bold font-display">Upload Card</h1>
         <p className="text-[var(--muted-foreground)]">
           Take a photo or upload an image of your trading card
         </p>
-      </header>
+      </div>
 
       {/* Upload Progress */}
       {hasUpload && (
-        <section className="mb-6" aria-label="Upload progress">
+        <div className="mb-6">
           <UploadProgress
             file={uploadState.file!}
             progress={uploadState.progress}
@@ -301,101 +277,44 @@ export default function UploadPage() {
               uploadState.status === 'error' ? handleRetryUpload : undefined
             }
           />
-        </section>
+        </div>
       )}
 
       {/* Upload Options */}
       {!hasUpload && (
-        <section aria-label="Upload options">
-          {/* Mobile: Show buttons side by side */}
-          <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:hidden">
+        <>
+          {/* Camera Button */}
+          <div className="mb-6">
             <Button
               variant="gradient"
               size="lg"
               onClick={() => setShowCamera(true)}
-              className="w-full touch-target"
+              className="w-full"
             >
               <Camera className="mr-2 h-5 w-5" />
-              Camera
-            </Button>
-            <Button
-              variant="outline"
-              size="lg"
-              onClick={() => {
-                const input = document.createElement('input');
-                input.type = 'file';
-                input.accept = 'image/jpeg,image/png,image/heic';
-                input.capture = 'environment'; // Prefer rear camera on mobile
-                input.onchange = (e) => {
-                  const files = (e.target as HTMLInputElement).files;
-                  if (files && files.length > 0) {
-                    handleFileSelected(Array.from(files));
-                  }
-                };
-                input.click();
-              }}
-              className="w-full touch-target"
-            >
-              <Upload className="mr-2 h-5 w-5" />
-              Gallery
+              Take Photo
             </Button>
           </div>
 
-          {/* Desktop: Show camera button and dropzone */}
-          <div className="hidden sm:block">
-            <div className="mb-6">
-              <Button
-                variant="gradient"
-                size="lg"
-                onClick={() => setShowCamera(true)}
-                className="w-full"
-              >
-                <Camera className="mr-2 h-5 w-5" />
-                Take Photo
-              </Button>
+          {/* Divider */}
+          <div className="relative mb-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-[var(--border)]" />
             </div>
-
-            {/* Divider */}
-            <div className="relative mb-6">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-[var(--border)]" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-[var(--background)] px-2 text-[var(--muted-foreground)]">
-                  Or
-                </span>
-              </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-[var(--background)] px-2 text-[var(--muted-foreground)]">
+                Or
+              </span>
             </div>
-
-            {/* Dropzone */}
-            <UploadDropzone
-              onSelected={handleFileSelected}
-              onError={handleUploadError}
-              disabled={isUploading}
-            />
           </div>
 
-          {/* Mobile: Show dropzone below buttons */}
-          <div className="sm:hidden">
-            <div className="relative mb-6">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-[var(--border)]" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-[var(--background)] px-2 text-[var(--muted-foreground)]">
-                  Or drag and drop
-                </span>
-              </div>
-            </div>
-
-            <UploadDropzone
-              onSelected={handleFileSelected}
-              onError={handleUploadError}
-              disabled={isUploading}
-              autoCompress={true}
-            />
-          </div>
-        </section>
+          {/* Dropzone */}
+          <UploadDropzone
+            onSelected={handleFileSelected}
+            onError={handleUploadError}
+            disabled={isUploading}
+          />
+        </>
       )}
 
       {/* Camera Capture Modal */}

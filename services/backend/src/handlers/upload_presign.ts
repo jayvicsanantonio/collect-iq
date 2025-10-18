@@ -9,8 +9,13 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { v4 as uuidv4 } from 'uuid';
 import { PresignRequestSchema, type PresignResponse } from '@collectiq/shared';
 import { getUserId, type APIGatewayProxyEventV2WithJWT } from '../auth/jwt-claims.js';
-import { logger } from '../utils/logger.js';
-import { formatErrorResponse, BadRequestError, PayloadTooLargeError } from '../utils/errors.js';
+import {
+  formatErrorResponse,
+  BadRequestError,
+  PayloadTooLargeError,
+  UnauthorizedError,
+} from '../utils/errors.js';
+import { logger, metrics, tracing, getJsonHeaders } from '../utils/index.js';
 import {
   validate,
   sanitizeFilename,
@@ -21,8 +26,12 @@ import {
   getEnvNumber,
 } from '../utils/validation.js';
 
-// Initialize S3 client
-const s3Client = new S3Client({});
+// Initialize S3 client with X-Ray instrumentation
+const s3Client = tracing.captureAWSv3Client(
+  new S3Client({
+    region: process.env.AWS_REGION || 'us-east-1',
+  }),
+);
 
 // Constants
 const PRESIGN_EXPIRATION_SECONDS = 60;
@@ -51,6 +60,9 @@ export async function handler(
   event: APIGatewayProxyEventV2WithJWT,
 ): Promise<APIGatewayProxyResultV2> {
   const requestId = event.requestContext.requestId;
+  const startTime = Date.now();
+
+  tracing.startSubsegment('upload_presign_handler', { requestId });
 
   try {
     // Get configuration
@@ -58,6 +70,9 @@ export async function handler(
 
     // Extract user ID from JWT claims
     const userId = getUserId(event);
+
+    tracing.addAnnotation('userId', userId);
+    tracing.addAnnotation('operation', 'upload_presign');
 
     logger.info('Processing presign request', {
       requestId,
@@ -122,15 +137,20 @@ export async function handler(
     });
 
     // Generate presigned URL
-    const uploadUrl = await getSignedUrl(s3Client, command, {
-      expiresIn: PRESIGN_EXPIRATION_SECONDS,
-      hoistableHeaders: new Set([
-        'x-amz-server-side-encryption',
-        'x-amz-server-side-encryption-aws-kms-key-id',
-        'x-amz-meta-uploaded-by',
-        'x-amz-meta-original-filename',
-      ]),
-    });
+    const uploadUrl = await tracing.trace(
+      's3_presign_put_object',
+      () =>
+        getSignedUrl(s3Client, command, {
+          expiresIn: PRESIGN_EXPIRATION_SECONDS,
+          hoistableHeaders: new Set([
+            'x-amz-server-side-encryption',
+            'x-amz-server-side-encryption-aws-kms-key-id',
+            'x-amz-meta-uploaded-by',
+            'x-amz-meta-original-filename',
+          ]),
+        }),
+      { requestId, userId },
+    );
 
     const response: PresignResponse = {
       uploadUrl,
@@ -145,14 +165,32 @@ export async function handler(
       expiresIn: PRESIGN_EXPIRATION_SECONDS,
     });
 
+    const latency = Date.now() - startTime;
+    await metrics.recordApiLatency('/upload/presign', 'POST', latency);
+
+    tracing.endSubsegment('upload_presign_handler', {
+      success: true,
+      s3Key,
+    });
+
     return {
       statusCode: 200,
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getJsonHeaders(),
       body: JSON.stringify(response),
     };
   } catch (error) {
+    if (error instanceof UnauthorizedError) {
+      await metrics.recordAuthFailure(error.detail);
+    }
+
+    const latency = Date.now() - startTime;
+    await metrics.recordApiLatency('/upload/presign', 'POST', latency);
+
+    tracing.endSubsegment('upload_presign_handler', {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+
     logger.error('Failed to generate presigned URL', error as Error, {
       requestId,
       operation: 'upload_presign',

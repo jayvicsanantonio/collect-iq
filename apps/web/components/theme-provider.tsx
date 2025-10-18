@@ -25,16 +25,18 @@ const ThemeProviderContext =
 
 export function ThemeProvider({
   children,
-  defaultTheme = 'system',
+  defaultTheme = 'light',
   storageKey = 'collectiq-theme',
   ...props
 }: ThemeProviderProps) {
-  const [theme, setTheme] = React.useState<Theme>(
-    () =>
-      (typeof window !== 'undefined' &&
-        (localStorage.getItem(storageKey) as Theme)) ||
-      defaultTheme
-  );
+  const [theme, setTheme] = React.useState<Theme>(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem(storageKey) as Theme;
+      // Only use stored theme if it exists, otherwise use defaultTheme
+      return stored || defaultTheme;
+    }
+    return defaultTheme;
+  });
 
   React.useEffect(() => {
     const root = window.document.documentElement;

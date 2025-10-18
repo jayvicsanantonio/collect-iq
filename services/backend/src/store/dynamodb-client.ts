@@ -8,6 +8,7 @@ import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient } from '@aws-sdk/lib-dynamodb';
 import { NodeHttpHandler } from '@smithy/node-http-handler';
 import { logger } from '../utils/logger.js';
+import { tracing } from '../utils/tracing.js';
 
 /**
  * DynamoDB configuration
@@ -74,8 +75,10 @@ export function getDynamoDBClient(config?: DynamoDBConfig): DynamoDBDocumentClie
     }),
   });
 
+  const instrumentedClient = tracing.captureAWSv3Client(client);
+
   // Create DocumentClient with marshalling options
-  documentClient = DynamoDBDocumentClient.from(client, {
+  documentClient = DynamoDBDocumentClient.from(instrumentedClient, {
     marshallOptions: {
       // Convert empty strings to null
       convertEmptyValues: false,

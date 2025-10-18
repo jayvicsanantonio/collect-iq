@@ -5,6 +5,7 @@ import js from '@eslint/js';
 import tseslint from 'typescript-eslint';
 import prettier from 'eslint-plugin-prettier';
 import eslintConfigPrettier from 'eslint-config-prettier';
+// @ts-expect-error - No type definitions available for @next/eslint-plugin-next
 import nextPlugin from '@next/eslint-plugin-next';
 import globals from 'globals';
 
@@ -14,6 +15,7 @@ export default [
       'node_modules/**',
       '.pnpm-store/**',
       'dist/**',
+      '**/dist/**',
       'build/**',
       'lib/**',
       'coverage/**',

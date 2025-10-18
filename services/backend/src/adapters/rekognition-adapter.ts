@@ -24,14 +24,19 @@ import type {
   ImageMetadata,
 } from '@collectiq/shared';
 import { logger } from '../utils/logger.js';
+import { tracing } from '../utils/tracing.js';
 
-const rekognitionClient = new RekognitionClient({
-  region: process.env.AWS_REGION || 'us-east-1',
-});
+const rekognitionClient = tracing.captureAWSv3Client(
+  new RekognitionClient({
+    region: process.env.AWS_REGION || 'us-east-1',
+  }),
+);
 
-const s3Client = new S3Client({
-  region: process.env.AWS_REGION || 'us-east-1',
-});
+const s3Client = tracing.captureAWSv3Client(
+  new S3Client({
+    region: process.env.AWS_REGION || 'us-east-1',
+  }),
+);
 
 /**
  * Extract S3 bucket and key from S3 key string
@@ -83,7 +88,11 @@ export class RekognitionAdapter {
         },
       });
 
-      const response: DetectTextCommandOutput = await rekognitionClient.send(command);
+      const response: DetectTextCommandOutput = await tracing.trace(
+        'rekognition_detect_text',
+        () => rekognitionClient.send(command),
+        { bucket, key },
+      );
 
       if (!response.TextDetections || response.TextDetections.length === 0) {
         logger.warn('No text detected in image', { s3Key });
@@ -142,7 +151,11 @@ export class RekognitionAdapter {
         MinConfidence: 70,
       });
 
-      const response = await rekognitionClient.send(command);
+      const response = await tracing.trace(
+        'rekognition_detect_labels',
+        () => rekognitionClient.send(command),
+        { bucket, key },
+      );
 
       logger.info('Label detection complete', {
         s3Key,
@@ -178,7 +191,11 @@ export class RekognitionAdapter {
         Key: key,
       });
 
-      const response = await s3Client.send(command);
+      const response = await tracing.trace(
+        's3_get_image_for_rekognition',
+        () => s3Client.send(command),
+        { bucket, key },
+      );
 
       if (!response.Body) {
         throw new Error('Empty response body from S3');

@@ -39,7 +39,6 @@ interface TCGPlayerPricingResult {
 
 export class TCGPlayerAdapter extends BasePriceAdapter {
   name = 'TCGPlayer';
-  private credentials: TCGPlayerCredentials | null = null;
   private accessToken: string | null = null;
   private tokenExpiry: number = 0;
 
@@ -88,16 +87,14 @@ export class TCGPlayerAdapter extends BasePriceAdapter {
       return;
     }
 
-    // Load credentials if not already loaded
-    if (!this.credentials) {
-      this.credentials = await getSecretJson<TCGPlayerCredentials>('TCGPLAYER_CREDENTIALS');
-    }
+    // Load credentials from Secrets Manager (cached internally with TTL)
+    const credentials = await getSecretJson<TCGPlayerCredentials>('TCGPLAYER_CREDENTIALS');
 
     // Request new access token
     const params = new URLSearchParams({
       grant_type: 'client_credentials',
-      client_id: this.credentials.publicKey,
-      client_secret: this.credentials.privateKey,
+      client_id: credentials.publicKey,
+      client_secret: credentials.privateKey,
     });
 
     const response = await fetch(this.AUTH_URL, {

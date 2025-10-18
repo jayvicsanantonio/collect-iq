@@ -31,6 +31,8 @@ cp apps/web/.env.example apps/web/.env.local
    - OAuth redirect URIs
    - API base URL
 
+For detailed authentication setup instructions, see [AUTHENTICATION.md](./AUTHENTICATION.md).
+
 ### Development
 
 Start the development server:
@@ -109,6 +111,12 @@ apps/web/
 - `@/components/*` - Components directory
 - `@/lib/*` - Library/utilities directory
 - `@collectiq/shared` - Shared package (types and schemas)
+
+## Documentation
+
+- [AUTHENTICATION.md](./AUTHENTICATION.md) - Complete authentication guide
+- [DESIGN_SYSTEM.md](./DESIGN_SYSTEM.md) - Design system and styling guide
+- [ENVIRONMENT_SETUP.md](./ENVIRONMENT_SETUP.md) - Environment configuration
 
 ## Learn More
 

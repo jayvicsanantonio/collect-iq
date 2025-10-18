@@ -6,8 +6,8 @@
 import type { APIGatewayProxyEventV2, APIGatewayProxyResultV2 } from 'aws-lambda';
 import { getUserId, type APIGatewayProxyEventV2WithJWT } from '../auth/jwt-claims.js';
 import { listCards } from '../store/card-service.js';
-import { formatErrorResponse, BadRequestError } from '../utils/errors.js';
-import { logger } from '../utils/logger.js';
+import { formatErrorResponse, BadRequestError, UnauthorizedError } from '../utils/errors.js';
+import { logger, metrics, tracing, getJsonHeaders } from '../utils/index.js';
 
 /**
  * Lambda handler for listing user's cards
@@ -17,10 +17,16 @@ import { logger } from '../utils/logger.js';
  */
 export async function handler(event: APIGatewayProxyEventV2): Promise<APIGatewayProxyResultV2> {
   const requestId = event.requestContext.requestId;
+  const startTime = Date.now();
+
+  tracing.startSubsegment('cards_list_handler', { requestId });
 
   try {
     // Extract user ID from JWT claims
     const userId = getUserId(event as APIGatewayProxyEventV2WithJWT);
+
+    tracing.addAnnotation('userId', userId);
+    tracing.addAnnotation('operation', 'cards_list');
 
     logger.info('Processing cards list request', {
       operation: 'cards_list',
@@ -39,13 +45,18 @@ export async function handler(event: APIGatewayProxyEventV2): Promise<APIGateway
     }
 
     // List cards with pagination
-    const result = await listCards(
-      userId,
-      {
-        limit,
-        cursor,
-      },
-      requestId,
+    const result = await tracing.trace(
+      'dynamodb_list_cards',
+      () =>
+        listCards(
+          userId,
+          {
+            limit,
+            cursor,
+          },
+          requestId,
+        ),
+      { userId, requestId },
     );
 
     logger.info('Cards listed successfully', {
@@ -56,15 +67,33 @@ export async function handler(event: APIGatewayProxyEventV2): Promise<APIGateway
       requestId,
     });
 
+    const latency = Date.now() - startTime;
+    await metrics.recordApiLatency('/cards', 'GET', latency);
+
+    tracing.endSubsegment('cards_list_handler', {
+      success: true,
+      count: result.items.length,
+    });
+
     // Return 200 OK with items and nextCursor
     return {
       statusCode: 200,
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getJsonHeaders(),
       body: JSON.stringify(result),
     };
   } catch (error) {
+    if (error instanceof UnauthorizedError) {
+      await metrics.recordAuthFailure(error.detail);
+    }
+
+    const latency = Date.now() - startTime;
+    await metrics.recordApiLatency('/cards', 'GET', latency);
+
+    tracing.endSubsegment('cards_list_handler', {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+
     logger.error(
       'Failed to list cards',
       error instanceof Error ? error : new Error(String(error)),

@@ -1,4 +1,4 @@
-import { env } from './env';
+import { signInWithRedirect, signOut as amplifySignOut, fetchAuthSession, fetchUserAttributes } from 'aws-amplify/auth';
 
 /**
  * User session interface representing authenticated user data
@@ -8,281 +8,101 @@ export interface UserSession {
   email: string;
   emailVerified: boolean;
   accessToken: string;
-  refreshToken: string;
-  idToken: string;
   expiresAt: number; // Unix timestamp
 }
 
 /**
- * OAuth state parameter containing intended destination
+ * User info interface for current user details
  */
-export interface OAuthState {
-  destination?: string;
-  nonce: string;
+export interface UserInfo {
+  sub: string;
+  email?: string;
+  emailVerified?: boolean;
 }
 
 /**
- * Generate a cryptographically secure random code verifier for PKCE
- * @returns Base64URL-encoded random string (43-128 characters)
+ * Initiate sign in flow by redirecting to Cognito Hosted UI
+ * Amplify handles PKCE, state management, and callback automatically
  */
-export function generateCodeVerifier(): string {
-  const array = new Uint8Array(32);
-  crypto.getRandomValues(array);
-  return base64URLEncode(array);
+export async function signIn(): Promise<void> {
+  await signInWithRedirect();
 }
 
 /**
- * Generate code challenge from code verifier using SHA-256
- * @param verifier - The code verifier string
- * @returns Base64URL-encoded SHA-256 hash of the verifier
+ * Sign out the user and redirect to Cognito logout
+ * Amplify handles session cleanup and logout redirect automatically
  */
-export async function generateCodeChallenge(
-  verifier: string
-): Promise<string> {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(verifier);
-  const hash = await crypto.subtle.digest('SHA-256', data);
-  return base64URLEncode(new Uint8Array(hash));
+export async function signOut(): Promise<void> {
+  await amplifySignOut();
 }
 
 /**
- * Base64URL encode a byte array (without padding)
+ * Get the current access token from Amplify session
+ * Amplify automatically refreshes tokens when needed
+ * @returns Access token string or null if not authenticated
  */
-function base64URLEncode(buffer: Uint8Array): string {
-  const base64 = btoa(String.fromCharCode(...buffer));
-  return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
-}
-
-/**
- * Build the Cognito Hosted UI authorization URL with PKCE
- * @param options - Configuration options
- * @returns Complete authorization URL
- */
-export async function buildHostedUIUrl(options: {
-  codeChallenge: string;
-  state: string;
-  destination?: string;
-}): Promise<string> {
-  const { codeChallenge, state } = options;
-
-  const params = new URLSearchParams({
-    response_type: 'code',
-    client_id: env.NEXT_PUBLIC_COGNITO_USER_POOL_CLIENT_ID,
-    redirect_uri: env.NEXT_PUBLIC_OAUTH_REDIRECT_URI,
-    state,
-    code_challenge: codeChallenge,
-    code_challenge_method: 'S256',
-    scope: 'openid email profile',
-  });
-
-  return `https://${env.NEXT_PUBLIC_COGNITO_DOMAIN}/oauth2/authorize?${params.toString()}`;
-}
-
-/**
- * Build the Cognito logout URL
- * @returns Complete logout URL
- */
-export function buildLogoutUrl(): string {
-  const params = new URLSearchParams({
-    client_id: env.NEXT_PUBLIC_COGNITO_USER_POOL_CLIENT_ID,
-    logout_uri: env.NEXT_PUBLIC_OAUTH_LOGOUT_URI,
-  });
-
-  return `https://${env.NEXT_PUBLIC_COGNITO_DOMAIN}/logout?${params.toString()}`;
-}
-
-/**
- * Generate a random state parameter for OAuth flow
- * @param destination - Optional intended destination after auth
- * @returns Base64URL-encoded state string
- */
-export function generateState(destination?: string): string {
-  const state: OAuthState = {
-    destination,
-    nonce: generateCodeVerifier(),
-  };
-  return btoa(JSON.stringify(state));
-}
-
-/**
- * Parse and validate OAuth state parameter
- * @param stateParam - The state parameter from OAuth callback
- * @returns Parsed state object or null if invalid
- */
-export function parseState(stateParam: string): OAuthState | null {
+export async function getAccessToken(): Promise<string | null> {
   try {
-    const decoded = atob(stateParam);
-    const state = JSON.parse(decoded) as OAuthState;
-    if (!state.nonce) return null;
-    return state;
+    const session = await fetchAuthSession();
+    const accessToken = session.tokens?.accessToken?.toString();
+    return accessToken || null;
   } catch {
     return null;
   }
 }
 
 /**
- * Parse JWT token without verification (verification happens server-side)
- * @param token - JWT token string
- * @returns Decoded token payload
+ * Check if user is currently authenticated
+ * @returns True if user has valid session
  */
-export function parseJWT(token: string): Record<string, unknown> {
+export async function isAuthenticated(): Promise<boolean> {
   try {
-    const parts = token.split('.');
-    if (parts.length !== 3) throw new Error('Invalid JWT format');
-    
-    const payload = parts[1];
-    const decoded = atob(payload.replace(/-/g, '+').replace(/_/g, '/'));
-    return JSON.parse(decoded);
-  } catch {
-    throw new Error('Failed to parse JWT token');
-  }
-}
-
-/**
- * Check if a JWT token is expired
- * @param token - JWT token string
- * @returns True if token is expired
- */
-export function isTokenExpired(token: string): boolean {
-  try {
-    const payload = parseJWT(token);
-    const exp = payload.exp as number;
-    if (!exp) return true;
-    
-    // Add 60 second buffer to account for clock skew
-    return Date.now() >= (exp * 1000) - 60000;
-  } catch {
-    return true;
-  }
-}
-
-/**
- * Get current user session from cookies (client-side)
- * Note: Actual token validation happens server-side
- * @returns User session or null if not authenticated
- */
-export async function getSession(): Promise<UserSession | null> {
-  try {
-    // Call API route to get session from HTTP-only cookies
-    const response = await fetch('/api/auth/session', {
-      credentials: 'include',
-    });
-
-    // 401 is expected when not authenticated - not an error
-    if (!response.ok) return null;
-
-    const session = await response.json();
-    return session as UserSession;
-  } catch {
-    // Network errors or other issues - silently return null
-    return null;
-  }
-}
-
-/**
- * Refresh the user session using refresh token
- * @returns New session or null if refresh failed
- */
-export async function refreshSession(): Promise<UserSession | null> {
-  try {
-    const response = await fetch('/api/auth/refresh', {
-      method: 'POST',
-      credentials: 'include',
-    });
-
-    if (!response.ok) return null;
-
-    const session = await response.json();
-    return session as UserSession;
-  } catch {
-    return null;
-  }
-}
-
-/**
- * Clear the user session (sign out)
- * @returns True if successful
- */
-export async function clearSession(): Promise<boolean> {
-  try {
-    const response = await fetch('/api/auth/signout', {
-      method: 'POST',
-      credentials: 'include',
-    });
-
-    return response.ok;
+    const session = await fetchAuthSession();
+    return !!session.tokens?.accessToken;
   } catch {
     return false;
   }
 }
 
 /**
- * Initiate sign in flow by redirecting to Cognito Hosted UI
- * @param destination - Optional path to redirect to after authentication
+ * Get current user information
+ * @returns User info or null if not authenticated
  */
-export async function signIn(destination?: string): Promise<void> {
-  // Generate PKCE parameters
-  const codeVerifier = generateCodeVerifier();
-  const codeChallenge = await generateCodeChallenge(codeVerifier);
-  const state = generateState(destination);
-
-  // Store code verifier in sessionStorage for callback
-  if (typeof window !== 'undefined') {
-    sessionStorage.setItem('pkce_code_verifier', codeVerifier);
-    sessionStorage.setItem('oauth_state', state);
+export async function getCurrentUserInfo(): Promise<UserInfo | null> {
+  try {
+    const attributes = await fetchUserAttributes();
+    return {
+      sub: attributes.sub || '',
+      email: attributes.email,
+      emailVerified: attributes.email_verified === 'true',
+    };
+  } catch {
+    return null;
   }
-
-  // Build and redirect to Hosted UI
-  const authUrl = await buildHostedUIUrl({
-    codeChallenge,
-    state,
-    destination,
-  });
-
-  window.location.href = authUrl;
 }
 
 /**
- * Sign out the user and redirect to Cognito logout
+ * Get current user session with token details
+ * @returns User session or null if not authenticated
  */
-export async function signOut(): Promise<void> {
-  // Clear session on backend
-  await clearSession();
+export async function getSession(): Promise<UserSession | null> {
+  try {
+    const [session, attributes] = await Promise.all([
+      fetchAuthSession(),
+      fetchUserAttributes(),
+    ]);
 
-  // Clear any client-side storage
-  if (typeof window !== 'undefined') {
-    sessionStorage.removeItem('pkce_code_verifier');
-    sessionStorage.removeItem('oauth_state');
+    const accessToken = session.tokens?.accessToken;
+    if (!accessToken) return null;
+
+    return {
+      sub: attributes.sub || '',
+      email: attributes.email || '',
+      emailVerified: attributes.email_verified === 'true',
+      accessToken: accessToken.toString(),
+      expiresAt: (accessToken.payload.exp as number) * 1000,
+    };
+  } catch {
+    return null;
   }
-
-  // Redirect to Cognito logout
-  const logoutUrl = buildLogoutUrl();
-  window.location.href = logoutUrl;
-}
-
-/**
- * Get the stored code verifier from sessionStorage
- * @returns Code verifier or null if not found
- */
-export function getStoredCodeVerifier(): string | null {
-  if (typeof window === 'undefined') return null;
-  return sessionStorage.getItem('pkce_code_verifier');
-}
-
-/**
- * Get the stored OAuth state from sessionStorage
- * @returns OAuth state or null if not found
- */
-export function getStoredState(): string | null {
-  if (typeof window === 'undefined') return null;
-  return sessionStorage.getItem('oauth_state');
-}
-
-/**
- * Clear stored PKCE parameters from sessionStorage
- */
-export function clearStoredPKCE(): void {
-  if (typeof window === 'undefined') return;
-  sessionStorage.removeItem('pkce_code_verifier');
-  sessionStorage.removeItem('oauth_state');
 }

@@ -447,28 +447,39 @@ interface CardDetailProps {
 
 ```typescript
 interface ApiClient {
-  // Upload
+  // Upload - POST /upload/presign
   getPresignedUrl(params: {
     filename: string;
     contentType: string;
-  }): Promise<{ url: string; key: string }>;
+    sizeBytes: number;
+  }): Promise<PresignResponse>; // { uploadUrl, key, expiresIn }
 
-  // Cards
-  createCard(data: CreateCardInput): Promise<Card>;
-  getCards(params?: {
-    cursor?: string;
-    limit?: number;
-  }): Promise<{ items: Card[]; nextCursor?: string }>;
+  // Cards - POST /cards (with Idempotency-Key header)
+  createCard(data: CreateCardRequest, idempotencyKey: string): Promise<Card>;
+
+  // Cards - GET /cards?cursor={cursor}&limit={limit}
+  getCards(params?: { cursor?: string; limit?: number }): Promise<ListCardsResponse>; // { items: Card[], nextCursor?: string }
+
+  // Cards - GET /cards/{id}
   getCard(id: string): Promise<Card>;
-  deleteCard(id: string): Promise<{ ok: boolean }>;
-  refreshValuation(id: string): Promise<ValuationData>;
+
+  // Cards - DELETE /cards/{id}
+  deleteCard(id: string): Promise<void>; // 204 No Content
+
+  // Cards - POST /cards/{id}/revalue (with Idempotency-Key header)
+  revalueCard(
+    id: string,
+    options: { forceRefresh?: boolean },
+    idempotencyKey: string,
+  ): Promise<RevalueResponse>; // { executionArn, status: 'RUNNING', message }
 }
 
 // Centralized API client with:
-// - Automatic credential inclusion
-// - Zod validation
+// - Automatic credential inclusion (cookies)
+// - Zod validation using @collectiq/shared schemas
 // - ProblemDetails error handling
 // - Exponential backoff for retries
+// - Idempotency-Key header generation for POST operations
 ```
 
 ## Data Models

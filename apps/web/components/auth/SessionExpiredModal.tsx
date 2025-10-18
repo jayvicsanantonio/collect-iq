@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { usePathname } from 'next/navigation';
 import {
   Dialog,
   DialogContent,
@@ -15,20 +14,14 @@ import { signIn, signOut } from '@/lib/auth';
 
 interface SessionExpiredModalProps {
   isOpen: boolean;
-  onReauthenticate?: () => void;
-  onSignOut?: () => void;
 }
 
 /**
  * Modal displayed when user session expires
  * Provides options to re-authenticate or sign out
+ * Uses Amplify signIn and signOut directly
  */
-export function SessionExpiredModal({
-  isOpen,
-  onReauthenticate,
-  onSignOut,
-}: SessionExpiredModalProps) {
-  const pathname = usePathname();
+export function SessionExpiredModal({ isOpen }: SessionExpiredModalProps) {
   const [isReauthenticating, setIsReauthenticating] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
 
@@ -40,23 +33,12 @@ export function SessionExpiredModal({
 
   const handleReauthenticate = async () => {
     setIsReauthenticating(true);
-
-    if (onReauthenticate) {
-      onReauthenticate();
-    } else {
-      // Redirect to sign in with current path as destination
-      await signIn(pathname);
-    }
+    await signIn();
   };
 
   const handleSignOut = async () => {
     setIsSigningOut(true);
-
-    if (onSignOut) {
-      onSignOut();
-    } else {
-      await signOut();
-    }
+    await signOut();
   };
 
   return (

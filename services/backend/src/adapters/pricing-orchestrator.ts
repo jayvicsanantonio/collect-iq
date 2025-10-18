@@ -9,7 +9,7 @@ import { TCGPlayerAdapter } from './tcgplayer-adapter.js';
 import { PriceChartingAdapter } from './pricecharting-adapter.js';
 import { PriceSource } from './base-price-adapter.js';
 import { savePricingSnapshot, getPricingSnapshot } from '../store/pricing-cache.js';
-import { logger } from '../utils/logger.js';
+import { logger, metrics } from '../utils/index.js';
 
 export class PricingOrchestrator {
   private pricingService: PricingService;
@@ -109,6 +109,15 @@ export class PricingOrchestrator {
       } else {
         failedSources.push(source.name);
         logger.error(`${source.name} failed to fetch comps`, result.reason as Error);
+
+        const errorType =
+          result.reason instanceof Error
+            ? result.reason.name || result.reason.message
+            : typeof result.reason === 'string'
+              ? result.reason
+              : 'Unknown error';
+
+        await metrics.recordPricingSourceError(source.name, errorType);
       }
     }
 

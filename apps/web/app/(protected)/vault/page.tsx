@@ -219,7 +219,7 @@ export default function VaultPage() {
   // Handle refresh valuation
   const handleRefresh = async (cardId: string) => {
     try {
-      await api.refreshValuation(cardId, true);
+      await api.revalueCard(cardId, { forceRefresh: true });
       toast({
         title: 'Valuation refresh started',
         description: 'Your card valuation is being updated.',

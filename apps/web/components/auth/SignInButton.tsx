@@ -5,7 +5,6 @@ import { signIn } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
 
 interface SignInButtonProps {
-  destination?: string;
   variant?:
     | 'primary'
     | 'secondary'
@@ -22,9 +21,9 @@ interface SignInButtonProps {
 /**
  * Sign in button component
  * Redirects to Cognito Hosted UI for authentication
+ * Amplify handles redirect destination automatically
  */
 export function SignInButton({
-  destination,
   variant = 'primary',
   size = 'default',
   className,
@@ -35,7 +34,7 @@ export function SignInButton({
   const handleSignIn = async () => {
     try {
       setIsRedirecting(true);
-      await signIn(destination);
+      await signIn();
     } catch (error) {
       console.error('Sign in error:', error);
       setIsRedirecting(false);
@@ -52,7 +51,7 @@ export function SignInButton({
     >
       {isRedirecting ? (
         <>
-          <span className="mr-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"></span>
+          <span className="mr-2 inline-block h-3.5 w-3.5 border-2 border-current border-t-transparent rounded-full animate-spin"></span>
           Redirecting...
         </>
       ) : (

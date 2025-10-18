@@ -197,12 +197,12 @@ export function exampleDebugFlags() {
 /**
  * Example: Complete upload flow with analytics and feature flags
  */
-export async function exampleCompleteUploadFlow(file: File) {
+export async function exampleCompleteUploadFlow(_file: File) {
   // Track upload start
   const startTime = Date.now();
   trackUploadStarted({
-    fileType: file.type,
-    fileSize: file.size,
+    fileType: _file.type,
+    fileSize: _file.size,
   });
 
   try {
@@ -212,7 +212,7 @@ export async function exampleCompleteUploadFlow(file: File) {
     // Track success
     const duration = Date.now() - startTime;
     trackUploadSucceeded(duration, {
-      fileType: file.type,
+      fileType: _file.type,
     });
 
     // Start analysis if enabled

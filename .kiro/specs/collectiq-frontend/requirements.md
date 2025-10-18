@@ -35,26 +35,27 @@ This specification defines the functional and non-functional requirements for th
 1. WHEN a user accesses the upload interface THEN the system SHALL provide both drag-and-drop and file picker options
 2. WHEN a user uploads an image THEN the system SHALL validate the file type (JPG, PNG, HEIC) and size (≤ 12 MB)
 3. IF a file fails validation THEN the system SHALL display an inline error message with specific remediation guidance
-4. WHEN a user uploads a valid image THEN the system SHALL request a presigned S3 URL from the backend API
+4. WHEN a user uploads a valid image THEN the system SHALL request a presigned S3 URL from POST /upload/presign endpoint
 5. WHEN the presigned URL is received THEN the system SHALL upload the file directly to S3 with a progress indicator
 6. WHEN a user is on a mobile device THEN the system SHALL provide a camera capture option using getUserMedia API
 7. WHEN camera permission is requested THEN the system SHALL display a permission helper dialog
 8. WHEN an upload is in progress THEN the system SHALL display a progress bar and thumbnail preview
 9. WHEN a user cancels an upload THEN the system SHALL abort the request and clean up temporary resources
-10. WHEN an upload completes successfully THEN the system SHALL automatically redirect to the identification screen
+10. WHEN an upload completes successfully THEN the system SHALL create a card record via POST /cards with the S3 key and trigger Step Functions workflow for analysis
 
-### Requirement 3: Card Identification & Selection
+### Requirement 3: Card Analysis & Processing
 
-**User Story:** As a collector, I want the system to identify my card from the uploaded image so that I can confirm the correct card details before valuation.
+**User Story:** As a collector, I want the system to automatically analyze my card after upload so that I can see valuation and authenticity results.
 
 #### Acceptance Criteria
 
-1. WHEN an image upload completes THEN the system SHALL display a loading state while the backend processes the image
-2. WHEN identification results are received THEN the system SHALL display the top 3 candidate cards with confidence scores
-3. WHEN displaying candidates THEN the system SHALL show card name, set, rarity, and a confidence bar for each
-4. WHEN a user selects a candidate card THEN the system SHALL proceed to the authenticity analysis screen
-5. IF identification confidence is below threshold THEN the system SHALL provide a manual confirmation option
-6. WHEN no candidates are found THEN the system SHALL display an error state with retry and manual entry options
+1. WHEN a card is created via POST /cards THEN the system SHALL trigger a Step Functions workflow for automated analysis
+2. WHEN the workflow is running THEN the system SHALL display a processing screen with status updates
+3. WHEN the workflow completes THEN the system SHALL update the card record with analysis results (authenticity score, valuation data)
+4. WHEN displaying the processing screen THEN the system SHALL show progress indicators for: feature extraction, authenticity analysis, and valuation
+5. WHEN analysis completes THEN the system SHALL redirect to the card detail view showing full results
+6. IF analysis fails THEN the system SHALL display an error state with retry option via POST /cards/{id}/revalue
+7. WHEN a user navigates away during processing THEN the system SHALL allow them to return and check status via GET /cards/{id}
 
 ### Requirement 4: Authenticity Analysis & Verification
 
@@ -76,14 +77,14 @@ This specification defines the functional and non-functional requirements for th
 
 #### Acceptance Criteria
 
-1. WHEN authenticity analysis completes THEN the system SHALL display a valuation summary panel
-2. WHEN displaying valuation THEN the system SHALL show low, median, and high price estimates
-3. WHEN displaying valuation THEN the system SHALL show trend indicators (arrow up/down with percentage change)
-4. WHEN displaying valuation THEN the system SHALL show data sources (eBay, TCGPlayer, PriceCharting logos)
-5. WHEN displaying valuation THEN the system SHALL show confidence score, comparable sales count, and time window (e.g., 14 days)
-6. IF valuation data is unavailable THEN the system SHALL display the last cached valuation with a timestamp
-7. WHEN valuation is displayed THEN the system SHALL provide a "Save to Vault" call-to-action button
-8. WHEN a user requests valuation refresh THEN the system SHALL fetch updated market data and display loading state
+1. WHEN a card analysis completes THEN the system SHALL display valuation data from the Card object (valueLow, valueMedian, valueHigh)
+2. WHEN displaying valuation THEN the system SHALL show low, median, and high price estimates from the card record
+3. WHEN displaying valuation THEN the system SHALL show data sources from the card.sources array (eBay, TCGPlayer, PriceCharting)
+4. WHEN displaying valuation THEN the system SHALL show comparable sales count from card.compsCount
+5. WHEN displaying valuation THEN the system SHALL calculate trend indicators based on historical data (future enhancement)
+6. WHEN a user requests valuation refresh THEN the system SHALL call POST /cards/{id}/revalue with forceRefresh=true
+7. WHEN revaluation is triggered THEN the system SHALL display a 202 Accepted response with executionArn and status
+8. WHEN revaluation is in progress THEN the system SHALL poll GET /cards/{id} to check for updated valuation data
 
 ### Requirement 6: Vault Management & Portfolio View
 
@@ -91,14 +92,14 @@ This specification defines the functional and non-functional requirements for th
 
 #### Acceptance Criteria
 
-1. WHEN a user navigates to /vault THEN the system SHALL display a grid of card thumbnails with current values
-2. WHEN displaying the vault THEN the system SHALL show a portfolio summary card with total value, card count, and 14-day performance sparkline
+1. WHEN a user navigates to /vault THEN the system SHALL call GET /cards to fetch the user's card collection
+2. WHEN displaying the vault THEN the system SHALL show a portfolio summary card with total value calculated from card.valueMedian, card count, and 14-day performance sparkline (calculated client-side)
 3. WHEN the vault is empty THEN the system SHALL display an empty state with "Upload Card" call-to-action
-4. WHEN a user applies filters THEN the system SHALL filter cards by set, type, rarity, or authenticity score
-5. WHEN a user applies sorting THEN the system SHALL sort cards by value, date added, or rarity
-6. WHEN a user clicks a card THEN the system SHALL navigate to the card detail view
-7. WHEN displaying vault cards THEN the system SHALL show quick actions for refresh valuation and delete
-8. WHEN the vault contains more than 200 items THEN the system SHALL implement virtualization for performance
+4. WHEN a user applies filters THEN the system SHALL filter cards client-side by set, rarity, or authenticityScore
+5. WHEN a user applies sorting THEN the system SHALL sort cards client-side by valueMedian, createdAt, or rarity
+6. WHEN a user clicks a card THEN the system SHALL navigate to /cards/{cardId} detail view
+7. WHEN displaying vault cards THEN the system SHALL show quick actions for refresh valuation (POST /cards/{id}/revalue) and delete (DELETE /cards/{id})
+8. WHEN pagination is needed THEN the system SHALL use cursor-based pagination with nextCursor from GET /cards response
 9. WHEN vault data is loading THEN the system SHALL display skeleton placeholders
 
 ### Requirement 7: Card Detail View & Historical Data
@@ -107,15 +108,15 @@ This specification defines the functional and non-functional requirements for th
 
 #### Acceptance Criteria
 
-1. WHEN a user navigates to /cards/:id THEN the system SHALL display the card detail page
-2. WHEN displaying card details THEN the system SHALL show a large, zoomable card image
-3. WHEN displaying card details THEN the system SHALL show the current authenticity score with breakdown
-4. WHEN displaying card details THEN the system SHALL show a valuation history chart using Recharts
-5. WHEN displaying card details THEN the system SHALL show a market data sources table with recent comparable sales
-6. WHEN displaying card details THEN the system SHALL provide actions: Re-evaluate, Delete, and Share
-7. IF the card does not exist or was deleted THEN the system SHALL display a 404 error state
-8. IF the user does not own the card THEN the system SHALL display a 403 forbidden error state
-9. WHEN the valuation chart loads THEN the system SHALL lazy-load the Recharts library to optimize performance
+1. WHEN a user navigates to /cards/{id} THEN the system SHALL call GET /cards/{id} to fetch card details
+2. WHEN displaying card details THEN the system SHALL show card image from S3 using card.frontS3Key (with presigned URL if needed)
+3. WHEN displaying card details THEN the system SHALL show authenticityScore and authenticitySignals breakdown
+4. WHEN displaying card details THEN the system SHALL show current valuation (valueLow, valueMedian, valueHigh, compsCount, sources)
+5. WHEN displaying card details THEN the system SHALL show card metadata (name, set, number, rarity, conditionEstimate)
+6. WHEN displaying card details THEN the system SHALL provide actions: Re-evaluate (POST /cards/{id}/revalue), Delete (DELETE /cards/{id}), and Share
+7. IF GET /cards/{id} returns 404 THEN the system SHALL display a "Card not found" error state
+8. IF GET /cards/{id} returns 403 THEN the system SHALL display a "You don't own this card" error state
+9. WHEN historical valuation data is available (future enhancement) THEN the system SHALL display a valuation history chart using Recharts
 
 ### Requirement 8: Responsive Design & Mobile Experience
 

@@ -42,7 +42,6 @@ interface PriceChartingHistoryResponse {
 
 export class PriceChartingAdapter extends BasePriceAdapter {
   name = 'PriceCharting';
-  private apiKey: string | null = null;
   private readonly BASE_URL = 'https://www.pricecharting.com/api';
 
   constructor() {
@@ -53,13 +52,11 @@ export class PriceChartingAdapter extends BasePriceAdapter {
    * Fetch comparable sales from PriceCharting API
    */
   protected async fetchCompsInternal(query: PriceQuery): Promise<RawComp[]> {
-    // Lazy load API key from Secrets Manager
-    if (!this.apiKey) {
-      this.apiKey = await getSecret('PRICECHARTING_KEY');
-    }
+    // Retrieve API key from Secrets Manager (cached internally with TTL)
+    const apiKey = await getSecret('PRICECHARTING_KEY');
 
     // Search for products
-    const products = await this.searchProducts(query);
+    const products = await this.searchProducts(query, apiKey);
 
     if (products.length === 0) {
       logger.info('No PriceCharting products found', { query });
@@ -76,7 +73,7 @@ export class PriceChartingAdapter extends BasePriceAdapter {
 
       // Optionally fetch historical data for more data points
       if (query.windowDays > 7) {
-        const historicalComps = await this.getHistoricalPricing(product.id, query);
+        const historicalComps = await this.getHistoricalPricing(product.id, query, apiKey);
         allComps.push(...historicalComps);
       }
     }
@@ -88,9 +85,9 @@ export class PriceChartingAdapter extends BasePriceAdapter {
   /**
    * Search for products matching the query
    */
-  private async searchProducts(query: PriceQuery): Promise<PriceChartingProduct[]> {
+  private async searchProducts(query: PriceQuery, apiKey: string): Promise<PriceChartingProduct[]> {
     const searchTerm = this.buildSearchTerm(query);
-    const url = `${this.BASE_URL}/products?t=${this.apiKey}&q=${encodeURIComponent(searchTerm)}&type=pokemon-card`;
+    const url = `${this.BASE_URL}/products?t=${apiKey}&q=${encodeURIComponent(searchTerm)}&type=pokemon-card`;
 
     const response = await fetch(url, {
       method: 'GET',
@@ -115,8 +112,12 @@ export class PriceChartingAdapter extends BasePriceAdapter {
   /**
    * Get historical pricing data for a product
    */
-  private async getHistoricalPricing(productId: string, query: PriceQuery): Promise<RawComp[]> {
-    const url = `${this.BASE_URL}/product?t=${this.apiKey}&id=${productId}`;
+  private async getHistoricalPricing(
+    productId: string,
+    query: PriceQuery,
+    apiKey: string,
+  ): Promise<RawComp[]> {
+    const url = `${this.BASE_URL}/product?t=${apiKey}&id=${productId}`;
 
     try {
       const response = await fetch(url, {

@@ -38,7 +38,6 @@ interface EbayFindingResponse {
 
 export class EbayAdapter extends BasePriceAdapter {
   name = 'eBay';
-  private appId: string | null = null;
   private readonly BASE_URL = 'https://svcs.ebay.com/services/search/FindingService/v1';
   private readonly MAX_PAGES = 3; // Fetch up to 3 pages of results
 
@@ -50,16 +49,14 @@ export class EbayAdapter extends BasePriceAdapter {
    * Fetch comparable sales from eBay Finding API
    */
   protected async fetchCompsInternal(query: PriceQuery): Promise<RawComp[]> {
-    // Lazy load API key from Secrets Manager
-    if (!this.appId) {
-      this.appId = await getSecret('EBAY_APP_ID');
-    }
+    // Retrieve API key from Secrets Manager (cached internally with TTL)
+    const appId = await getSecret('EBAY_APP_ID');
 
     const allComps: RawComp[] = [];
 
     // Fetch multiple pages
     for (let page = 1; page <= this.MAX_PAGES; page++) {
-      const comps = await this.fetchPage(query, page);
+      const comps = await this.fetchPage(query, page, appId);
       allComps.push(...comps);
 
       // Stop if we got fewer results than expected (last page)
@@ -75,12 +72,16 @@ export class EbayAdapter extends BasePriceAdapter {
   /**
    * Fetch a single page of results
    */
-  private async fetchPage(query: PriceQuery, pageNumber: number): Promise<RawComp[]> {
+  private async fetchPage(
+    query: PriceQuery,
+    pageNumber: number,
+    appId: string,
+  ): Promise<RawComp[]> {
     const keywords = this.buildSearchKeywords(query);
     const params = new URLSearchParams({
       'OPERATION-NAME': 'findCompletedItems',
       'SERVICE-VERSION': '1.0.0',
-      'SECURITY-APPNAME': this.appId!,
+      'SECURITY-APPNAME': appId,
       'RESPONSE-DATA-FORMAT': 'JSON',
       'REST-PAYLOAD': '',
       keywords: keywords,

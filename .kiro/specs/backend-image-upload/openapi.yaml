@@ -1,0 +1,509 @@
+openapi: 3.1.0
+info:
+  title: CollectIQ Upload API
+  version: 1.0.0
+  description: |
+    CollectIQ image upload API with defense-in-depth validation.
+
+    ## Authentication
+    All endpoints require a valid JWT token from Amazon Cognito.
+
+    ## Error Handling
+    All errors follow RFC 7807 Problem Details format.
+
+  contact:
+    name: CollectIQ Support
+    email: support@collectiq.com
+  license:
+    name: Proprietary
+
+servers:
+  - url: https://api.collectiq.com
+    description: Production
+  - url: https://api-hackathon.collectiq.com
+    description: Hackathon Environment
+  - url: http://localhost:3001
+    description: Local Development
+
+security:
+  - BearerAuth: []
+
+tags:
+  - name: Upload
+    description: Image upload operations
+  - name: Config
+    description: Configuration endpoints
+
+paths:
+  /api/v1/upload/presign:
+    post:
+      tags:
+        - Upload
+      summary: Generate presigned URL for image upload
+      description: |
+        Validates upload constraints and generates an S3 presigned POST URL.
+
+        **Validation:**
+        - Content-Type must be in allowlist (image/jpeg, image/png, image/heic)
+        - File size must not exceed MAX_UPLOAD_MB (default 12 MB)
+
+        **Defense-in-depth:**
+        - Layer 1: API validation (this endpoint)
+        - Layer 2: S3 bucket policy enforcement
+        - Layer 3: Post-upload magic number verification
+
+      operationId: createPresignedUrl
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PresignRequest'
+            examples:
+              jpeg:
+                summary: JPEG upload
+                value:
+                  contentType: image/jpeg
+                  fileName: charizard-1st-edition.jpg
+                  fileSizeBytes: 8388608
+              png:
+                summary: PNG upload
+                value:
+                  contentType: image/png
+                  fileName: pikachu-shadowless.png
+                  fileSizeBytes: 5242880
+              heic:
+                summary: HEIC upload (iOS)
+                value:
+                  contentType: image/heic
+                  fileName: mewtwo-holo.heic
+                  fileSizeBytes: 4194304
+      responses:
+        '200':
+          description: Presigned URL generated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PresignResponse'
+              examples:
+                success:
+                  summary: Successful presign
+                  value:
+                    url: https://collectiq-uploads.s3.amazonaws.com
+                    fields:
+                      key: uploads/user-123/abc-def-456
+                      Content-Type: image/jpeg
+                      x-amz-meta-user-id: user-123
+                      x-amz-meta-original-filename: charizard.jpg
+                      x-amz-meta-upload-source: web
+                      Policy: eyJleHBpcmF0aW9uIjoi...
+                      X-Amz-Signature: abc123...
+                    key: uploads/user-123/abc-def-456
+                    maxSizeBytes: 12582912
+                    acceptedTypes:
+                      - image/jpeg
+                      - image/png
+                      - image/heic
+                    expiresIn: 300
+        '400':
+          description: Validation error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+              examples:
+                unsupportedType:
+                  summary: Unsupported media type
+                  value:
+                    type: https://collectiq.com/errors/unsupported-media-type
+                    title: Unsupported Media Type
+                    status: 400
+                    detail: "Content-Type 'image/gif' is not allowed. Supported types: image/jpeg, image/png, image/heic"
+                    instance: /api/v1/upload/presign
+                    requestId: abc-123-def-456
+                    requestedType: image/gif
+                    allowedTypes:
+                      - image/jpeg
+                      - image/png
+                      - image/heic
+                fileTooLarge:
+                  summary: File too large
+                  value:
+                    type: https://collectiq.com/errors/file-too-large
+                    title: File Too Large
+                    status: 400
+                    detail: File size 15728640 bytes exceeds maximum 12582912 bytes (12 MB)
+                    instance: /api/v1/upload/presign
+                    requestId: xyz-789-ghi-012
+                    receivedBytes: 15728640
+                    maxBytes: 12582912
+                    maxMB: 12
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimitExceeded'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/config:
+    get:
+      tags:
+        - Config
+      summary: Get runtime configuration
+      description: |
+        Returns current upload constraints and feature flags.
+        Used by frontend to sync validation rules with backend.
+      operationId: getConfig
+      responses:
+        '200':
+          description: Configuration retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Config'
+              example:
+                upload:
+                  maxSizeBytes: 12582912
+                  maxSizeMB: 12
+                  allowedMimeTypes:
+                    - image/jpeg
+                    - image/png
+                    - image/heic
+                  allowedExtensions:
+                    - .jpg
+                    - .jpeg
+                    - .png
+                    - .heic
+                  presignTTL: 300
+                features:
+                  heicSupport: true
+                  clientCompression: true
+                  bulkUpload: false
+                version: 1.0.0
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        JWT token from Amazon Cognito.
+        Include in Authorization header: `Bearer <token>`
+
+  schemas:
+    PresignRequest:
+      type: object
+      required:
+        - contentType
+        - fileName
+        - fileSizeBytes
+      properties:
+        contentType:
+          type: string
+          enum:
+            - image/jpeg
+            - image/png
+            - image/heic
+          description: MIME type of the file to upload
+          example: image/jpeg
+        fileName:
+          type: string
+          minLength: 1
+          maxLength: 255
+          pattern: '^[a-zA-Z0-9._-]+\.(jpg|jpeg|png|heic)$'
+          description: Original filename (for metadata only)
+          example: charizard-1st-edition.jpg
+        fileSizeBytes:
+          type: integer
+          minimum: 1
+          maximum: 12582912
+          description: File size in bytes (max 12 MB by default)
+          example: 8388608
+
+    PresignResponse:
+      type: object
+      required:
+        - url
+        - fields
+        - key
+        - maxSizeBytes
+        - acceptedTypes
+        - expiresIn
+      properties:
+        url:
+          type: string
+          format: uri
+          description: S3 bucket URL for POST request
+          example: https://collectiq-uploads.s3.amazonaws.com
+        fields:
+          type: object
+          description: Form fields to include in multipart/form-data POST
+          required:
+            - key
+            - Content-Type
+            - Policy
+            - X-Amz-Signature
+          properties:
+            key:
+              type: string
+              description: S3 object key
+              example: uploads/user-123/abc-def-456
+            Content-Type:
+              type: string
+              description: MIME type (must match presign request)
+              example: image/jpeg
+            x-amz-meta-user-id:
+              type: string
+              description: User ID metadata
+              example: user-123
+            x-amz-meta-original-filename:
+              type: string
+              description: Original filename metadata
+              example: charizard.jpg
+            x-amz-meta-upload-source:
+              type: string
+              enum: [web, mobile]
+              description: Upload source
+              example: web
+            Policy:
+              type: string
+              description: Base64-encoded policy document
+              example: eyJleHBpcmF0aW9uIjoi...
+            X-Amz-Signature:
+              type: string
+              description: Request signature
+              example: abc123def456...
+        key:
+          type: string
+          description: S3 object key (for reference)
+          example: uploads/user-123/abc-def-456
+        maxSizeBytes:
+          type: integer
+          description: Maximum allowed file size in bytes
+          example: 12582912
+        acceptedTypes:
+          type: array
+          items:
+            type: string
+          description: List of accepted MIME types
+          example:
+            - image/jpeg
+            - image/png
+            - image/heic
+        expiresIn:
+          type: integer
+          description: Presigned URL expiration in seconds
+          example: 300
+
+    Config:
+      type: object
+      required:
+        - upload
+        - features
+        - version
+      properties:
+        upload:
+          type: object
+          required:
+            - maxSizeBytes
+            - maxSizeMB
+            - allowedMimeTypes
+            - allowedExtensions
+            - presignTTL
+          properties:
+            maxSizeBytes:
+              type: integer
+              description: Maximum upload size in bytes
+              example: 12582912
+            maxSizeMB:
+              type: integer
+              description: Maximum upload size in megabytes
+              example: 12
+            allowedMimeTypes:
+              type: array
+              items:
+                type: string
+              description: Allowed MIME types
+              example:
+                - image/jpeg
+                - image/png
+                - image/heic
+            allowedExtensions:
+              type: array
+              items:
+                type: string
+              description: Allowed file extensions
+              example:
+                - .jpg
+                - .jpeg
+                - .png
+                - .heic
+            presignTTL:
+              type: integer
+              description: Presigned URL TTL in seconds
+              example: 300
+        features:
+          type: object
+          required:
+            - heicSupport
+            - clientCompression
+          properties:
+            heicSupport:
+              type: boolean
+              description: Whether HEIC uploads are supported
+              example: true
+            clientCompression:
+              type: boolean
+              description: Whether client-side compression is enabled
+              example: true
+            bulkUpload:
+              type: boolean
+              description: Whether bulk upload is enabled
+              example: false
+        version:
+          type: string
+          description: API version
+          example: 1.0.0
+
+    ProblemDetails:
+      type: object
+      description: RFC 7807 Problem Details
+      required:
+        - type
+        - title
+        - status
+        - detail
+      properties:
+        type:
+          type: string
+          format: uri
+          description: URI reference identifying the problem type
+          example: https://collectiq.com/errors/unsupported-media-type
+        title:
+          type: string
+          description: Short, human-readable summary
+          example: Unsupported Media Type
+        status:
+          type: integer
+          description: HTTP status code
+          example: 400
+        detail:
+          type: string
+          description: Human-readable explanation specific to this occurrence
+          example: "Content-Type 'image/gif' is not allowed. Supported types: image/jpeg, image/png, image/heic"
+        instance:
+          type: string
+          format: uri
+          description: URI reference identifying the specific occurrence
+          example: /api/v1/upload/presign
+        requestId:
+          type: string
+          description: Unique request identifier for support
+          example: abc-123-def-456
+
+    UnsupportedMediaTypeProblem:
+      allOf:
+        - $ref: '#/components/schemas/ProblemDetails'
+        - type: object
+          properties:
+            requestedType:
+              type: string
+              description: The requested Content-Type
+              example: image/gif
+            allowedTypes:
+              type: array
+              items:
+                type: string
+              description: List of allowed MIME types
+              example:
+                - image/jpeg
+                - image/png
+                - image/heic
+
+    FileTooLargeProblem:
+      allOf:
+        - $ref: '#/components/schemas/ProblemDetails'
+        - type: object
+          properties:
+            receivedBytes:
+              type: integer
+              description: Size of the uploaded file in bytes
+              example: 15728640
+            maxBytes:
+              type: integer
+              description: Maximum allowed size in bytes
+              example: 12582912
+            maxMB:
+              type: integer
+              description: Maximum allowed size in megabytes
+              example: 12
+
+  responses:
+    Unauthorized:
+      description: Missing or invalid authentication token
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+          example:
+            type: https://collectiq.com/errors/unauthorized
+            title: Unauthorized
+            status: 401
+            detail: Missing or invalid authentication token. Please sign in and try again.
+            instance: /api/v1/upload/presign
+            requestId: stu-901-vwx-234
+
+    RateLimitExceeded:
+      description: Rate limit exceeded
+      headers:
+        Retry-After:
+          schema:
+            type: integer
+          description: Seconds to wait before retrying
+          example: 60
+      content:
+        application/problem+json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/ProblemDetails'
+              - type: object
+                properties:
+                  limit:
+                    type: integer
+                    description: Rate limit threshold
+                    example: 10
+                  window:
+                    type: string
+                    description: Time window for rate limit
+                    example: 1 minute
+                  retryAfter:
+                    type: integer
+                    description: Seconds to wait before retrying
+                    example: 60
+          example:
+            type: https://collectiq.com/errors/rate-limit-exceeded
+            title: Rate Limit Exceeded
+            status: 429
+            detail: You have exceeded the rate limit of 10 uploads per minute. Please wait 60 seconds and try again.
+            instance: /api/v1/upload/presign
+            requestId: wxy-901-zab-234
+            limit: 10
+            window: 1 minute
+            retryAfter: 60
+
+    InternalServerError:
+      description: Unexpected server error
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+          example:
+            type: https://collectiq.com/errors/internal-error
+            title: Internal Server Error
+            status: 500
+            detail: An unexpected error occurred while processing your request. Our team has been notified.
+            instance: /api/v1/upload/presign
+            requestId: cde-567-fgh-890

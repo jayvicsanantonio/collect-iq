@@ -223,7 +223,7 @@ Terraform modules (in `infra/terraform/`) provision all AWS resources:
 
 - Users are redirected to **Cognito Hosted UI** for all auth operations
 - OAuth 2.0 authorization code flow with PKCE
-- Callback handler at `/auth/callback` exchanges code for tokens
+- AWS Amplify handles OAuth callback automatically at redirect URI (/)
 - `AuthGuard` component protects routes and handles session expiry
 - No custom auth forms; AWS manages UI and security
 

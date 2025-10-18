@@ -213,21 +213,21 @@
     - Test font metrics extraction
     - _Requirements: 13.1_
 
-- [ ] 8. Implement authenticity detection agent
-  - [ ] 8.1 Create visual hash computation
+- [x] 8. Implement authenticity detection agent
+  - [x] 8.1 Create visual hash computation
     - Create utility in services/backend/src/utils/phash.ts
     - Implement perceptual hashing (pHash) algorithm
     - Download image from S3 and compute hash
     - Return hash string for comparison
     - _Requirements: 6.1_
 
-  - [ ] 8.2 Implement reference hash comparison
+  - [x] 8.2 Implement reference hash comparison
     - Load authentic reference hashes from S3 (authentic-samples/ bucket)
     - Compare computed hash with reference hashes using Hamming distance
     - Return visualHashConfidence score (0-1)
     - _Requirements: 6.1_
 
-  - [ ] 8.3 Compute authenticity signals
+  - [x] 8.3 Compute authenticity signals
     - Calculate textMatchConfidence from OCR validation
     - Calculate holoPatternConfidence from holographic analysis
     - Calculate borderConsistency from border metrics
@@ -235,14 +235,14 @@
     - Aggregate into AuthenticitySignals structure
     - _Requirements: 6.3, 6.7_
 
-  - [ ] 8.4 Integrate Bedrock for authenticity judgment
+  - [x] 8.4 Integrate Bedrock for authenticity judgment
     - Create Bedrock prompt with FeatureEnvelope and AuthenticitySignals
     - Invoke Bedrock Converse API with Claude 3 Sonnet
     - Parse response to extract authenticityScore, fakeDetected, and rationale
     - Set fakeDetected=true if score < 0.85
     - _Requirements: 6.4, 6.5, 6.6_
 
-  - [ ] 8.5 Create AuthenticityAgent Lambda handler
+  - [x] 8.5 Create AuthenticityAgent Lambda handler
     - Create handler in services/backend/src/agents/authenticity_agent.ts
     - Accept input with features (FeatureEnvelope) and cardMeta
     - Call visual hash computation and comparison
@@ -257,8 +257,8 @@
     - Test Bedrock prompt formatting
     - _Requirements: 13.1_
 
-- [ ] 9. Implement Bedrock integration service
-  - [ ] 9.1 Create BedrockService class
+- [x] 9. Implement Bedrock integration service
+  - [x] 9.1 Create BedrockService class
     - Create service in services/backend/src/adapters/bedrock_service.ts
     - Initialize Bedrock Runtime client
     - Implement invokeValuation method
@@ -266,21 +266,21 @@
     - Add retry logic (3 attempts with exponential backoff)
     - _Requirements: 8.1, 8.2, 8.3, 8.4_
 
-  - [ ] 9.2 Create valuation prompt and parser
+  - [x] 9.2 Create valuation prompt and parser
     - Write system prompt for valuation agent
     - Format ValuationContext into user message
     - Parse Bedrock response to extract ValuationSummary
     - Validate response with Zod schema
     - _Requirements: 8.2_
 
-  - [ ] 9.3 Create authenticity prompt and parser
+  - [x] 9.3 Create authenticity prompt and parser
     - Write system prompt for authenticity agent
     - Format AuthenticityContext into user message
     - Parse Bedrock response to extract AuthenticityResult
     - Validate response with Zod schema
     - _Requirements: 8.4_
 
-  - [ ] 9.4 Implement fallback handling
+  - [x] 9.4 Implement fallback handling
     - If Bedrock fails after retries, return signals-only result
     - Set reduced confidence flag
     - Log Bedrock errors for monitoring
@@ -293,8 +293,8 @@
     - Test fallback behavior
     - _Requirements: 13.1_
 
-- [ ] 10. Implement Step Functions workflow
-  - [ ] 10.1 Create RekognitionExtract Lambda
+- [x] 10. Implement Step Functions workflow
+  - [x] 10.1 Create RekognitionExtract Lambda
     - Create handler in services/backend/src/orchestration/rekognition_extract.ts
     - Accept input with userId, cardId, s3Keys
     - Call RekognitionAdapter.extractFeatures for front image
@@ -302,7 +302,7 @@
     - Return FeatureEnvelope in output
     - _Requirements: 7.2, 7.3_
 
-  - [ ] 10.2 Create PricingAgent Lambda
+  - [x] 10.2 Create PricingAgent Lambda
     - Create handler in services/backend/src/agents/pricing_agent.ts
     - Accept input with cardMeta and features
     - Extract card name, set, condition from metadata
@@ -311,14 +311,14 @@
     - Return PricingResult and ValuationSummary
     - _Requirements: 7.3, 8.2_
 
-  - [ ] 10.3 Create AuthenticityAgent Lambda
+  - [x] 10.3 Create AuthenticityAgent Lambda
     - Handler already created in task 8.5 (services/backend/src/agents/authenticity_agent.ts)
     - Accept input with features (FeatureEnvelope) and cardMeta
     - Call AuthenticityAgent.analyze
     - Return AuthenticityResult
     - _Requirements: 7.3, 8.4_
 
-  - [ ] 10.4 Create Aggregator Lambda
+  - [x] 10.4 Create Aggregator Lambda
     - Create handler in services/backend/src/orchestration/aggregator.ts
     - Accept input with agentResults (pricing and authenticity)
     - Merge results into single card update
@@ -327,7 +327,7 @@
     - Return final card object
     - _Requirements: 7.4, 7.5_
 
-  - [ ] 10.5 Create error handler Lambda
+  - [x] 10.5 Create error handler Lambda
     - Create handler in services/backend/src/orchestration/error_handler.ts
     - Accept input with error details
     - Persist partial results if available
@@ -342,8 +342,8 @@
     - Test DLQ routing
     - _Requirements: 13.2_
 
-- [ ] 11. Implement revalue orchestration handler
-  - [ ] 11.1 Create cards_revalue Lambda handler
+- [x] 11. Implement revalue orchestration handler
+  - [x] 11.1 Create cards_revalue Lambda handler
     - Create handler in services/backend/src/handlers/cards_revalue.ts
     - Extract userId from JWT claims using auth module
     - Extract cardId from path parameters
@@ -359,22 +359,22 @@
     - Test 404 when card not found
     - _Requirements: 13.2_
 
-- [ ] 12. Implement observability and logging
-  - [ ] 12.1 Create structured logger utility
+- [x] 12. Implement observability and logging
+  - [x] 12.1 Create structured logger utility
     - Create logger in packages/telemetry for reuse across services
     - Implement JSON logger with requestId, userId, operation fields
     - Ensure no PII is logged
     - Add log level filtering (DEBUG, INFO, WARN, ERROR)
     - _Requirements: 9.2, 9.3_
 
-  - [ ] 12.2 Add CloudWatch metrics emission
+  - [x] 12.2 Add CloudWatch metrics emission
     - Emit custom metrics for API latency
     - Emit metrics for auth failures
     - Emit metrics for pricing source errors
     - Emit metrics for authenticity score distribution
     - _Requirements: 9.5_
 
-  - [ ] 12.3 Enable X-Ray tracing
+  - [x] 12.3 Enable X-Ray tracing
     - Add X-Ray SDK to all Lambda functions
     - Instrument AWS SDK calls
     - Add custom subsegments for business logic
@@ -386,15 +386,15 @@
     - Add widgets for data storage metrics
     - _Requirements: 9.5_
 
-- [ ] 13. Implement idempotency handling
-  - [ ] 13.1 Create idempotency token storage
+- [x] 13. Implement idempotency handling
+  - [x] 13.1 Create idempotency token storage
     - Create utility in services/backend/src/utils/idempotency.ts
     - Write saveIdempotencyToken function to store token in DynamoDB
     - Use conditional writes to prevent race conditions
     - Set TTL to IDEMPOTENCY_TTL_SECONDS (600)
     - _Requirements: 10.1, 10.2, 10.4_
 
-  - [ ] 13.2 Create idempotency middleware
+  - [x] 13.2 Create idempotency middleware
     - Extract idempotency key from request headers
     - Check DynamoDB for existing token
     - Return cached result if token exists and not expired
@@ -407,15 +407,15 @@
     - Test TTL expiration
     - _Requirements: 13.1_
 
-- [ ] 14. Implement secrets management
-  - [ ] 14.1 Create secrets retrieval utility
+- [x] 14. Implement secrets management
+  - [x] 14.1 Create secrets retrieval utility
     - Create utility in services/backend/src/utils/secrets.ts
     - Implement getSecret function using AWS Secrets Manager
     - Cache secrets in memory for Lambda execution lifetime
     - Handle secret rotation gracefully
     - _Requirements: 12.5_
 
-  - [ ] 14.2 Update pricing adapters to use secrets
+  - [x] 14.2 Update pricing adapters to use secrets
     - Retrieve EBAY_APP_ID from Secrets Manager
     - Retrieve TCGPLAYER keys from Secrets Manager
     - Retrieve PRICECHARTING_KEY from Secrets Manager
@@ -427,8 +427,8 @@
     - Test error handling
     - _Requirements: 13.1_
 
-- [ ] 15. Create API Gateway configuration
-  - [ ] 15.1 Define API routes and methods
+- [x] 15. Create API Gateway configuration
+  - [x] 15.1 Define API routes and methods
     - POST /upload/presign → upload_presign Lambda
     - POST /cards → cards_create Lambda
     - GET /cards → cards_list Lambda
@@ -438,20 +438,20 @@
     - GET /healthz → healthz Lambda (no auth)
     - _Requirements: 1.1, 1.5_
 
-  - [ ] 15.2 Configure JWT authorizer
+  - [x] 15.2 Configure JWT authorizer
     - Set up Cognito User Pool as authorizer
     - Configure JWKS URL from environment
     - Set token source to Authorization header
     - Apply authorizer to all routes except /healthz
     - _Requirements: 1.1_
 
-  - [ ] 15.3 Configure CORS and security headers
+  - [x] 15.3 Configure CORS and security headers
     - Enable CORS with appropriate origins
     - Set security headers (HSTS, X-Content-Type-Options)
     - _Requirements: 12.3_
 
-- [ ] 16. Write end-to-end tests
-  - [ ] 16.1 Create E2E test suite setup
+- [-] 16. Write end-to-end tests
+  - [x] 16.1 Create E2E test suite setup
     - Set up test Cognito user pool
     - Create test user and obtain JWT token
     - Configure test environment variables
@@ -482,20 +482,20 @@
     - Validate rationale content
     - _Requirements: 13.2_
 
-- [ ] 17. Create deployment documentation
-  - [ ] 17.1 Document environment variables
+- [x] 17. Create deployment documentation
+  - [x] 17.1 Document environment variables
     - List all required environment variables
     - Provide example values
     - Document secrets management approach
     - _Requirements: 9.1_
 
-  - [ ] 17.2 Document IAM requirements
+  - [x] 17.2 Document IAM requirements
     - List required IAM permissions per Lambda
     - Provide example IAM policy documents
     - Document least-privilege principles
     - _Requirements: 12.4_
 
-  - [ ] 17.3 Create deployment guide
+  - [x] 17.3 Create deployment guide
     - Document build process (esbuild)
     - Document Lambda packaging
     - Document Terraform integration points

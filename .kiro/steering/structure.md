@@ -52,8 +52,7 @@ collect-iq/
 │       │   ├── ssm_secrets/
 │       │   └── xray/
 │       └── envs/
-│           ├── dev/
-│           └── prod/
+│           └── hackathon/    # Single environment for hackathon
 │
 ├── docs/                    # Comprehensive specifications
 │   ├── Frontend/
@@ -97,7 +96,8 @@ collect-iq/
 ### Infrastructure Modules
 
 - Each Terraform module is self-contained with inputs, outputs, and resources
-- Modules are environment-agnostic; configuration lives in `environments/`
+- Single hackathon environment configuration lives in `envs/hackathon/`
+- Modules are reusable and environment-agnostic
 
 ### Documentation Hierarchy
 

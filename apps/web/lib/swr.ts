@@ -1,92 +1,27 @@
 /**
  * SWR configuration and custom hooks for data fetching
- * Implements stale-while-revalidate caching strategies for optimal performance
  */
 
 import useSWR, { type SWRConfiguration } from 'swr';
 import useSWRMutation, { type SWRMutationConfiguration } from 'swr/mutation';
-import type { Card, ListCardsResponse } from '@collectiq/shared';
-import { getCards, getCard, deleteCard, refreshValuation } from './api';
+import type { Card, ListCardsResponse, RevalueResponse } from '@collectiq/shared';
+import { getCards, getCard, deleteCard, revalueCard } from './api';
 
 // ============================================================================
 // SWR Configuration
 // ============================================================================
 
 /**
- * Default SWR configuration with stale-while-revalidate strategy
- * 
- * Strategy:
- * - Serve cached data immediately (stale)
- * - Revalidate in background
- * - Update UI when fresh data arrives
+ * Default SWR configuration
  */
 export const swrConfig: SWRConfiguration = {
-  // Stale-while-revalidate settings
-  revalidateOnFocus: false, // Don't revalidate on window focus (too aggressive)
-  revalidateOnReconnect: true, // Revalidate when network reconnects
-  revalidateIfStale: true, // Revalidate if data is stale
-  
-  // Deduplication settings
-  dedupingInterval: 2000, // Dedupe requests within 2 seconds
-  focusThrottleInterval: 5000, // Throttle focus revalidation to 5 seconds
-  
-  // Error handling
-  errorRetryCount: 3, // Retry failed requests 3 times
-  errorRetryInterval: 5000, // Wait 5 seconds between retries
-  shouldRetryOnError: true, // Enable automatic retries
-  
-  // Performance optimization
-  keepPreviousData: true, // Keep previous data while fetching new data
-};
-
-// ============================================================================
-// Cache Configuration
-// ============================================================================
-
-/**
- * Cache time-to-live (TTL) configurations in milliseconds
- */
-export const CACHE_TTL = {
-  // Vault list: 5 minutes (frequently updated)
-  VAULT_LIST: 5 * 60 * 1000,
-  
-  // Card details: 10 minutes (less frequently updated)
-  CARD_DETAIL: 10 * 60 * 1000,
-  
-  // Valuation data: 1 hour (expensive to compute)
-  VALUATION: 60 * 60 * 1000,
-  
-  // User session: 15 minutes
-  SESSION: 15 * 60 * 1000,
-} as const;
-
-/**
- * SWR configuration for vault lists with aggressive stale-while-revalidate
- */
-export const vaultListConfig: SWRConfiguration = {
-  ...swrConfig,
-  dedupingInterval: 5000, // Longer deduping for lists
-  revalidateOnMount: true, // Always revalidate on mount
-  refreshInterval: CACHE_TTL.VAULT_LIST, // Auto-refresh every 5 minutes
-};
-
-/**
- * SWR configuration for card details with longer cache
- */
-export const cardDetailConfig: SWRConfiguration = {
-  ...swrConfig,
-  dedupingInterval: 10000, // Longer deduping for details
-  refreshInterval: CACHE_TTL.CARD_DETAIL, // Auto-refresh every 10 minutes
-};
-
-/**
- * SWR configuration for valuation data with extended cache
- */
-export const valuationConfig: SWRConfiguration = {
-  ...swrConfig,
-  dedupingInterval: 30000, // Much longer deduping for expensive operations
-  refreshInterval: CACHE_TTL.VALUATION, // Auto-refresh every hour
-  revalidateOnMount: false, // Don't revalidate on mount (use cached data)
+  revalidateOnFocus: false,
+  revalidateOnReconnect: true,
+  dedupingInterval: 2000,
+  focusThrottleInterval: 5000,
+  errorRetryCount: 3,
+  errorRetryInterval: 5000,
+  shouldRetryOnError: true,
 };
 
 // ============================================================================
@@ -120,12 +55,7 @@ export function getCardKey(cardId: string) {
 // ============================================================================
 
 /**
- * Hook to fetch paginated list of cards with stale-while-revalidate
- * 
- * Uses aggressive caching strategy:
- * - Serves cached data immediately
- * - Revalidates in background every 5 minutes
- * - Auto-refreshes to keep data fresh
+ * Hook to fetch paginated list of cards
  */
 export function useCards(params?: { cursor?: string; limit?: number }) {
   const key = getCardsKey(params);
@@ -133,17 +63,12 @@ export function useCards(params?: { cursor?: string; limit?: number }) {
   return useSWR<ListCardsResponse>(
     key,
     () => getCards(params),
-    vaultListConfig
+    swrConfig
   );
 }
 
 /**
- * Hook to fetch a single card with extended cache
- * 
- * Uses longer cache strategy:
- * - Card details change less frequently
- * - 10-minute cache with background revalidation
- * - Reduces API calls for frequently viewed cards
+ * Hook to fetch a single card
  */
 export function useCard(cardId: string | null) {
   const key = cardId ? getCardKey(cardId) : null;
@@ -151,7 +76,7 @@ export function useCard(cardId: string | null) {
   return useSWR<Card>(
     key,
     () => (cardId ? getCard(cardId) : Promise.reject('No card ID')),
-    cardDetailConfig
+    swrConfig
   );
 }
 
@@ -160,59 +85,72 @@ export function useCard(cardId: string | null) {
 // ============================================================================
 
 /**
- * Hook to delete a card with optimistic updates and cache invalidation
- * 
- * Strategy:
- * - Optimistically remove card from UI
- * - Invalidate all related caches
- * - Rollback on error
+ * Hook to create a card
+ */
+export function useCreateCard() {
+  return useSWRMutation(
+    '/cards',
+    async (
+      _key: string,
+      { arg }: { arg: { frontS3Key: string; backS3Key?: string } }
+    ) => {
+      const { createCard } = await import('./api');
+      return createCard(arg);
+    },
+    {
+      // Revalidate cards list after creation
+      revalidate: true,
+    } as SWRMutationConfiguration<
+      Card,
+      Error,
+      string,
+      { frontS3Key: string; backS3Key?: string }
+    >
+  );
+}
+
+/**
+ * Hook to delete a card with optimistic updates
  */
 export function useDeleteCard() {
   return useSWRMutation(
     '/cards',
     async (_key: string, { arg }: { arg: string }) => {
       // arg is the cardId
-      return deleteCard(arg);
+      await deleteCard(arg);
+      return { cardId: arg };
     },
     {
       // Optimistic update: remove card from cache immediately
-      populateCache: () => {
-        // Don't populate cache, let revalidation handle it
-        return false;
-      },
+      populateCache: false,
       revalidate: true,
       // On error, revalidate to restore correct state
       rollbackOnError: true,
-      // Optimistic data update
-      optimisticData: (currentData) => {
-        // This will be used by the cache invalidation helpers
-        return currentData;
-      },
-    } as SWRMutationConfiguration<{ ok: boolean }, Error, string, string>
+    } as SWRMutationConfiguration<{ cardId: string }, Error, string, string>
   );
 }
 
 /**
- * Hook to refresh card valuation with cache invalidation
- * 
- * Strategy:
- * - Trigger valuation refresh
- * - Invalidate card cache to fetch fresh data
- * - Invalidate vault list to show updated values
+ * Hook to refresh card valuation
  */
-export function useRefreshValuation() {
+export function useRevalueCard() {
   return useSWRMutation(
     '/cards/revalue',
     async (
       _key: string,
       { arg }: { arg: { cardId: string; forceRefresh?: boolean } }
     ) => {
-      return refreshValuation(arg.cardId, arg.forceRefresh);
+      return revalueCard(arg.cardId, { forceRefresh: arg.forceRefresh });
     },
     {
       // Revalidate the card after refresh
       revalidate: true,
-    }
+    } as SWRMutationConfiguration<
+      RevalueResponse,
+      Error,
+      string,
+      { cardId: string; forceRefresh?: boolean }
+    >
   );
 }
 

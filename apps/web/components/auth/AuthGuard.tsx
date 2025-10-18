@@ -1,8 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { usePathname } from 'next/navigation';
-import { getSession, refreshSession, signIn } from '@/lib/auth';
+import { isAuthenticated } from '@/lib/auth';
 import { SessionExpiredModal } from './SessionExpiredModal';
 
 interface AuthGuardProps {
@@ -13,9 +12,9 @@ interface AuthGuardProps {
 /**
  * AuthGuard component that protects routes requiring authentication
  * Checks session validity and redirects to Cognito Hosted UI if unauthenticated
+ * Amplify handles token refresh automatically
  */
 export function AuthGuard({ children, fallback }: AuthGuardProps) {
-  const pathname = usePathname();
   const [isLoading, setIsLoading] = useState(true);
   const [showSessionExpired, setShowSessionExpired] = useState(false);
 
@@ -26,30 +25,26 @@ export function AuthGuard({ children, fallback }: AuthGuardProps) {
     const interval = setInterval(checkAuth, 5 * 60 * 1000);
 
     return () => clearInterval(interval);
-  }, [pathname]);
+  }, []);
 
   async function checkAuth() {
     try {
-      // Try to get current session
-      let currentSession = await getSession();
+      const authenticated = await isAuthenticated();
 
-      // If no session, try to refresh
-      if (!currentSession) {
-        currentSession = await refreshSession();
-      }
-
-      if (currentSession) {
+      if (authenticated) {
         setShowSessionExpired(false);
         setIsLoading(false);
       } else {
-        // No valid session - redirect to sign in
+        // No valid session - redirect to landing page
+        // Don't call signIn() here to avoid redirect loop
+        // User should click sign in button on landing page
         setIsLoading(false);
-        await signIn(pathname);
+        window.location.href = '/landing';
       }
     } catch (error) {
       console.error('Auth check failed:', error);
       setIsLoading(false);
-      await signIn(pathname);
+      window.location.href = '/landing';
     }
   }
 
@@ -73,12 +68,7 @@ export function AuthGuard({ children, fallback }: AuthGuardProps) {
 
   // Show session expired modal if needed
   if (showSessionExpired) {
-    return (
-      <SessionExpiredModal
-        isOpen={showSessionExpired}
-        onReauthenticate={() => signIn(pathname)}
-      />
-    );
+    return <SessionExpiredModal isOpen={showSessionExpired} />;
   }
 
   // Render protected content

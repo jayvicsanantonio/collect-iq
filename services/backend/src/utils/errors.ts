@@ -3,6 +3,8 @@
  * Provides standardized error responses
  */
 
+import { getProblemJsonHeaders } from './response-headers.js';
+
 export interface ProblemDetails {
   type: string;
   title: string;
@@ -187,9 +189,7 @@ export function formatErrorResponse(
 
   return {
     statusCode: problemDetails.status,
-    headers: {
-      'Content-Type': 'application/problem+json',
-    },
+    headers: getProblemJsonHeaders(),
     body: JSON.stringify(problemDetails),
   };
 }

@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { Inter, Space_Grotesk, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
 import { ThemeProvider } from '@/components/theme-provider';
-import { SWRProvider } from '@/components/providers';
+import { SWRProvider, AmplifyProvider } from '@/components/providers';
 import { Toaster } from '@/components/ui/toaster';
 import { SkipLink } from '@/components/ui/skip-link';
 
@@ -42,10 +42,12 @@ export default function RootLayout({
       >
         <SkipLink />
         <ThemeProvider defaultTheme="light" storageKey="collectiq-theme">
-          <SWRProvider>
-            {children}
-            <Toaster />
-          </SWRProvider>
+          <AmplifyProvider>
+            <SWRProvider>
+              {children}
+              <Toaster />
+            </SWRProvider>
+          </AmplifyProvider>
         </ThemeProvider>
       </body>
     </html>

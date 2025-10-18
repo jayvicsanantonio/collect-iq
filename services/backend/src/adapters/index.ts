@@ -13,3 +13,6 @@ export { PricingOrchestrator, getPricingOrchestrator } from './pricing-orchestra
 
 // Rekognition adapter
 export { RekognitionAdapter, rekognitionAdapter } from './rekognition-adapter.js';
+
+// Bedrock service
+export { BedrockService, bedrockService } from './bedrock-service.js';

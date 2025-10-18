@@ -2,29 +2,54 @@ import { z } from 'zod';
 
 const envSchema = z.object({
   // AWS Configuration
-  NEXT_PUBLIC_REGION: z.string().min(1, 'AWS region is required'),
+  NEXT_PUBLIC_AWS_REGION: z
+    .string()
+    .min(1, 'AWS region is required (e.g., us-east-1)')
+    .regex(
+      /^[a-z]{2}-[a-z]+-\d{1}$/,
+      'AWS region must be in format: us-east-1, eu-west-1, etc.'
+    ),
 
   // Cognito Configuration
   NEXT_PUBLIC_COGNITO_USER_POOL_ID: z
     .string()
-    .min(1, 'Cognito User Pool ID is required'),
+    .min(1, 'Cognito User Pool ID is required')
+    .regex(
+      /^[a-z]{2}-[a-z]+-\d{1}_[a-zA-Z0-9]+$/,
+      'Cognito User Pool ID must be in format: us-east-1_abc123XYZ'
+    ),
   NEXT_PUBLIC_COGNITO_USER_POOL_CLIENT_ID: z
     .string()
-    .min(1, 'Cognito Client ID is required'),
+    .min(1, 'Cognito Client ID is required')
+    .min(26, 'Cognito Client ID should be 26 characters'),
   NEXT_PUBLIC_COGNITO_DOMAIN: z
     .string()
-    .min(1, 'Cognito Domain is required'),
+    .min(1, 'Cognito Domain is required')
+    .regex(
+      /^[a-z0-9-]+\.auth\.[a-z]{2}-[a-z]+-\d{1}\.amazoncognito\.com$/,
+      'Cognito Domain must be in format: domain.auth.region.amazoncognito.com'
+    ),
 
   // OAuth Configuration
   NEXT_PUBLIC_OAUTH_REDIRECT_URI: z
     .string()
-    .url('OAuth Redirect URI must be a valid URL'),
+    .url('OAuth Redirect URI must be a valid URL')
+    .refine(
+      (url) => url.endsWith('/'),
+      'OAuth Redirect URI should end with / for Amplify to handle callback'
+    ),
   NEXT_PUBLIC_OAUTH_LOGOUT_URI: z
     .string()
     .url('OAuth Logout URI must be a valid URL'),
 
   // API Configuration
-  NEXT_PUBLIC_API_BASE: z.string().url('API Base URL must be a valid URL'),
+  NEXT_PUBLIC_API_BASE: z
+    .string()
+    .url('API Base URL must be a valid URL')
+    .refine(
+      (url) => url.startsWith('http://') || url.startsWith('https://'),
+      'API Base URL must start with http:// or https://'
+    ),
 
   // Optional Configuration
   FEATURE_FLAGS: z.string().optional(),
@@ -36,7 +61,7 @@ type Env = z.infer<typeof envSchema>;
 
 function validateEnv(): Env {
   const env = {
-    NEXT_PUBLIC_REGION: process.env.NEXT_PUBLIC_REGION,
+    NEXT_PUBLIC_AWS_REGION: process.env.NEXT_PUBLIC_AWS_REGION,
     NEXT_PUBLIC_COGNITO_USER_POOL_ID:
       process.env.NEXT_PUBLIC_COGNITO_USER_POOL_ID,
     NEXT_PUBLIC_COGNITO_USER_POOL_CLIENT_ID:

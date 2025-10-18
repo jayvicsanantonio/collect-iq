@@ -4,9 +4,9 @@
 
 CollectIQ DevOps is responsible for provisioning, managing, and maintaining the complete AWS infrastructure for an AI-powered Pokémon TCG card identification, authentication, and valuation platform. The infrastructure supports a serverless, multi-agent architecture with Next.js frontend on AWS Amplify, Lambda-based backend APIs, and Step Functions orchestrating AI workflows using Amazon Rekognition (for visual feature extraction) and Amazon Bedrock (for reasoning and valuation).
 
-The DevOps specification ensures infrastructure-as-code (Terraform), automated CI/CD pipelines, comprehensive observability, security best practices, and cost optimization strategies. The system must scale from hackathon prototype (~$50/month) to production growth stage (50k+ users, ~$1,500-2,000/month) while maintaining security, reliability, and operational excellence.
+The DevOps specification ensures infrastructure-as-code (Terraform), automated CI/CD pipelines, comprehensive observability, security best practices, and cost optimization strategies. As a hackathon project, the system is designed for a single environment with a target budget of ~$50/month while maintaining security, reliability, and operational excellence.
 
-This document defines the functional and non-functional requirements for infrastructure provisioning, deployment automation, monitoring, security, and cost management across development and production environments.
+This document defines the functional and non-functional requirements for infrastructure provisioning, deployment automation, monitoring, security, and cost management for the hackathon environment.
 
 ## Requirements
 
@@ -17,12 +17,11 @@ This document defines the functional and non-functional requirements for infrast
 #### Acceptance Criteria
 
 1. WHEN infrastructure is provisioned THEN the system SHALL use Terraform modules organized by service (amplify_hosting, api_gateway_http, cognito_user_pool, etc.)
-2. WHEN Terraform state is managed THEN the system SHALL use S3 backend with versioning enabled and DynamoDB state locking per environment
-3. WHEN resources are created THEN the system SHALL apply consistent tags: {Project=CollectIQ, Env, Owner}
+2. WHEN Terraform state is managed THEN the system SHALL use S3 backend with versioning enabled and DynamoDB state locking
+3. WHEN resources are created THEN the system SHALL apply consistent tags: {Project=CollectIQ, Environment=hackathon, Owner}
 4. WHEN Terraform code is committed THEN the system SHALL enforce terraform fmt, validate, and plan checks in CI
-5. WHEN infrastructure changes are applied THEN the system SHALL require manual approval for terraform apply
+5. WHEN infrastructure changes are applied THEN the system SHALL support manual approval for terraform apply
 6. WHEN Terraform modules are developed THEN the system SHALL pass tflint and checkov security scans before merge
-7. WHEN environments are separated THEN the system SHALL maintain distinct dev and prod configurations with separate state files
 
 ### Requirement 2: AWS Amplify Hosting for Next.js Frontend
 
@@ -33,7 +32,7 @@ This document defines the functional and non-functional requirements for infrast
 1. WHEN the Next.js app is deployed THEN the system SHALL use AWS Amplify Hosting with SSR/ISR enabled
 2. WHEN code is pushed to the repository THEN the system SHALL trigger automatic builds and deployments
 3. WHEN pull requests are created THEN the system SHALL generate preview environments for testing
-4. WHEN the production app is accessed THEN the system SHALL serve it via custom domain app.collectiq.com with SSL
+4. WHEN the app is accessed THEN the system SHALL serve it via Amplify default domain with SSL
 5. WHEN environment variables are needed THEN the system SHALL inject them from Terraform outputs (API base URL, Cognito IDs, region)
 6. WHEN builds fail THEN the system SHALL trigger CloudWatch alarms for notification
 7. WHEN the app is deployed THEN the system SHALL configure CORS to allow API Gateway origins
@@ -65,7 +64,7 @@ This document defines the functional and non-functional requirements for infrast
 4. WHEN the /healthz endpoint is accessed THEN the system SHALL allow unauthenticated access
 5. WHEN all other endpoints are accessed THEN the system SHALL require valid JWT in Authorization header
 6. WHEN API Gateway logs are enabled THEN the system SHALL send access logs to CloudWatch with request/response details
-7. WHEN throttling is configured THEN the system SHALL set rate limits per stage (dev: 100 req/s, prod: 1000 req/s)
+7. WHEN throttling is configured THEN the system SHALL set rate limits to 100 req/s for cost control
 8. WHEN CORS is configured THEN the system SHALL allow requests from Amplify origin with credentials
 
 ### Requirement 5: Lambda Functions for Backend APIs
@@ -89,7 +88,7 @@ This document defines the functional and non-functional requirements for infrast
 
 #### Acceptance Criteria
 
-1. WHEN DynamoDB table is created THEN the system SHALL use single-table design with name {stage}-CollectIQ
+1. WHEN DynamoDB table is created THEN the system SHALL use single-table design with name hackathon-CollectIQ
 2. WHEN primary key is defined THEN the system SHALL use PK=USER#{sub} and SK=CARD#{cardId} | PRICE#{iso8601}
 3. WHEN GSI1 is created THEN the system SHALL index on userId with sort key createdAt for vault listings
 4. WHEN GSI2 is created THEN the system SHALL index on set#rarity with sort key valueMedian for analytics
@@ -104,7 +103,7 @@ This document defines the functional and non-functional requirements for infrast
 
 #### Acceptance Criteria
 
-1. WHEN S3 bucket is created THEN the system SHALL name it {stage}-collectiq-uploads-{accountId}
+1. WHEN S3 bucket is created THEN the system SHALL name it hackathon-collectiq-uploads-{accountId}
 2. WHEN bucket security is configured THEN the system SHALL enable Block Public Access for all settings
 3. WHEN encryption is configured THEN the system SHALL use SSE-S3 for server-side encryption
 4. WHEN bucket policy is set THEN the system SHALL enforce aws:SecureTransport (HTTPS only)
@@ -162,7 +161,7 @@ This document defines the functional and non-functional requirements for infrast
 
 #### Acceptance Criteria
 
-1. WHEN EventBridge bus is created THEN the system SHALL name it {stage}-collectiq-events
+1. WHEN EventBridge bus is created THEN the system SHALL name it hackathon-collectiq-events
 2. WHEN events are emitted THEN the system SHALL publish CardValuationUpdated and AuthenticityFlagged events
 3. WHEN event rules are configured THEN the system SHALL route events to target Lambda functions or SQS queues
 4. WHEN DLQ is configured THEN the system SHALL create SQS dead-letter queue for failed event deliveries
@@ -192,9 +191,9 @@ This document defines the functional and non-functional requirements for infrast
 2. WHEN CloudWatch alarms are configured THEN the system SHALL alert on: API 5xx > 5% for 5 minutes, Lambda error rate > 10%, Step Functions failed executions, DLQ depth > 10
 3. WHEN X-Ray tracing is enabled THEN the system SHALL instrument all Lambda functions and Step Functions
 4. WHEN logs are written THEN the system SHALL use structured JSON format with requestId, userId, operation fields
-5. WHEN log retention is set THEN the system SHALL retain logs for 30 days (dev) and 90 days (prod)
+5. WHEN log retention is set THEN the system SHALL retain logs for 30 days
 6. WHEN metrics are emitted THEN the system SHALL publish custom metrics for Bedrock invocations, Rekognition calls, authenticity score distribution
-7. WHEN cost monitoring is enabled THEN the system SHALL set AWS Budget alerts at $20 (dev) and $500 (prod) thresholds
+7. WHEN cost monitoring is enabled THEN the system SHALL set AWS Budget alerts at $50 threshold
 
 ### Requirement 14: CI/CD Pipelines
 
@@ -203,7 +202,7 @@ This document defines the functional and non-functional requirements for infrast
 #### Acceptance Criteria
 
 1. WHEN backend code is pushed THEN the system SHALL run: lint → typecheck → unit tests → integration tests → package Lambdas → upload artifacts
-2. WHEN infrastructure code is pushed THEN the system SHALL run: terraform fmt → validate → plan → approval gate → apply
+2. WHEN infrastructure code is pushed THEN the system SHALL run: terraform fmt → validate → plan → optional approval gate → apply
 3. WHEN frontend code is pushed THEN the system SHALL trigger Amplify auto-build and deployment
 4. WHEN PR previews are created THEN the system SHALL deploy ephemeral Amplify environments
 5. WHEN Lambda deployments use aliases THEN the system SHALL support canary (10% traffic) or linear (10% every 10 minutes) rollouts
@@ -233,24 +232,23 @@ This document defines the functional and non-functional requirements for infrast
 1. WHEN Lambda memory is allocated THEN the system SHALL use 256-512MB for lightweight functions to minimize cost
 2. WHEN DynamoDB is configured THEN the system SHALL use on-demand billing for variable workloads
 3. WHEN Step Functions are used THEN the system SHALL prefer Express workflows for high-volume, short-duration tasks
-4. WHEN logs are written THEN the system SHALL control verbosity and disable debug logs in production
+4. WHEN logs are written THEN the system SHALL control verbosity and use info-level logging
 5. WHEN pricing data is cached THEN the system SHALL use DynamoDB TTL to minimize external API calls
-6. WHEN AWS Budgets are set THEN the system SHALL configure alerts at 80% and 100% of monthly budget
+6. WHEN AWS Budgets are set THEN the system SHALL configure alerts at 80% and 100% of $50 monthly budget
 7. WHEN cost tagging is enabled THEN the system SHALL tag all resources for cost allocation reporting
 8. WHEN free tier is available THEN the system SHALL maximize usage of Lambda, DynamoDB, and S3 free tier limits
 
-### Requirement 17: Environment Separation and Configuration
+### Requirement 17: Environment Configuration
 
-**User Story:** As a DevOps engineer, I want separate dev and prod environments so that testing doesn't impact production users.
+**User Story:** As a DevOps engineer, I want a single hackathon environment configuration so that infrastructure is simple and cost-effective.
 
 #### Acceptance Criteria
 
-1. WHEN environments are created THEN the system SHALL maintain separate Terraform state files for dev and prod
-2. WHEN resources are named THEN the system SHALL prefix with environment (dev-CollectIQ, prod-CollectIQ)
-3. WHEN environment variables are set THEN the system SHALL use environment-specific values for API keys, domains, and quotas
-4. WHEN Terraform outputs are generated THEN the system SHALL provide environment-specific values to frontend and backend
-5. WHEN access is controlled THEN the system SHALL restrict prod deployments to approved personnel only
-6. WHEN testing is performed THEN the system SHALL use dev environment for all non-production workloads
+1. WHEN the environment is created THEN the system SHALL maintain a single Terraform state file for the hackathon environment
+2. WHEN resources are named THEN the system SHALL prefix with hackathon (hackathon-CollectIQ)
+3. WHEN environment variables are set THEN the system SHALL use hackathon-specific values for API keys, domains, and quotas
+4. WHEN Terraform outputs are generated THEN the system SHALL provide values to frontend and backend
+5. WHEN testing is performed THEN the system SHALL use the hackathon environment for all workloads
 
 ### Requirement 18: Disaster Recovery and Backup
 
@@ -261,8 +259,7 @@ This document defines the functional and non-functional requirements for infrast
 1. WHEN DynamoDB PITR is enabled THEN the system SHALL support point-in-time recovery for up to 35 days
 2. WHEN S3 versioning is enabled THEN the system SHALL retain previous versions of uploaded images
 3. WHEN Terraform state is stored THEN the system SHALL enable S3 versioning for state file recovery
-4. WHEN backups are tested THEN the system SHALL perform quarterly disaster recovery drills
-5. WHEN RTO/RPO are defined THEN the system SHALL target RTO < 4 hours and RPO < 1 hour for production
+4. WHEN RTO/RPO are defined THEN the system SHALL target RTO < 4 hours and RPO < 1 hour
 
 ### Requirement 19: Runbooks and Operational Procedures
 
@@ -287,5 +284,5 @@ This document defines the functional and non-functional requirements for infrast
 2. WHEN Lambda concurrency is configured THEN the system SHALL set reserved concurrency to prevent account-level throttling
 3. WHEN DynamoDB is queried THEN the system SHALL use GSIs for efficient access patterns
 4. WHEN Step Functions execute THEN the system SHALL complete workflows in < 30 seconds for typical card analysis
-5. WHEN the system scales THEN the system SHALL support 100k API calls/month (hackathon) to 10M calls/month (growth) without architecture changes
-6. WHEN Amplify serves traffic THEN the system SHALL handle 10k concurrent users with CDN caching
+5. WHEN the system scales THEN the system SHALL support 100k API calls/month for the hackathon
+6. WHEN Amplify serves traffic THEN the system SHALL handle concurrent users with CDN caching

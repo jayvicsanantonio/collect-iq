@@ -1,0 +1,334 @@
+# Implementation Plan
+
+- [x] 1. Set up project structure and shared utilities
+  - ✅ Directory structure exists (handlers/, utils/, store/, adapters/)
+  - ✅ RFC 7807 error responses implemented (src/utils/errors.ts)
+  - ✅ CloudWatch metrics via @collectiq/telemetry
+  - ✅ TypeScript configuration exists
+  - ⚠️ Need to add ALLOWED_MIME_TYPES and MAX_UPLOAD_MB constants
+  - _Requirements: 1.1, 7.1, 7.2, 8.1_
+
+- [ ] 2. Implement presign handler Lambda function
+  - [ ] 2.1 Create presign handler with JWT validation
+    - Extract userId from API Gateway JWT authorizer context
+    - Validate request body schema (contentType, fileName, fileSizeBytes)
+    - _Requirements: 1.1, 13.3_
+  - [ ] 2.2 Implement Content-Type validation
+    - Check contentType against ALLOWED_MIME_TYPES array
+    - Return 400 with RFC 7807 error if unsupported
+    - Include allowedTypes in error response
+    - Emit presign_denied_bad_type metric
+    - _Requirements: 1.2, 1.7, 7.2, 7.4, 9.2_
+  - [ ] 2.3 Implement file size validation
+    - Calculate MAX_UPLOAD_BYTES from MAX_UPLOAD_MB env var
+    - Check fileSizeBytes against MAX_UPLOAD_BYTES
+    - Return 400 with RFC 7807 error if oversized
+    - Include maxMB and receivedBytes in error response
+    - Emit presign_denied_too_large metric
+    - _Requirements: 1.3, 1.7, 7.3, 9.1_
+  - [ ] 2.4 Generate S3 presigned POST URL
+    - Generate unique S3 key: uploads/{userId}/{uuid}
+    - Create presigned POST with policy conditions (content-length-range, eq Content-Type, starts-with key)
+    - Set expiration to PRESIGN_TTL_SECONDS
+    - Include metadata fields (x-amz-meta-user-id, x-amz-meta-original-filename, x-amz-meta-upload-source)
+    - _Requirements: 1.1, 1.4, 1.5, 1.6_
+  - [ ] 2.5 Return presigned URL response
+    - Return 200 with url, fields, key, maxSizeBytes, acceptedTypes, expiresIn
+    - Emit presign_success metric
+    - Log structured JSON with requestId, userId, contentType, fileSizeBytes
+    - _Requirements: 1.1, 9.7_
+  - [ ]\* 2.6 Write unit tests for presign handler
+    - Test valid JPEG/PNG/HEIC requests return 200
+    - Test oversized file returns 400 with correct error
+    - Test unsupported type returns 400 with allowedTypes
+    - Test JWT extraction and key scoping
+    - Test metric emission
+    - _Requirements: All Requirement 1_
+
+- [ ] 3. Configure S3 bucket and policies
+  - [ ] 3.1 Create S3 bucket with Terraform
+    - Set bucket name pattern: collectiq-uploads-{environment}
+    - Enable server-side encryption (SSE-S3 or SSE-KMS)
+    - Block all public access
+    - Configure CORS for web domain
+    - _Requirements: 2.4, 11.1_
+  - [ ] 3.2 Implement bucket policy for security
+    - Deny uploads without server-side encryption
+    - Deny uploads without x-amz-meta-user-id metadata
+    - _Requirements: 2.5, 11.3, 11.4_
+  - [ ] 3.3 Configure S3 lifecycle rules
+    - Delete objects in uploads/ prefix older than 24 hours
+    - _Requirements: 11.5_
+  - [ ] 3.4 Set up S3 event notifications
+    - Configure EventBridge notification for s3:ObjectCreated:\* events
+    - Filter by prefix: uploads/
+    - _Requirements: 3.1_
+
+- [ ] 4. Implement ingestion handler Lambda function
+  - [ ] 4.1 Create ingestion handler with S3 event processing
+    - Parse S3Event from EventBridge
+    - Extract bucket name, object key, and size from event
+    - _Requirements: 3.1_
+  - [ ] 4.2 Implement file size verification
+    - Check S3 object size against MAX_UPLOAD_BYTES
+    - If oversized: delete object, emit ingestion_rejected_too_large metric
+    - Store rejection record in DynamoDB with reason
+    - _Requirements: 4.1, 4.2, 4.3, 4.4_
+  - [ ] 4.3 Implement magic number validation
+    - Download first 4KB of file from S3
+    - Use file-type library to detect MIME type from magic number
+    - Compare detected type with declared Content-Type (from metadata)
+    - If mismatch or unsupported: delete object, emit ingestion_rejected_mime_mismatch metric
+    - Store rejection record in DynamoDB
+    - _Requirements: 3.2, 3.3, 3.4, 3.5_
+  - [ ] 4.4 Implement metadata extraction
+    - Download full file from S3 (if not already downloaded)
+    - Use sharp library to extract width, height, format, exifOrientation, hasAlpha, density
+    - Handle extraction errors gracefully (log but don't delete file)
+    - _Requirements: 5.1, 5.4_
+  - [ ] 4.5 Store upload record in DynamoDB
+    - Create record with PK=USER#{userId}, SK=UPLOAD#{s3Key}
+    - Include originalBytes, originalMime, width, height, exifOrientation, uploadedAt, status=pending_processing
+    - Emit upload_success metric
+    - _Requirements: 5.2, 5.3, 5.5_
+  - [ ] 4.6 Trigger Step Functions workflow
+    - Start execution with INGESTION_STATE_MACHINE_ARN
+    - Pass s3Key and s3Bucket in input
+    - Update DynamoDB record status to "processing"
+    - Handle start failures (log error, emit ingestion_error metric)
+    - _Requirements: 10.1, 10.2, 10.3, 10.4_
+  - [ ]\* 4.7 Write unit tests for ingestion handler
+    - Test oversized file deletion and metric emission
+    - Test MIME mismatch detection and deletion
+    - Test metadata extraction
+    - Test DynamoDB record creation
+    - Test Step Functions trigger
+    - _Requirements: All Requirements 3, 4, 5, 10_
+
+- [ ] 5. Implement HEIC transcode handler Lambda function
+  - [ ] 5.1 Create HEIC transcode handler
+    - Parse EventBridge event for HEIC upload records
+    - Extract s3Key, s3Bucket, userId from event
+    - _Requirements: 6.2_
+  - [ ] 5.2 Download and convert HEIC to JPEG
+    - Download HEIC file from S3
+    - Use sharp library to convert to JPEG at 90% quality
+    - _Requirements: 6.1, 6.2_
+  - [ ] 5.3 Upload JPEG derivative
+    - Generate derivative key: {original-key}.jpg
+    - Upload JPEG to S3 with metadata linking to original
+    - Include original-key, original-mime, original-bytes in metadata
+    - _Requirements: 6.3, 6.4_
+  - [ ] 5.4 Update DynamoDB with derivative info
+    - Update upload record with derivativeKey, derivativeMime, derivativeBytes
+    - Emit heic_transcode_success metric
+    - _Requirements: 6.5, 6.6_
+  - [ ] 5.5 Handle transcode errors
+    - Log error with requestId and s3Key
+    - Emit heic_transcode_error metric
+    - Retain original HEIC file
+    - _Requirements: 6.7_
+  - [ ]\* 5.6 Write unit tests for HEIC transcode
+    - Test HEIC to JPEG conversion
+    - Test derivative upload and metadata
+    - Test DynamoDB update
+    - Test error handling
+    - _Requirements: All Requirement 6_
+
+- [ ] 6. Implement config endpoint Lambda function
+  - [ ] 6.1 Create config handler
+    - Read environment variables (MAX_UPLOAD_MB, ALLOWED_UPLOAD_MIME, PRESIGN_TTL_SECONDS)
+    - Calculate maxSizeBytes from maxSizeMB
+    - Parse ALLOWED_UPLOAD_MIME into array
+    - _Requirements: 8.1, 8.2, 8.3_
+  - [ ] 6.2 Return configuration response
+    - Return upload config (maxSizeBytes, maxSizeMB, allowedMimeTypes, allowedExtensions, presignTTL)
+    - Return features config (heicSupport, clientCompression)
+    - Return version
+    - _Requirements: 8.5_
+  - [ ]\* 6.3 Write unit tests for config endpoint
+    - Test default values
+    - Test environment variable overrides
+    - Test response format
+    - _Requirements: All Requirement 8_
+
+- [ ] 7. Implement shared utilities
+  - [ ] 7.1 Create RFC 7807 error response helper
+    - Implement problemJson() function
+    - Support all error types (file-too-large, unsupported-media-type, etc.)
+    - Include requestId from API Gateway context
+    - Set Content-Type: application/problem+json
+    - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5_
+  - [ ] 7.2 Create CloudWatch metrics helper
+    - Implement emitMetric() function
+    - Support all metric names (presign*denied*_, ingestion*rejected*_, upload_success, etc.)
+    - Include dimensions (Endpoint, UserId, ErrorType)
+    - Use CLOUDWATCH_NAMESPACE from env var
+    - _Requirements: 9.1, 9.2, 9.3, 9.4, 9.5_
+  - [ ] 7.3 Create structured logging helper
+    - Configure Lambda Powertools Logger
+    - Include requestId, userId, and context in all logs
+    - Support log levels (DEBUG, INFO, WARN, ERROR)
+    - _Requirements: 9.6_
+  - [ ] 7.4 Create X-Ray tracing setup
+    - Capture AWS SDK clients (S3, DynamoDB, Step Functions)
+    - Add annotations (userId, contentType, fileSizeBytes, validationResult)
+    - _Requirements: 9.7_
+
+- [ ] 8. Configure API Gateway
+  - [ ] 8.1 Create HTTP API with Terraform
+    - Set up JWT authorizer with Cognito User Pool
+    - Configure CORS for web domain
+    - _Requirements: 13.1, 13.2, 13.3_
+  - [ ] 8.2 Create presign endpoint route
+    - POST /api/v1/upload/presign → presign-handler Lambda
+    - Require JWT authorization
+    - Configure throttling (10 req/s per user)
+    - _Requirements: 1.1, 12.1_
+  - [ ] 8.3 Create config endpoint route
+    - GET /api/v1/config → config-handler Lambda
+    - Require JWT authorization
+    - _Requirements: 8.5, 13.4_
+  - [ ] 8.4 Implement rate limiting
+    - Configure API Gateway usage plan
+    - Set throttle limit: 10 requests per 60 seconds per user
+    - Return 429 with Retry-After header when exceeded
+    - _Requirements: 12.1, 12.2, 12.3, 12.4_
+
+- [ ] 9. Configure EventBridge rules
+  - [ ] 9.1 Create custom event bus
+    - Create collectiq-events-{environment} bus
+    - _Requirements: 3.1_
+  - [ ] 9.2 Create S3 upload rule
+    - Match s3:ObjectCreated:\* events from upload bucket
+    - Target: ingestion-handler Lambda
+    - _Requirements: 3.1_
+  - [ ] 9.3 Create HEIC transcode rule
+    - Match DynamoDB stream events where originalMime = image/heic
+    - Target: heic-transcode-handler Lambda
+    - _Requirements: 6.2_
+
+- [ ] 10. Set up DynamoDB table
+  - [ ] 10.1 Create DynamoDB table with Terraform
+    - Table name: collectiq-{environment}
+    - PK: string (USER#{userId})
+    - SK: string (UPLOAD#{s3Key} or REJECTED#{s3Key})
+    - Billing mode: PAY_PER_REQUEST
+    - Enable point-in-time recovery
+    - Enable encryption with AWS managed key
+    - _Requirements: 5.2, 3.5_
+  - [ ] 10.2 Create GSI for user uploads query (optional)
+    - GSI1: PK=userId, SK=uploadedAt
+    - _Requirements: 5.2_
+
+- [ ] 11. Implement authentication and authorization
+  - [ ] 11.1 Configure JWT validation in API Gateway
+    - Set JWT issuer to Cognito User Pool
+    - Set JWT audience to Cognito Client ID
+    - Extract sub claim for userId
+    - _Requirements: 13.1, 13.2, 13.3_
+  - [ ] 11.2 Implement 401 error responses
+    - Return RFC 7807 error for missing JWT
+    - Return RFC 7807 error for expired JWT with expiredAt timestamp
+    - _Requirements: 13.1, 13.2, 13.5_
+
+- [ ] 12. Set up observability
+  - [ ] 12.1 Create CloudWatch dashboard
+    - Add widgets for presign requests (success/failure)
+    - Add widgets for upload success rate
+    - Add widgets for ingestion processing time
+    - Add widgets for error breakdown by type
+    - _Requirements: 9.1, 9.2, 9.3, 9.4, 9.5_
+  - [ ] 12.2 Configure CloudWatch alarms
+    - High error rate alarm (> 5% of requests)
+    - High latency alarm (p95 > 5s for ingestion)
+    - Failed Step Functions alarm (> 1 in 5 minutes)
+    - _Requirements: 9.1, 9.2, 9.3, 9.4_
+  - [ ] 12.3 Set up SNS topic for alerts
+    - Create SNS topic for alarm notifications
+    - Subscribe on-call email/phone
+    - _Requirements: 9.1, 9.2, 9.3, 9.4_
+
+- [ ] 13. Write integration tests
+  - [ ] 13.1 Test S3 policy enforcement
+    - Test S3 rejects oversized upload (403)
+    - Test S3 rejects wrong Content-Type (403)
+    - Test S3 rejects invalid key prefix (403)
+    - Test S3 accepts compliant upload (204)
+    - _Requirements: 2.1, 2.2, 2.3_
+  - [ ] 13.2 Test end-to-end upload flow
+    - Request presign → upload to S3 → verify ingestion → check DynamoDB record
+    - Test HEIC upload → verify transcode → check derivative
+    - Test rejection flow → verify file deleted → check rejection record
+    - _Requirements: All requirements_
+
+- [ ] 14. Deploy infrastructure with Terraform
+  - [ ] 14.1 Create Terraform modules
+    - Module: lambda_upload_handler (presign, ingestion, heic-transcode, config)
+    - Module: s3_upload_bucket
+    - Module: api_gateway_upload
+    - Module: eventbridge_upload_rules
+    - _Requirements: All requirements_
+  - [ ] 14.2 Configure environment-specific variables
+    - Set MAX_UPLOAD_MB, ALLOWED_UPLOAD_MIME, PRESIGN_TTL_SECONDS
+    - Set bucket names, table names, state machine ARNs
+    - _Requirements: 8.1, 8.2, 8.3_
+  - [ ] 14.3 Deploy to hackathon environment
+    - Run terraform plan
+    - Run terraform apply
+    - Verify all resources created
+    - _Requirements: All requirements_
+
+- [ ] 15. Perform acceptance testing
+  - [ ] 15.1 Run Layer 1 tests (Presign validation)
+    - AC-1.1: Accept valid JPEG request
+    - AC-1.2: Reject oversized file at presign
+    - AC-1.3: Reject unsupported media type at presign
+    - AC-1.4: Reject unauthenticated request
+    - _Requirements: 1.1, 1.2, 1.3, 13.1_
+  - [ ] 15.2 Run Layer 2 tests (S3 policy enforcement)
+    - AC-2.1: S3 rejects oversized file
+    - AC-2.2: S3 rejects wrong Content-Type
+    - AC-2.3: S3 rejects invalid key prefix
+    - _Requirements: 2.1, 2.2, 2.3_
+  - [ ] 15.3 Run Layer 3 tests (Post-upload validation)
+    - AC-3.1: Accept valid JPEG upload
+    - AC-3.2: Reject mislabeled file (magic number check)
+    - AC-3.3: Reject oversized file (post-upload)
+    - _Requirements: 3.2, 3.3, 3.4, 4.1, 4.2_
+  - [ ] 15.4 Run HEIC handling tests
+    - AC-4.1: Accept HEIC upload and transcode
+    - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5_
+  - [ ] 15.5 Run configuration tests
+    - AC-5.1: Config endpoint returns current limits
+    - AC-5.2: Dynamic configuration change
+    - _Requirements: 8.5, 8.4_
+  - [ ] 15.6 Run observability tests
+    - AC-6.1: Metrics emitted for all rejection paths
+    - AC-6.2: Structured logs include request context
+    - _Requirements: 9.1, 9.2, 9.3, 9.4, 9.5, 9.6_
+  - [ ] 15.7 Run performance tests
+    - AC-7.1: Presign response time < 500ms (p95)
+    - AC-7.2: Ingestion processing time < 5s
+    - _Requirements: All requirements_
+  - [ ] 15.8 Run security tests
+    - AC-8.1: Cross-user upload prevented
+    - AC-8.2: Expired JWT rejected
+    - _Requirements: 11.2, 13.1, 13.2_
+
+- [ ] 16. Update documentation
+  - [ ] 16.1 Update API documentation
+    - Document presign endpoint in OpenAPI spec
+    - Document config endpoint in OpenAPI spec
+    - Include all error responses
+    - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5_
+  - [ ] 16.2 Create deployment guide
+    - Document Terraform deployment steps
+    - Document environment variable configuration
+    - Document monitoring setup
+    - _Requirements: 8.1, 8.2, 8.3, 9.1, 9.2, 9.3_
+  - [ ] 16.3 Create troubleshooting guide
+    - Document common issues and solutions
+    - Document how to check logs and metrics
+    - Document how to test each layer
+    - _Requirements: 9.6, 9.7_
