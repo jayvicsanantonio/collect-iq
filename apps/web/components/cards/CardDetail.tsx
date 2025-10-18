@@ -14,6 +14,11 @@ import {
 } from '@/components/ui/card';
 import { RefreshCw, Trash2, Share2, ZoomIn, ZoomOut, X } from 'lucide-react';
 import { getCardImageAlt } from '@/lib/alt-text';
+import {
+  BLUR_DATA_URL,
+  getCardImageSizes,
+  getImageUrlFromS3Key,
+} from '@/lib/image-optimization';
 
 export interface CardDetailProps {
   card: Card;
@@ -77,12 +82,8 @@ export function CardDetail({
     setIsZoomed(false);
   };
 
-  // Get image URL from S3 key
-  const getImageUrl = (s3Key: string) => {
-    // In production, this would be a CloudFront URL or S3 presigned URL
-    // For now, we'll use a placeholder pattern
-    return `/api/images/${s3Key}`;
-  };
+  // Get image URL from S3 key (using utility function)
+  const getImageUrl = getImageUrlFromS3Key;
 
   return (
     <div className={cn('space-y-6', className)}>
@@ -102,6 +103,7 @@ export function CardDetail({
                 src={getImageUrl(card.frontS3Key)}
                 alt={getCardImageAlt(card)}
                 fill
+                sizes={getCardImageSizes('detail')}
                 className={cn(
                   'object-contain transition-transform duration-300',
                   isZoomed && 'cursor-zoom-out'
@@ -109,6 +111,9 @@ export function CardDetail({
                 style={{
                   transform: isZoomed ? `scale(${zoomLevel})` : 'scale(1)',
                 }}
+                placeholder="blur"
+                blurDataURL={BLUR_DATA_URL}
+                quality={90}
                 priority
               />
             </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import Image from 'next/image';
 import { X, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -77,10 +78,13 @@ export function UploadProgress({
       {/* Thumbnail */}
       <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg bg-[var(--muted)]">
         {thumbnailUrl ? (
-          <img
+          <Image
             src={thumbnailUrl}
             alt={file.name}
-            className="h-full w-full object-cover"
+            fill
+            sizes="64px"
+            className="object-cover"
+            unoptimized
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center">

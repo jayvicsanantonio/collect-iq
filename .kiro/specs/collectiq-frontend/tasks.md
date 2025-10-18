@@ -573,7 +573,7 @@
   - Fix performance issues blocking thresholds
   - _Requirements: 10.1, 10.2, 10.3, 15.10_
 
-- [ ] 15. Security hardening
+- [x] 15. Security hardening
 - [x] 15.1 Implement secure authentication
   - Store JWT in HTTP-only, Secure, SameSite=Lax cookies
   - Never store tokens in localStorage

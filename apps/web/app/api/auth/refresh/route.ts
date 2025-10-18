@@ -2,6 +2,7 @@ import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { env } from '@/lib/env';
 import { parseJWT } from '@/lib/auth';
+import { getCacheHeaders, CACHE_PRESETS } from '@/lib/cache-headers';
 
 // Force dynamic rendering (uses cookies)
 export const dynamic = 'force-dynamic';
@@ -16,7 +17,13 @@ export async function POST() {
     const refreshToken = cookieStore.get('refresh_token')?.value;
 
     if (!refreshToken) {
-      return NextResponse.json({ error: 'No refresh token' }, { status: 401 });
+      return NextResponse.json(
+        { error: 'No refresh token' },
+        {
+          status: 401,
+          headers: getCacheHeaders(CACHE_PRESETS.NO_CACHE),
+        }
+      );
     }
 
     // Exchange refresh token for new access token
@@ -41,7 +48,10 @@ export async function POST() {
       console.error('Token refresh failed:', error);
       return NextResponse.json(
         { error: 'Token refresh failed' },
-        { status: 401 }
+        {
+          status: 401,
+          headers: getCacheHeaders(CACHE_PRESETS.NO_CACHE),
+        }
       );
     }
 
@@ -79,12 +89,18 @@ export async function POST() {
       expiresAt: (accessPayload.exp as number) * 1000,
     };
 
-    return NextResponse.json(session);
+    // Token refresh should not be cached (security-sensitive)
+    return NextResponse.json(session, {
+      headers: getCacheHeaders(CACHE_PRESETS.NO_CACHE),
+    });
   } catch (error) {
     console.error('Token refresh error:', error);
     return NextResponse.json(
       { error: 'Failed to refresh token' },
-      { status: 500 }
+      {
+        status: 500,
+        headers: getCacheHeaders(CACHE_PRESETS.NO_CACHE),
+      }
     );
   }
 }

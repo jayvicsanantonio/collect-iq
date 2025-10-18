@@ -1,11 +1,13 @@
 'use client';
 
 import * as React from 'react';
+import Image from 'next/image';
 import { Check } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import type { Candidate } from '@collectiq/shared';
+import { BLUR_DATA_URL, getCardImageSizes } from '@/lib/image-optimization';
 
 // ============================================================================
 // Types
@@ -90,10 +92,15 @@ function CandidateCard({
           {/* Card Thumbnail */}
           {candidate.imageUrl ? (
             <div className="relative h-20 w-16 flex-shrink-0 overflow-hidden rounded-lg bg-[var(--muted)]">
-              <img
+              <Image
                 src={candidate.imageUrl}
                 alt={`${candidate.name} card`}
-                className="h-full w-full object-cover"
+                fill
+                sizes={getCardImageSizes('candidate')}
+                className="object-cover"
+                placeholder="blur"
+                blurDataURL={BLUR_DATA_URL}
+                quality={75}
               />
             </div>
           ) : (

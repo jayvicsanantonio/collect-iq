@@ -1,8 +1,11 @@
 'use client';
 
 import * as React from 'react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { RefreshCw, Trash2 } from 'lucide-react';
+// @ts-expect-error - react-window types may not be fully compatible
+import { FixedSizeGrid } from 'react-window';
 import { type Card as CardType } from '@collectiq/shared';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
@@ -15,6 +18,11 @@ import {
 } from '@/components/ui/tooltip';
 import { useRovingTabindex } from '@/hooks/use-roving-tabindex';
 import { getCardThumbnailAlt } from '@/lib/alt-text';
+import {
+  BLUR_DATA_URL,
+  getCardImageSizes,
+  getCardImageUrl,
+} from '@/lib/image-optimization';
 
 // ============================================================================
 // Types
@@ -65,7 +73,7 @@ function CardThumbnail({
   // Get image URL (placeholder for now - will need S3 presigned URL logic)
   const imageUrl = imageError
     ? '/placeholder-card.png'
-    : `/api/cards/${card.cardId}/image`;
+    : getCardImageUrl(card.cardId);
 
   // Handle keyboard activation
   const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
@@ -91,11 +99,16 @@ function CardThumbnail({
       <Card className="overflow-hidden transition-all duration-200 hover:shadow-lg hover:scale-[1.02]">
         {/* Card Image */}
         <div className="relative aspect-[2.5/3.5] bg-[var(--muted)]">
-          <img
+          <Image
             src={imageUrl}
             alt={getCardThumbnailAlt(card)}
-            className="h-full w-full object-cover"
+            fill
+            sizes={getCardImageSizes('thumbnail')}
+            className="object-cover"
             onError={() => setImageError(true)}
+            placeholder="blur"
+            blurDataURL={BLUR_DATA_URL}
+            quality={75}
           />
 
           {/* Authenticity Badge Overlay */}
@@ -211,8 +224,72 @@ function CardSkeleton() {
 }
 
 // ============================================================================
+// Virtualized Grid Cell Component
+// ============================================================================
+
+interface VirtualizedCellProps {
+  columnIndex: number;
+  rowIndex: number;
+  style: React.CSSProperties;
+  data: {
+    cards: CardType[];
+    columns: number;
+    onRefresh?: (cardId: string) => void;
+    onDelete?: (cardId: string) => void;
+    onCardClick: (cardId: string) => void;
+    getTabIndex: (index: number) => number;
+    handleKeyDown: (e: React.KeyboardEvent, index: number) => void;
+    getItemRef: (index: number) => (el: HTMLDivElement | null) => void;
+  };
+}
+
+function VirtualizedCell({
+  columnIndex,
+  rowIndex,
+  style,
+  data,
+}: VirtualizedCellProps) {
+  const {
+    cards,
+    columns,
+    onRefresh,
+    onDelete,
+    onCardClick,
+    getTabIndex,
+    handleKeyDown,
+    getItemRef,
+  } = data;
+
+  const index = rowIndex * columns + columnIndex;
+  const card = cards[index];
+
+  // Don't render if index is out of bounds
+  if (!card) {
+    return <div style={style} />;
+  }
+
+  return (
+    <div style={{ ...style, padding: '8px' }}>
+      <CardThumbnail
+        card={card}
+        onRefresh={onRefresh}
+        onDelete={onDelete}
+        onClick={() => onCardClick(card.cardId)}
+        tabIndex={getTabIndex(index)}
+        onKeyDown={(e) => handleKeyDown(e, index)}
+        itemRef={getItemRef(index)}
+      />
+    </div>
+  );
+}
+
+// ============================================================================
 // Main Component
 // ============================================================================
+
+const VIRTUALIZATION_THRESHOLD = 200;
+const CARD_HEIGHT = 420; // Approximate card height including padding
+const MIN_CARD_WIDTH = 240; // Minimum card width for smaller screens
 
 export function VaultGrid({
   cards,
@@ -222,8 +299,12 @@ export function VaultGrid({
 }: VaultGridProps) {
   const router = useRouter();
   const containerRef = React.useRef<HTMLDivElement>(null);
+  const [containerSize, setContainerSize] = React.useState({
+    width: 0,
+    height: 0,
+  });
 
-  // Determine grid columns based on screen size (approximate)
+  // Determine grid columns based on screen size
   const [columns, setColumns] = React.useState(1);
 
   React.useEffect(() => {
@@ -238,6 +319,22 @@ export function VaultGrid({
     updateColumns();
     window.addEventListener('resize', updateColumns);
     return () => window.removeEventListener('resize', updateColumns);
+  }, []);
+
+  // Measure container size for virtualization
+  React.useEffect(() => {
+    if (!containerRef.current) return;
+
+    const updateSize = () => {
+      if (containerRef.current) {
+        const { width, height } = containerRef.current.getBoundingClientRect();
+        setContainerSize({ width, height: Math.max(height, 600) });
+      }
+    };
+
+    updateSize();
+    window.addEventListener('resize', updateSize);
+    return () => window.removeEventListener('resize', updateSize);
   }, []);
 
   // Roving tabindex for keyboard navigation
@@ -272,8 +369,49 @@ export function VaultGrid({
     );
   }
 
-  // TODO: Implement virtualization for collections > 200 items
-  // For now, render all cards directly
+  // Use virtualization for large collections (> 200 items)
+  const shouldVirtualize = cards.length > VIRTUALIZATION_THRESHOLD;
+
+  if (shouldVirtualize && containerSize.width > 0) {
+    // Calculate column width based on container and number of columns
+    const columnWidth = Math.max(
+      MIN_CARD_WIDTH,
+      Math.floor(containerSize.width / columns)
+    );
+    const rowCount = Math.ceil(cards.length / columns);
+
+    // Prepare data for virtualized cells
+    const itemData = {
+      cards,
+      columns,
+      onRefresh,
+      onDelete,
+      onCardClick: handleCardClick,
+      getTabIndex,
+      handleKeyDown,
+      getItemRef,
+    };
+
+    return (
+      <div ref={containerRef} className="w-full h-full min-h-[600px]">
+        <FixedSizeGrid
+          columnCount={columns}
+          columnWidth={columnWidth}
+          height={containerSize.height}
+          rowCount={rowCount}
+          rowHeight={CARD_HEIGHT}
+          width={containerSize.width}
+          itemData={itemData}
+          overscanRowCount={2}
+          className="scrollbar-thin"
+        >
+          {VirtualizedCell}
+        </FixedSizeGrid>
+      </div>
+    );
+  }
+
+  // Standard rendering for smaller collections
   return (
     <div
       ref={containerRef}

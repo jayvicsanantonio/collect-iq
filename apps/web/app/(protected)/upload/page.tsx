@@ -1,16 +1,37 @@
 'use client';
 
 import * as React from 'react';
+import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { Camera, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { UploadDropzone } from '@/components/upload/UploadDropzone';
-import { CameraCapture } from '@/components/upload/CameraCapture';
 import { UploadProgress } from '@/components/upload/UploadProgress';
 import { api, ApiError } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 import type { UploadError } from '@/components/upload/UploadDropzone';
 import type { CameraError } from '@/components/upload/CameraCapture';
+
+// Dynamically import CameraCapture component for code splitting
+const CameraCapture = dynamic(
+  () =>
+    import('@/components/upload/CameraCapture').then((mod) => ({
+      default: mod.CameraCapture,
+    })),
+  {
+    ssr: false, // Camera requires browser APIs
+    loading: () => (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+        <div className="text-center">
+          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]" />
+          <p className="mt-2 text-sm text-muted-foreground">
+            Loading camera...
+          </p>
+        </div>
+      </div>
+    ),
+  }
+);
 
 // ============================================================================
 // Types

@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import dynamic from 'next/dynamic';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   ArrowLeft,
@@ -18,9 +19,21 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { AuthenticityBadge, FeedbackModal } from '@/components/cards';
+import { AuthenticityBadge } from '@/components/cards';
 import { useToast } from '@/hooks/use-toast';
 import type { AuthenticityDetails } from '@collectiq/shared';
+
+// Dynamically import FeedbackModal for code splitting
+const FeedbackModal = dynamic(
+  () =>
+    import('@/components/cards/FeedbackModal').then((mod) => ({
+      default: mod.FeedbackModal,
+    })),
+  {
+    ssr: false,
+    loading: () => null, // Modal doesn't need a loading state
+  }
+);
 
 // ============================================================================
 // Types
@@ -197,7 +210,7 @@ export default function AuthenticityPage() {
   // Loading State
   if (state.status === 'loading') {
     return (
-      <div className="container mx-auto max-w-6xl px-4 py-8">
+      <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
         <div className="mb-8 text-center">
           <h1
             className="mb-2 text-4xl font-bold"
@@ -229,7 +242,7 @@ export default function AuthenticityPage() {
   // Error State
   if (state.status === 'error') {
     return (
-      <div className="container mx-auto max-w-6xl px-4 py-8">
+      <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
         <div className="mb-8">
           <Button variant="ghost" onClick={handleBack} className="mb-4">
             <ArrowLeft className="mr-2 h-4 w-4" />
@@ -273,7 +286,7 @@ export default function AuthenticityPage() {
 
   // Success State
   return (
-    <div className="container mx-auto max-w-6xl px-4 py-8">
+    <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
       {/* Header */}
       <div className="mb-8">
         <Button variant="ghost" onClick={handleBack} className="mb-4">

@@ -144,7 +144,7 @@ export function FullPageErrorExample({ cardId }: { cardId: string }) {
     return <ServerError onRetry={loadCard} />;
   }
 
-  if (loading) {
+  if (_loading) {
     return <div>Loading...</div>;
   }
 

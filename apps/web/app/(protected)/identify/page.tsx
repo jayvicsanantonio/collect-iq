@@ -208,7 +208,7 @@ export default function IdentifyPage() {
   // Loading State
   if (state.status === 'loading') {
     return (
-      <div className="container mx-auto max-w-4xl px-4 py-8">
+      <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
         <div className="mb-8 text-center">
           <h1
             className="mb-2 text-4xl font-bold"
@@ -240,7 +240,7 @@ export default function IdentifyPage() {
   // Error State
   if (state.status === 'error') {
     return (
-      <div className="container mx-auto max-w-4xl px-4 py-8">
+      <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
         <div className="mb-8">
           <Button variant="ghost" onClick={handleBack} className="mb-4">
             <ArrowLeft className="mr-2 h-4 w-4" />
@@ -289,7 +289,7 @@ export default function IdentifyPage() {
   // No Results State
   if (state.status === 'no-results') {
     return (
-      <div className="container mx-auto max-w-4xl px-4 py-8">
+      <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
         <div className="mb-8">
           <Button variant="ghost" onClick={handleBack} className="mb-4">
             <ArrowLeft className="mr-2 h-4 w-4" />
@@ -332,7 +332,7 @@ export default function IdentifyPage() {
 
   // Success State (with candidates)
   return (
-    <div className="container mx-auto max-w-4xl px-4 py-8">
+    <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
       <div className="mb-8">
         <Button variant="ghost" onClick={handleBack} className="mb-4">
           <ArrowLeft className="mr-2 h-4 w-4" />

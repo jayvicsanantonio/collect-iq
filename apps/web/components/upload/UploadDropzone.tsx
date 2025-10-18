@@ -3,6 +3,11 @@
 import * as React from 'react';
 import { Upload, Image as ImageIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import {
+  compressImage,
+  isMobileDevice,
+  getRecommendedCompressionOptions,
+} from '@/lib/image-compression';
 
 // ============================================================================
 // Types
@@ -21,6 +26,7 @@ export interface UploadDropzoneProps {
   onError: (error: UploadError) => void;
   disabled?: boolean;
   className?: string;
+  autoCompress?: boolean; // Auto-compress on mobile (default: true)
 }
 
 // ============================================================================
@@ -74,6 +80,7 @@ export function UploadDropzone({
   onError,
   disabled = false,
   className,
+  autoCompress = true,
 }: UploadDropzoneProps) {
   const [isDragging, setIsDragging] = React.useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -86,7 +93,7 @@ export function UploadDropzone({
   // ============================================================================
 
   const handleFiles = React.useCallback(
-    (files: FileList | null) => {
+    async (files: FileList | null) => {
       if (!files || files.length === 0) return;
 
       const fileArray = Array.from(files);
@@ -102,12 +109,28 @@ export function UploadDropzone({
         validFiles.push(file);
       }
 
-      // All files valid
+      // Compress images on mobile if enabled
       if (validFiles.length > 0) {
-        onSelected(validFiles);
+        const shouldCompress = autoCompress !== false && isMobileDevice();
+
+        if (shouldCompress) {
+          try {
+            const compressionOptions = getRecommendedCompressionOptions();
+            const compressedFiles = await Promise.all(
+              validFiles.map((file) => compressImage(file, compressionOptions))
+            );
+            onSelected(compressedFiles);
+          } catch (error) {
+            console.error('Compression error:', error);
+            // Fall back to original files if compression fails
+            onSelected(validFiles);
+          }
+        } else {
+          onSelected(validFiles);
+        }
       }
     },
-    [accept, maxSizeBytes, onSelected, onError]
+    [accept, maxSizeBytes, onSelected, onError, autoCompress]
   );
 
   // ============================================================================
