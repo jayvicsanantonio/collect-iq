@@ -17,10 +17,10 @@ module "api_gateway_http" {
   cognito_client_id     = module.cognito_user_pool.client_id
 
   # CORS Configuration
-  cors_allow_origins     = ["*"] # Will be restricted to Amplify domain after deployment
+  cors_allow_origins     = ["https://main.ddtufp5of4bf.amplifyapp.com"]
   cors_allow_methods     = ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
   cors_allow_headers     = ["Content-Type", "Authorization", "X-Amz-Date", "X-Api-Key", "X-Amz-Security-Token"]
-  cors_allow_credentials = false #just for testing, set to true once the cors_allow_origins is restricted to a specific domain
+  cors_allow_credentials = true
   cors_max_age           = 300
 
   # Throttling
