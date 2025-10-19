@@ -29,19 +29,11 @@ import {
 // Constants
 const PRESIGN_EXPIRATION_SECONDS = 60;
 
-// Lazy-initialize S3 client to avoid X-Ray context issues
-let s3Client: S3Client | null = null;
-
-function getS3Client(): S3Client {
-  if (!s3Client) {
-    s3Client = tracing.captureAWSv3Client(
-      new S3Client({
-        region: process.env.REGION || process.env.AWS_REGION || 'us-east-1',
-      })
-    );
-  }
-  return s3Client;
-}
+// Initialize S3 client without X-Ray instrumentation to avoid context issues
+// X-Ray will still trace the Lambda function itself
+const s3Client = new S3Client({
+  region: process.env.REGION || process.env.AWS_REGION || 'us-east-1',
+});
 
 /**
  * Get environment configuration
@@ -157,7 +149,7 @@ export async function handler(
     const uploadUrl = await tracing.trace(
       's3_presign_put_object',
       () =>
-        getSignedUrl(getS3Client(), command, {
+        getSignedUrl(s3Client, command, {
           expiresIn: PRESIGN_EXPIRATION_SECONDS,
           hoistableHeaders,
         }),
