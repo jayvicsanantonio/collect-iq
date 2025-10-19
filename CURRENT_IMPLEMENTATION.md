@@ -206,7 +206,7 @@ The frontend does NOT call `POST /cards/{id}/revalue` after card creation.
 **Files that reference this (for documentation only):**
 
 - `docs/AUTO_TRIGGER_REVALUE.md` - Option 1 (not implemented)
-- `apps/web/lib/config.ts` - No feature flags needed
+- Frontend has no configuration files for auto-trigger (backend-driven)
 
 ---
 

@@ -84,24 +84,32 @@ Upload → Create Card → Auto-Analyze → View Processing → Results
 
 ## Configuration
 
-### Enable Auto-Trigger
+### Auto-Trigger Configuration
 
-**Option 1: Code (Quick)**
-
-```typescript
-// apps/web/lib/config.ts
-export const FEATURES = {
-  AUTO_TRIGGER_REVALUE: true,
-  REVALUE_FORCE_REFRESH: false,
-};
-```
-
-**Option 2: Environment Variable (Production)**
+**Backend (Lambda Environment Variables):**
 
 ```bash
-# apps/web/.env.local
-NEXT_PUBLIC_AUTO_TRIGGER_REVALUE=true
-NEXT_PUBLIC_REVALUE_FORCE_REFRESH=false
+# Lambda: cards_create
+AUTO_TRIGGER_REVALUE=true
+EVENT_BUS_NAME=collectiq-hackathon-events
+```
+
+**Frontend:**
+
+No frontend configuration needed - auto-trigger is handled entirely by the backend via EventBridge.
+
+**Enable/Disable:**
+
+```bash
+# Disable auto-trigger
+aws events disable-rule \
+  --name card_created_auto_revalue \
+  --event-bus-name collectiq-hackathon-events
+
+# Re-enable
+aws events enable-rule \
+  --name card_created_auto_revalue \
+  --event-bus-name collectiq-hackathon-events
 ```
 
 ---

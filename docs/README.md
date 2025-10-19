@@ -188,14 +188,19 @@ STEP_FUNCTIONS_ARN=arn:aws:states:us-east-1:123456789012:stateMachine:...
 
 ### Feature Flags
 
-Control features via `apps/web/lib/config.ts`:
+**Backend Configuration:**
 
-```typescript
-export const FEATURES = {
-  AUTO_TRIGGER_REVALUE: true, // Auto-analyze after upload
-  REVALUE_FORCE_REFRESH: false, // Use cached pricing
-};
+Auto-trigger is controlled via backend Lambda environment variables:
+
+```bash
+# Lambda: cards_create
+AUTO_TRIGGER_REVALUE=true  # Enable auto-trigger via EventBridge
+EVENT_BUS_NAME=collectiq-hackathon-events
 ```
+
+**Frontend:**
+
+No frontend feature flags needed - auto-trigger is handled entirely by the backend via EventBridge.
 
 ---
 
