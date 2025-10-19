@@ -265,7 +265,7 @@ module "lambda_upload_presign" {
     MAX_UPLOAD_MB            = "12"
     ALLOWED_UPLOAD_MIME      = "image/jpeg,image/png,image/heic"
     KMS_KEY_ID               = "" # Using SSE-S3 for hackathon
-    AWS_XRAY_CONTEXT_MISSING = "LOG_ERROR" # Don't throw on missing X-Ray context
+    XRAY_ENABLED             = "false" # Disable X-Ray SDK to avoid context issues
   }
 
   custom_iam_policy_json = data.aws_iam_policy_document.upload_presign_s3.json
