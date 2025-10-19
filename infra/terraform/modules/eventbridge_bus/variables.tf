@@ -9,8 +9,9 @@ variable "event_rules" {
     description          = string
     event_pattern        = string
     target_arn           = string
-    target_type          = string # "lambda" or "sqs"
+    target_type          = string # "lambda", "sqs", or "stepfunctions"
     target_function_name = optional(string)
+    target_role_arn      = optional(string) # IAM role ARN for Step Functions targets
     input_transformer = optional(object({
       input_paths    = map(string)
       input_template = string
