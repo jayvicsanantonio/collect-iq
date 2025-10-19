@@ -26,15 +26,22 @@ import {
   getEnvNumber,
 } from '../utils/validation.js';
 
-// Initialize S3 client with X-Ray instrumentation
-const s3Client = tracing.captureAWSv3Client(
-  new S3Client({
-    region: process.env.REGION || process.env.AWS_REGION || 'us-east-1',
-  })
-);
-
 // Constants
 const PRESIGN_EXPIRATION_SECONDS = 60;
+
+// Lazy-initialize S3 client to avoid X-Ray context issues
+let s3Client: S3Client | null = null;
+
+function getS3Client(): S3Client {
+  if (!s3Client) {
+    s3Client = tracing.captureAWSv3Client(
+      new S3Client({
+        region: process.env.REGION || process.env.AWS_REGION || 'us-east-1',
+      })
+    );
+  }
+  return s3Client;
+}
 
 /**
  * Get environment configuration
@@ -150,7 +157,7 @@ export async function handler(
     const uploadUrl = await tracing.trace(
       's3_presign_put_object',
       () =>
-        getSignedUrl(s3Client, command, {
+        getSignedUrl(getS3Client(), command, {
           expiresIn: PRESIGN_EXPIRATION_SECONDS,
           hoistableHeaders,
         }),
