@@ -7,7 +7,10 @@ import type { APIGatewayProxyEventV2, APIGatewayProxyResultV2 } from 'aws-lambda
 import { getUserId, type APIGatewayProxyEventV2WithJWT } from '../auth/jwt-claims.js';
 import { listCards } from '../store/card-service.js';
 import { formatErrorResponse, BadRequestError, UnauthorizedError } from '../utils/errors.js';
-import { logger, metrics, tracing, getJsonHeaders } from '../utils/index.js';
+import { logger } from '../utils/logger.js';
+import { metrics } from '../utils/metrics.js';
+import { tracing } from '../utils/tracing.js';
+import { getJsonHeaders } from '../utils/response-headers.js';
 
 /**
  * Lambda handler for listing user's cards

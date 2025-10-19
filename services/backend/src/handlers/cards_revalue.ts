@@ -10,7 +10,11 @@ import { RevalueRequestSchema } from '@collectiq/shared';
 import { getUserId, type APIGatewayProxyEventV2WithJWT } from '../auth/jwt-claims.js';
 import { getCard } from '../store/card-service.js';
 import { formatErrorResponse, BadRequestError, UnauthorizedError } from '../utils/errors.js';
-import { logger, metrics, tracing, withIdempotency, getJsonHeaders } from '../utils/index.js';
+import { logger } from '../utils/logger.js';
+import { metrics } from '../utils/metrics.js';
+import { tracing } from '../utils/tracing.js';
+import { withIdempotency } from '../utils/idempotency-middleware.js';
+import { getJsonHeaders } from '../utils/response-headers.js';
 
 /**
  * Step Functions client singleton
