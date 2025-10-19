@@ -103,7 +103,7 @@ async function fetchCardItemById(cardId: string, requestId?: string): Promise<Ca
           ':cardId': cardId,
         },
         Limit: 1,
-      }),
+      })
     );
 
     const item = result.Items?.[0] as CardItem | undefined;
@@ -127,6 +127,12 @@ async function fetchCardItemById(cardId: string, requestId?: string): Promise<Ca
     }
   }
 
+  logger.info('Using scan fallback to fetch card', {
+    operation: 'fetchCardItemById',
+    cardId,
+    requestId,
+  });
+
   const fallback = await client.send(
     new ScanCommand({
       TableName: tableName,
@@ -139,10 +145,18 @@ async function fetchCardItemById(cardId: string, requestId?: string): Promise<Ca
         ':cardId': cardId,
       },
       Limit: 1,
-    }),
+    })
   );
 
   const fallbackItem = fallback.Items?.[0] as CardItem | undefined;
+
+  logger.info('Scan fallback completed', {
+    operation: 'fetchCardItemById',
+    cardId,
+    requestId,
+    found: !!fallbackItem,
+  });
+
   return fallbackItem ?? null;
 }
 
@@ -240,7 +254,7 @@ function cardToItem(card: Partial<Card>, userId: string, cardId: string): CardIt
 export async function createCard(
   userId: string,
   data: Partial<Card>,
-  requestId?: string,
+  requestId?: string
 ): Promise<Card> {
   const cardId = uuidv4();
   const item = cardToItem(data, userId, cardId);
@@ -262,7 +276,7 @@ export async function createCard(
         Item: item,
         // Conditional write: fail if item already exists
         ConditionExpression: 'attribute_not_exists(PK) AND attribute_not_exists(SK)',
-      }),
+      })
     );
 
     return itemToCard(item);
@@ -297,7 +311,7 @@ export async function createCard(
 export async function listCards(
   userId: string,
   options: PaginationOptions = {},
-  requestId?: string,
+  requestId?: string
 ): Promise<ListCardsResult> {
   const limit = options.limit || 20;
 
@@ -369,7 +383,7 @@ export async function listCards(
         operation: 'listCards',
         userId,
         requestId,
-      },
+      }
     );
     throw new InternalServerError('Failed to list cards', requestId || '');
   }
@@ -413,13 +427,18 @@ export async function getCard(userId: string, cardId: string, requestId?: string
     if (error instanceof NotFoundError || error instanceof ForbiddenError) {
       throw error;
     }
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorName =
+      error && typeof error === 'object' && 'name' in error ? error.name : 'Unknown';
     logger.error('Failed to get card', error instanceof Error ? error : new Error(String(error)), {
       operation: 'getCard',
       userId,
       cardId,
       requestId,
+      errorName,
+      errorMessage,
     });
-    throw new InternalServerError('Failed to get card', requestId || '');
+    throw new InternalServerError(`Failed to get card: ${errorMessage}`, requestId || '');
   }
 }
 
@@ -438,7 +457,7 @@ export async function updateCard(
   userId: string,
   cardId: string,
   data: Partial<Card>,
-  requestId?: string,
+  requestId?: string
 ): Promise<Card> {
   logger.info('Updating card', {
     operation: 'updateCard',
@@ -503,7 +522,7 @@ export async function updateCard(
         // Conditional: only update if item exists and not deleted
         ConditionExpression: 'attribute_exists(PK) AND attribute_not_exists(deletedAt)',
         ReturnValues: 'ALL_NEW',
-      }),
+      })
     );
 
     return itemToCard(result.Attributes as CardItem);
@@ -524,7 +543,7 @@ export async function updateCard(
         userId,
         cardId,
         requestId,
-      },
+      }
     );
     throw new InternalServerError('Failed to update card', requestId || '');
   }
@@ -544,7 +563,7 @@ export async function deleteCard(
   userId: string,
   cardId: string,
   requestId?: string,
-  hardDelete: boolean = false,
+  hardDelete: boolean = false
 ): Promise<void> {
   logger.info('Deleting card', {
     operation: 'deleteCard',
@@ -571,7 +590,7 @@ export async function deleteCard(
             SK: generateCardSK(cardId),
           },
           ConditionExpression: 'attribute_exists(PK)',
-        }),
+        })
       );
     } else {
       // Soft delete: set deletedAt timestamp
@@ -588,7 +607,7 @@ export async function deleteCard(
             ':updatedAt': new Date().toISOString(),
           },
           ConditionExpression: 'attribute_exists(PK) AND attribute_not_exists(deletedAt)',
-        }),
+        })
       );
     }
 
@@ -616,7 +635,7 @@ export async function deleteCard(
         userId,
         cardId,
         requestId,
-      },
+      }
     );
     throw new InternalServerError('Failed to delete card', requestId || '');
   }

@@ -133,10 +133,13 @@ data "aws_iam_policy_document" "cards_get_dynamodb" {
   statement {
     effect = "Allow"
     actions = [
-      "dynamodb:GetItem"
+      "dynamodb:GetItem",
+      "dynamodb:Query",
+      "dynamodb:Scan"
     ]
     resources = [
-      module.dynamodb_collectiq.table_arn
+      module.dynamodb_collectiq.table_arn,
+      "${module.dynamodb_collectiq.table_arn}/index/*"
     ]
   }
 }
@@ -147,10 +150,14 @@ data "aws_iam_policy_document" "cards_delete_dynamodb" {
     effect = "Allow"
     actions = [
       "dynamodb:DeleteItem",
-      "dynamodb:GetItem"
+      "dynamodb:GetItem",
+      "dynamodb:Query",
+      "dynamodb:Scan",
+      "dynamodb:UpdateItem"
     ]
     resources = [
-      module.dynamodb_collectiq.table_arn
+      module.dynamodb_collectiq.table_arn,
+      "${module.dynamodb_collectiq.table_arn}/index/*"
     ]
   }
 }
@@ -173,10 +180,13 @@ data "aws_iam_policy_document" "cards_revalue_sfn" {
   statement {
     effect = "Allow"
     actions = [
-      "dynamodb:GetItem"
+      "dynamodb:GetItem",
+      "dynamodb:Query",
+      "dynamodb:Scan"
     ]
     resources = [
-      module.dynamodb_collectiq.table_arn
+      module.dynamodb_collectiq.table_arn,
+      "${module.dynamodb_collectiq.table_arn}/index/*"
     ]
   }
 }
