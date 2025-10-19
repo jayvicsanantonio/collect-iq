@@ -28,7 +28,7 @@ export class HttpError extends Error {
     detail: string,
     instance: string = '',
     type?: string,
-    extensions?: Record<string, unknown>,
+    extensions?: Record<string, unknown>
   ) {
     super(detail);
     this.name = 'HttpError';
@@ -73,7 +73,7 @@ export class ForbiddenError extends HttpError {
   constructor(
     detail: string = 'Access denied',
     instance: string = '',
-    extensions?: Record<string, unknown>,
+    extensions?: Record<string, unknown>
   ) {
     super(403, 'Forbidden', detail, instance, '/errors/forbidden', extensions);
   }
@@ -101,7 +101,7 @@ export class TooManyRequestsError extends HttpError {
   constructor(
     detail: string = 'Rate limit exceeded',
     instance: string = '',
-    extensions?: Record<string, unknown>,
+    extensions?: Record<string, unknown>
   ) {
     super(429, 'Too Many Requests', detail, instance, '/errors/too-many-requests', extensions);
   }
@@ -111,7 +111,7 @@ export class InternalServerError extends HttpError {
   constructor(
     detail: string = 'An internal error occurred',
     instance: string = '',
-    extensions?: Record<string, unknown>,
+    extensions?: Record<string, unknown>
   ) {
     super(
       500,
@@ -119,7 +119,7 @@ export class InternalServerError extends HttpError {
       detail,
       instance,
       '/errors/internal-server-error',
-      extensions,
+      extensions
     );
   }
 }
@@ -134,7 +134,7 @@ export class ServiceUnavailableError extends HttpError {
   constructor(
     detail: string = 'Service temporarily unavailable',
     instance: string = '',
-    extensions?: Record<string, unknown>,
+    extensions?: Record<string, unknown>
   ) {
     super(503, 'Service Unavailable', detail, instance, '/errors/service-unavailable', extensions);
   }
@@ -144,7 +144,7 @@ export class GatewayTimeoutError extends HttpError {
   constructor(
     detail: string = 'Request timeout',
     instance: string = '',
-    extensions?: Record<string, unknown>,
+    extensions?: Record<string, unknown>
   ) {
     super(504, 'Gateway Timeout', detail, instance, '/errors/gateway-timeout', extensions);
   }
@@ -156,6 +156,7 @@ export class GatewayTimeoutError extends HttpError {
 export function formatErrorResponse(
   error: unknown,
   requestId?: string,
+  origin?: string
 ): {
   statusCode: number;
   headers: Record<string, string>;
@@ -189,7 +190,7 @@ export function formatErrorResponse(
 
   return {
     statusCode: problemDetails.status,
-    headers: getProblemJsonHeaders(),
+    headers: getProblemJsonHeaders({}, origin),
     body: JSON.stringify(problemDetails),
   };
 }

@@ -17,7 +17,7 @@ module "api_gateway_http" {
   cognito_client_id     = module.cognito_user_pool.client_id
 
   # CORS Configuration
-  cors_allow_origins     = ["https://main.ddtufp5of4bf.amplifyapp.com"]
+  cors_allow_origins     = ["https://main.ddtufp5of4bf.amplifyapp.com", "http://localhost:3000"]
   cors_allow_methods     = ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
   cors_allow_headers     = ["Content-Type", "Authorization", "X-Amz-Date", "X-Api-Key", "X-Amz-Security-Token", "X-Request-ID", "Idempotency-Key"]
   cors_expose_headers    = ["X-Request-ID"]

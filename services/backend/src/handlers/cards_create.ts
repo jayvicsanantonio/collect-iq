@@ -63,7 +63,7 @@ async function cardsCreateHandler(event: APIGatewayProxyEventV2): Promise<APIGat
     const card = await tracing.trace(
       'dynamodb_create_card',
       () => createCard(userId, cardData, requestId),
-      { userId, requestId },
+      { userId, requestId }
     );
 
     logger.info('Card created successfully', {
@@ -83,7 +83,7 @@ async function cardsCreateHandler(event: APIGatewayProxyEventV2): Promise<APIGat
     // Return 201 Created with card object
     return {
       statusCode: 201,
-      headers: getJsonHeaders(),
+      headers: getJsonHeaders({}, event.headers?.origin),
       body: JSON.stringify(card),
     };
   } catch (error) {
@@ -97,7 +97,7 @@ async function cardsCreateHandler(event: APIGatewayProxyEventV2): Promise<APIGat
       {
         operation: 'cards_create',
         requestId,
-      },
+      }
     );
 
     // Emit error metric
@@ -110,7 +110,7 @@ async function cardsCreateHandler(event: APIGatewayProxyEventV2): Promise<APIGat
       error: error instanceof Error ? error.message : 'Unknown error',
     });
 
-    return formatErrorResponse(error, requestId);
+    return formatErrorResponse(error, requestId, event.headers?.origin);
   }
 }
 

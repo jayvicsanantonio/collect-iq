@@ -54,9 +54,9 @@ export async function handler(event: APIGatewayProxyEventV2): Promise<APIGateway
             limit,
             cursor,
           },
-          requestId,
+          requestId
         ),
-      { userId, requestId },
+      { userId, requestId }
     );
 
     logger.info('Cards listed successfully', {
@@ -78,7 +78,7 @@ export async function handler(event: APIGatewayProxyEventV2): Promise<APIGateway
     // Return 200 OK with items and nextCursor
     return {
       statusCode: 200,
-      headers: getJsonHeaders(),
+      headers: getJsonHeaders({}, event.headers?.origin),
       body: JSON.stringify(result),
     };
   } catch (error) {
@@ -100,9 +100,9 @@ export async function handler(event: APIGatewayProxyEventV2): Promise<APIGateway
       {
         operation: 'cards_list',
         requestId,
-      },
+      }
     );
 
-    return formatErrorResponse(error, requestId);
+    return formatErrorResponse(error, requestId, event.headers?.origin);
   }
 }
