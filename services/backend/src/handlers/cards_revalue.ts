@@ -141,7 +141,7 @@ async function cardsRevalueHandler(
     tracing.addAnnotation('operation', 'cards_revalue');
 
     // Extract cardId from path parameters
-    const cardId = event.pathParameters?.id;
+    const cardId = event.pathParameters?.cardId;
 
     if (!cardId) {
       throw new BadRequestError('Card ID is required in path', requestId);

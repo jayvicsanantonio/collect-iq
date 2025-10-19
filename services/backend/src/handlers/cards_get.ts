@@ -32,7 +32,7 @@ export async function handler(event: APIGatewayProxyEventV2): Promise<APIGateway
     tracing.addAnnotation('operation', 'cards_get');
 
     // Extract cardId from path parameters
-    const cardId = event.pathParameters?.id;
+    const cardId = event.pathParameters?.cardId;
 
     if (!cardId) {
       throw new BadRequestError('Card ID is required in path', requestId);
