@@ -270,7 +270,7 @@ module "lambda_upload_presign" {
 
   custom_iam_policy_json = data.aws_iam_policy_document.upload_presign_s3.json
 
-  enable_xray_tracing = true
+  enable_xray_tracing = false # Disabled due to context issues with module-level SDK initialization
   log_retention_days  = 30
 
   tags = local.common_tags
