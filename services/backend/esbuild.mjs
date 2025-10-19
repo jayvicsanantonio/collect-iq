@@ -28,7 +28,7 @@ const buildOptions = {
   minify: process.env.NODE_ENV === 'production',
   treeShaking: true,
   splitting: false,
-  external: ['@aws-sdk/*', 'aws-sdk'],
+  external: ['@aws-sdk/*', 'aws-sdk', 'sharp'],
   banner: {
     js: "import { createRequire } from 'module'; const require = createRequire(import.meta.url);",
   },
