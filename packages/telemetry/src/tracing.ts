@@ -50,52 +50,61 @@ class TracingService {
       return name;
     }
 
-    const segment = AWSXRay.getSegment();
-    if (!segment) {
-      logger.debug('AWS X-Ray segment unavailable; skipping subsegment start', {
-        operation: 'xray_subsegment_start',
-        subsegmentName: name,
-      });
-      return name;
-    }
+    try {
+      const segment = AWSXRay.getSegment();
+      if (!segment) {
+        logger.debug('AWS X-Ray segment unavailable; skipping subsegment start', {
+          operation: 'xray_subsegment_start',
+          subsegmentName: name,
+        });
+        return name;
+      }
 
-    const { addNewSubsegment } = segment as {
-      addNewSubsegment?: (subsegmentName: string) => XRaySubsegment;
-    };
+      const { addNewSubsegment } = segment as {
+        addNewSubsegment?: (subsegmentName: string) => XRaySubsegment;
+      };
 
-    if (typeof addNewSubsegment !== 'function') {
-      logger.debug('Current X-Ray entity cannot create subsegments', {
-        operation: 'xray_subsegment_start',
-        subsegmentName: name,
-      });
-      return name;
-    }
+      if (typeof addNewSubsegment !== 'function') {
+        logger.debug('Current X-Ray entity cannot create subsegments', {
+          operation: 'xray_subsegment_start',
+          subsegmentName: name,
+        });
+        return name;
+      }
 
-    const subsegment = addNewSubsegment(name);
+      const subsegment = addNewSubsegment(name);
 
-    if (annotations) {
-      for (const [key, value] of Object.entries(annotations)) {
-        try {
-          subsegment.addAnnotation(key, value);
-        } catch (error) {
-          logger.debug('Failed to add X-Ray annotation', {
-            operation: 'xray_annotation',
-            key,
-            error: error instanceof Error ? error.message : String(error),
-          });
+      if (annotations) {
+        for (const [key, value] of Object.entries(annotations)) {
+          try {
+            subsegment.addAnnotation(key, value);
+          } catch (error) {
+            logger.debug('Failed to add X-Ray annotation', {
+              operation: 'xray_annotation',
+              key,
+              error: error instanceof Error ? error.message : String(error),
+            });
+          }
         }
       }
+
+      this.activeSubsegments.set(name, subsegment);
+
+      logger.debug('X-Ray subsegment started', {
+        operation: 'xray_subsegment_start',
+        subsegmentName: name,
+        annotations,
+      });
+
+      return name;
+    } catch (error) {
+      logger.debug('Failed to start X-Ray subsegment; X-Ray may be disabled', {
+        operation: 'xray_subsegment_start',
+        subsegmentName: name,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return name;
     }
-
-    this.activeSubsegments.set(name, subsegment);
-
-    logger.debug('X-Ray subsegment started', {
-      operation: 'xray_subsegment_start',
-      subsegmentName: name,
-      annotations,
-    });
-
-    return name;
   }
 
   /**
@@ -282,7 +291,7 @@ export function traced(name: string, annotations?: AnnotationMap) {
       return tracing.trace(
         name || propertyKey,
         () => originalMethod.apply(this, args),
-        annotations,
+        annotations
       );
     };
 
