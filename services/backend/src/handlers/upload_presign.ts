@@ -15,7 +15,10 @@ import {
   PayloadTooLargeError,
   UnauthorizedError,
 } from '../utils/errors.js';
-import { logger, metrics, tracing, getJsonHeaders } from '../utils/index.js';
+import { logger } from '../utils/logger.js';
+import { metrics } from '../utils/metrics.js';
+import { tracing } from '../utils/tracing.js';
+import { getJsonHeaders } from '../utils/response-headers.js';
 import {
   validate,
   sanitizeFilename,
