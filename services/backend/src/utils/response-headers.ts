@@ -13,6 +13,8 @@ export interface SecurityHeaders {
   'X-Frame-Options': string;
   'X-XSS-Protection': string;
   'Content-Security-Policy': string;
+  'Access-Control-Allow-Origin': string;
+  'Access-Control-Allow-Credentials': string;
   'Cache-Control'?: string;
   [key: string]: string | undefined;
 }
@@ -26,7 +28,7 @@ export interface SecurityHeaders {
  */
 export function getSecurityHeaders(
   contentType: string = 'application/json',
-  additionalHeaders: Record<string, string> = {},
+  additionalHeaders: Record<string, string> = {}
 ): SecurityHeaders {
   const baseHeaders: SecurityHeaders = {
     'Content-Type': contentType,
@@ -40,6 +42,9 @@ export function getSecurityHeaders(
     'X-XSS-Protection': '1; mode=block',
     // Content Security Policy
     'Content-Security-Policy': "default-src 'self'",
+    // CORS headers - must match API Gateway configuration
+    'Access-Control-Allow-Origin': 'https://main.ddtufp5of4bf.amplifyapp.com',
+    'Access-Control-Allow-Credentials': 'true',
   };
 
   return {
@@ -65,7 +70,7 @@ export function getJsonHeaders(additionalHeaders: Record<string, string> = {}): 
  * @returns Object containing security headers for problem+json responses
  */
 export function getProblemJsonHeaders(
-  additionalHeaders: Record<string, string> = {},
+  additionalHeaders: Record<string, string> = {}
 ): SecurityHeaders {
   return getSecurityHeaders('application/problem+json', additionalHeaders);
 }
@@ -79,7 +84,7 @@ export function getProblemJsonHeaders(
  */
 export function getNoCacheHeaders(
   contentType: string = 'application/json',
-  additionalHeaders: Record<string, string> = {},
+  additionalHeaders: Record<string, string> = {}
 ): SecurityHeaders {
   return getSecurityHeaders(contentType, {
     'Cache-Control': 'no-cache, no-store, must-revalidate',
