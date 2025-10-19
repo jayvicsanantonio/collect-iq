@@ -49,7 +49,7 @@ function getConfig() {
       'image/heic',
     ]),
     MAX_UPLOAD_MB: getEnvNumber('MAX_UPLOAD_MB', 12),
-    KMS_KEY_ID: getEnvVar('KMS_KEY_ID'),
+    KMS_KEY_ID: getEnvVar('KMS_KEY_ID', ''), // Optional, defaults to empty string
   };
 }
 
