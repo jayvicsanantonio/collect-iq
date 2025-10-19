@@ -101,6 +101,17 @@ data "aws_iam_policy_document" "cards_create_dynamodb" {
       module.dynamodb_collectiq.table_arn
     ]
   }
+
+  # EventBridge PutEvents for auto-trigger revaluation
+  statement {
+    effect = "Allow"
+    actions = [
+      "events:PutEvents"
+    ]
+    resources = [
+      module.eventbridge_bus.bus_arn
+    ]
+  }
 }
 
 # DynamoDB Query policy for cards_list Lambda (GSI1)
@@ -295,10 +306,12 @@ module "lambda_cards_create" {
   vpc_security_group_ids = [aws_security_group.lambda.id]
 
   environment_variables = {
-    REGION            = var.aws_region
+    REGION                = var.aws_region
     DDB_TABLE             = module.dynamodb_collectiq.table_name
     COGNITO_USER_POOL_ID  = "" # Will be added when Cognito is deployed
-    XRAY_ENABLED         = "false"
+    XRAY_ENABLED          = "false"
+    AUTO_TRIGGER_REVALUE  = "true"  # Enable auto-trigger via EventBridge
+    EVENT_BUS_NAME        = module.eventbridge_bus.bus_name
   }
 
   custom_iam_policy_json = data.aws_iam_policy_document.cards_create_dynamodb.json
