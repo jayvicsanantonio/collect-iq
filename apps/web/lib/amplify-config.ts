@@ -31,16 +31,7 @@ export function configureAmplify() {
     },
   };
 
-  console.log('🔧 Configuring Amplify with:', {
-    userPoolId: config.Auth.Cognito.userPoolId,
-    userPoolClientId: config.Auth.Cognito.userPoolClientId,
-    domain: config.Auth.Cognito.loginWith?.oauth?.domain,
-    redirectSignIn: redirectSignInValues,
-    redirectSignOut: redirectSignOutValues,
-  });
-
   Amplify.configure(config, { ssr: true });
-  console.log('✅ Amplify configured successfully');
 }
 
 function buildRedirectVariants(url: string): string[] {

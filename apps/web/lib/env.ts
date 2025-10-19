@@ -77,13 +77,6 @@ function validateEnv(): Env {
     SENTRY_DSN: process.env.SENTRY_DSN,
   };
 
-  console.log('🔍 Validating environment variables:', {
-    hasRegion: !!env.NEXT_PUBLIC_AWS_REGION,
-    hasPoolId: !!env.NEXT_PUBLIC_COGNITO_USER_POOL_ID,
-    hasClientId: !!env.NEXT_PUBLIC_COGNITO_USER_POOL_CLIENT_ID,
-    hasDomain: !!env.NEXT_PUBLIC_COGNITO_DOMAIN,
-  });
-
   const parsed = envSchema.safeParse(env);
 
   if (!parsed.success) {
@@ -94,7 +87,6 @@ function validateEnv(): Env {
     throw new Error('Invalid environment variables');
   }
 
-  console.log('✅ Environment variables validated successfully');
   return parsed.data;
 }
 
