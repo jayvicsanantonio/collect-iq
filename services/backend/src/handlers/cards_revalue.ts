@@ -50,7 +50,7 @@ function getStateMachineArn(): string {
 async function hasInFlightExecution(
   cardId: string,
   userId: string,
-  requestId?: string,
+  requestId?: string
 ): Promise<string | null> {
   const client = getSFNClient();
   const stateMachineArn = getStateMachineArn();
@@ -76,15 +76,15 @@ async function hasInFlightExecution(
               statusFilter: 'RUNNING',
               maxResults: 100,
               nextToken,
-            }),
+            })
           ),
-        { cardId, userId, requestId },
+        { cardId, userId, requestId }
       );
 
       // Check if any running execution is for this card
       // Execution names follow pattern: {cardId}-{requestId}
       const inFlightExecution = result.executions?.find((execution) =>
-        execution.name?.startsWith(`${cardId}-`),
+        execution.name?.startsWith(`${cardId}-`)
       );
 
       if (inFlightExecution) {
@@ -122,7 +122,7 @@ async function hasInFlightExecution(
  * @returns 202 Accepted with execution ARN or error response
  */
 async function cardsRevalueHandler(
-  event: APIGatewayProxyEventV2,
+  event: APIGatewayProxyEventV2
 ): Promise<APIGatewayProxyResultV2> {
   const requestId = event.requestContext.requestId;
   const startTime = Date.now();
@@ -171,7 +171,7 @@ async function cardsRevalueHandler(
     const card = await tracing.trace(
       'dynamodb_get_card',
       () => getCard(userId, cardId, requestId),
-      { userId, requestId, cardId },
+      { userId, requestId, cardId }
     );
 
     // Verify card has required S3 keys
@@ -202,7 +202,7 @@ async function cardsRevalueHandler(
 
       return {
         statusCode: 202,
-        headers: getJsonHeaders(),
+        headers: getJsonHeaders({}, event.headers?.origin),
         body: JSON.stringify({
           executionArn: existingExecutionArn,
           status: 'RUNNING',
@@ -256,9 +256,9 @@ async function cardsRevalueHandler(
             stateMachineArn,
             name: executionName,
             input: JSON.stringify(executionInput),
-          }),
+          })
         ),
-      { userId, cardId, requestId, executionName },
+      { userId, cardId, requestId, executionName }
     );
 
     logger.info('Step Functions execution started successfully', {
@@ -281,7 +281,7 @@ async function cardsRevalueHandler(
     // Return 202 Accepted with execution ARN
     return {
       statusCode: 202,
-      headers: getJsonHeaders(),
+      headers: getJsonHeaders({}, event.headers?.origin),
       body: JSON.stringify({
         executionArn: result.executionArn,
         status: 'RUNNING',
@@ -307,10 +307,10 @@ async function cardsRevalueHandler(
       {
         operation: 'cards_revalue',
         requestId,
-      },
+      }
     );
 
-    return formatErrorResponse(error, requestId);
+    return formatErrorResponse(error, requestId, event.headers?.origin);
   }
 }
 

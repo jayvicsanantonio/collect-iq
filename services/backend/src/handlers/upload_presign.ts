@@ -30,7 +30,7 @@ import {
 const s3Client = tracing.captureAWSv3Client(
   new S3Client({
     region: process.env.AWS_REGION || 'us-east-1',
-  }),
+  })
 );
 
 // Constants
@@ -57,7 +57,7 @@ function getConfig() {
  * Lambda handler for generating presigned upload URLs
  */
 export async function handler(
-  event: APIGatewayProxyEventV2WithJWT,
+  event: APIGatewayProxyEventV2WithJWT
 ): Promise<APIGatewayProxyResultV2> {
   const requestId = event.requestContext.requestId;
   const startTime = Date.now();
@@ -92,7 +92,7 @@ export async function handler(
         {
           contentType: request.contentType,
           allowedTypes: config.ALLOWED_UPLOAD_MIME,
-        },
+        }
       );
     }
 
@@ -104,7 +104,7 @@ export async function handler(
         {
           sizeBytes: request.sizeBytes,
           maxBytes: config.MAX_UPLOAD_MB * 1024 * 1024,
-        },
+        }
       );
     }
 
@@ -149,7 +149,7 @@ export async function handler(
             'x-amz-meta-original-filename',
           ]),
         }),
-      { requestId, userId },
+      { requestId, userId }
     );
 
     const response: PresignResponse = {
@@ -175,7 +175,7 @@ export async function handler(
 
     return {
       statusCode: 200,
-      headers: getJsonHeaders(),
+      headers: getJsonHeaders({}, event.headers?.origin),
       body: JSON.stringify(response),
     };
   } catch (error) {
@@ -196,6 +196,6 @@ export async function handler(
       operation: 'upload_presign',
     });
 
-    return formatErrorResponse(error, requestId);
+    return formatErrorResponse(error, requestId, event.headers?.origin);
   }
 }

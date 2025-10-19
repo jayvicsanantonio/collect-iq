@@ -131,9 +131,15 @@ module "cognito_user_pool" {
   #  "http://localhost:3000",
   #  "https://localhost:3000"
   #]
-  callback_urls = [ var.amplify_oauth_redirect_uri ]
+  callback_urls = [
+    var.amplify_oauth_redirect_uri,
+    var.local_oauth_redirect_uri
+  ]
 
-  logout_urls = [ var.amplify_oauth_logout_uri ]
+  logout_urls = [
+    var.amplify_oauth_logout_uri,
+    var.local_oauth_logout_uri
+  ]
 
   allowed_oauth_flows  = ["code"]
   allowed_oauth_scopes = ["openid", "email", "profile"]

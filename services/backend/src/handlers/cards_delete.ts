@@ -48,7 +48,7 @@ export async function handler(event: APIGatewayProxyEventV2): Promise<APIGateway
     await tracing.trace(
       'dynamodb_delete_card',
       () => deleteCard(userId, cardId, requestId, hardDelete),
-      { userId, requestId, cardId },
+      { userId, requestId, cardId }
     );
 
     logger.info('Card deleted successfully', {
@@ -93,9 +93,9 @@ export async function handler(event: APIGatewayProxyEventV2): Promise<APIGateway
       {
         operation: 'cards_delete',
         requestId,
-      },
+      }
     );
 
-    return formatErrorResponse(error, requestId);
+    return formatErrorResponse(error, requestId, event.headers?.origin);
   }
 }

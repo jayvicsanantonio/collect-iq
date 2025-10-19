@@ -46,7 +46,7 @@ export async function handler(event: APIGatewayProxyEventV2): Promise<APIGateway
     const card = await tracing.trace(
       'dynamodb_get_card',
       () => getCard(userId, cardId, requestId),
-      { userId, requestId, cardId },
+      { userId, requestId, cardId }
     );
 
     logger.info('Card retrieved successfully', {
@@ -67,7 +67,7 @@ export async function handler(event: APIGatewayProxyEventV2): Promise<APIGateway
     // Return 200 OK with card object
     return {
       statusCode: 200,
-      headers: getJsonHeaders(),
+      headers: getJsonHeaders({}, event.headers?.origin),
       body: JSON.stringify(card),
     };
   } catch (error) {
@@ -88,6 +88,6 @@ export async function handler(event: APIGatewayProxyEventV2): Promise<APIGateway
       requestId,
     });
 
-    return formatErrorResponse(error, requestId);
+    return formatErrorResponse(error, requestId, event.headers?.origin);
   }
 }

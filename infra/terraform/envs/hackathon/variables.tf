@@ -43,6 +43,18 @@ variable "amplify_oauth_logout_uri" {
   default     = "https://main.ddtufp5of4bf.amplifyapp.com/landing"
 }
 
+variable "local_oauth_redirect_uri" {
+  description = "OAuth redirect URI for local development"
+  type        = string
+  default     = "http://localhost:3000/auth/callback"
+}
+
+variable "local_oauth_logout_uri" {
+  description = "OAuth logout URI for local development"
+  type        = string
+  default     = "http://localhost:3000/landing"
+}
+
 variable "budget_amount" {
   description = "Monthly budget amount in USD"
   type        = number
