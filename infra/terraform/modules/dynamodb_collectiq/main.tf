@@ -18,6 +18,12 @@ resource "aws_dynamodb_table" "table" {
     type = "S"
   }
 
+  # cardId attribute for card lookup
+  attribute {
+    name = "cardId"
+    type = "S"
+  }
+
   # GSI1 attributes for vault listings (userId + createdAt)
   attribute {
     name = "userId"
@@ -38,6 +44,13 @@ resource "aws_dynamodb_table" "table" {
   attribute {
     name = "valueMedian"
     type = "N"
+  }
+
+  # CardIdIndex: Query cards by cardId for direct lookup
+  global_secondary_index {
+    name            = "CardIdIndex"
+    hash_key        = "cardId"
+    projection_type = "ALL"
   }
 
   # GSI1: Query cards by userId sorted by createdAt
