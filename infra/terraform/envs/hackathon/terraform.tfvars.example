@@ -1,0 +1,46 @@
+# Example terraform.tfvars for hackathon environment
+# Copy this file to terraform.tfvars and update with your values
+
+# ============================================================================
+# Core Configuration
+# ============================================================================
+aws_region   = "us-east-1"
+environment  = "hackathon"
+project_name = "collectiq"
+
+# ============================================================================
+# GitHub Integration
+# ============================================================================
+# GitHub repository URL for Amplify hosting
+# REQUIRED: Update with your actual repository URL
+# github_repo_url = "https://github.com/your-org/collect-iq"
+
+# ============================================================================
+# Budget Configuration
+# ============================================================================
+# Monthly budget amount in USD
+budget_amount = 50
+
+# Email addresses for budget alerts (80% and 100% thresholds)
+# budget_email_addresses = ["devops@example.com", "team@example.com"]
+
+# ============================================================================
+# Lambda Configuration
+# ============================================================================
+# Memory allocation for lightweight Lambda functions (presign, list, get)
+lambda_memory_lightweight = 512
+
+# Memory allocation for heavy processing Lambda functions (rekognition, pricing, authenticity)
+lambda_memory_heavy = 1024
+
+# ============================================================================
+# Logging and Monitoring
+# ============================================================================
+# Log level for Lambda functions (debug, info, warn, error)
+log_level = "info"
+
+# CloudWatch log retention in days
+log_retention_days = 30
+
+# Enable X-Ray tracing for distributed tracing
+enable_xray_tracing = true

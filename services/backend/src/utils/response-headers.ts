@@ -13,9 +13,6 @@ export interface SecurityHeaders {
   'X-Frame-Options': string;
   'X-XSS-Protection': string;
   'Content-Security-Policy': string;
-  'Access-Control-Allow-Origin': string;
-  'Access-Control-Allow-Methods': string;
-  'Access-Control-Allow-Headers': string;
   'Cache-Control'?: string;
   [key: string]: string | undefined;
 }
@@ -43,11 +40,6 @@ export function getSecurityHeaders(
     'X-XSS-Protection': '1; mode=block',
     // Content Security Policy
     'Content-Security-Policy': "default-src 'self'",
-    // CORS headers
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers':
-      'Content-Type, Authorization, X-Amz-Date, X-Api-Key, X-Amz-Security-Token',
   };
 
   return {
