@@ -206,6 +206,45 @@ module "bedrock_access" {
 }
 
 ## ============================================================================
+## IAM Role for EventBridge to Invoke Step Functions
+## ============================================================================
+
+resource "aws_iam_role" "eventbridge_sfn_role" {
+  name = "${local.name_prefix}-eventbridge-sfn-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Principal = {
+        Service = "events.amazonaws.com"
+      }
+      Action = "sts:AssumeRole"
+    }]
+  })
+
+  tags = local.common_tags
+}
+
+resource "aws_iam_role_policy" "eventbridge_sfn_policy" {
+  name = "${local.name_prefix}-eventbridge-sfn-policy"
+  role = aws_iam_role.eventbridge_sfn_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Action = [
+        "states:StartExecution"
+      ]
+      Resource = [
+        module.step_functions.state_machine_arn
+      ]
+    }]
+  })
+}
+
+## ============================================================================
 ## EventBridge Event Bus
 ## ============================================================================
 module "eventbridge_bus" {
