@@ -29,7 +29,7 @@ import {
 // Initialize S3 client with X-Ray instrumentation
 const s3Client = tracing.captureAWSv3Client(
   new S3Client({
-    region: process.env.AWS_REGION || 'us-east-1',
+    region: process.env.REGION || process.env.AWS_REGION || 'us-east-1',
   })
 );
 
@@ -126,9 +126,11 @@ export async function handler(
       Key: s3Key,
       ContentType: request.contentType,
       ContentLength: request.sizeBytes,
-      // Server-side encryption
-      ServerSideEncryption: 'aws:kms',
-      SSEKMSKeyId: config.KMS_KEY_ID,
+      // Add KMS encryption if key is provided
+      ...(config.KMS_KEY_ID && {
+        ServerSideEncryption: 'aws:kms',
+        SSEKMSKeyId: config.KMS_KEY_ID,
+      }),
       // Metadata for tracking
       Metadata: {
         'uploaded-by': userId,
@@ -137,17 +139,20 @@ export async function handler(
     });
 
     // Generate presigned URL
+    const hoistableHeaders = new Set(['x-amz-meta-uploaded-by', 'x-amz-meta-original-filename']);
+
+    // Add KMS headers if encryption is enabled
+    if (config.KMS_KEY_ID) {
+      hoistableHeaders.add('x-amz-server-side-encryption');
+      hoistableHeaders.add('x-amz-server-side-encryption-aws-kms-key-id');
+    }
+
     const uploadUrl = await tracing.trace(
       's3_presign_put_object',
       () =>
         getSignedUrl(s3Client, command, {
           expiresIn: PRESIGN_EXPIRATION_SECONDS,
-          hoistableHeaders: new Set([
-            'x-amz-server-side-encryption',
-            'x-amz-server-side-encryption-aws-kms-key-id',
-            'x-amz-meta-uploaded-by',
-            'x-amz-meta-original-filename',
-          ]),
+          hoistableHeaders,
         }),
       { requestId, userId }
     );
