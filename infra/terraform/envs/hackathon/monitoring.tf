@@ -391,3 +391,18 @@ resource "aws_budgets_budget" "hackathon" {
 # - API Gateway will have X-Ray enabled when deployed
 
 # No additional resources needed - X-Ray is configured at the service level
+
+
+## ============================================================================
+## Monitoring Outputs
+## ============================================================================
+
+output "cloudwatch_dashboard_names" {
+  description = "List of CloudWatch dashboard names"
+  value       = module.cloudwatch_dashboards.dashboard_names
+}
+
+output "cloudwatch_alarms_topic_arn" {
+  description = "SNS topic ARN for CloudWatch alarms"
+  value       = aws_sns_topic.cloudwatch_alarms.arn
+}

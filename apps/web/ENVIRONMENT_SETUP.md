@@ -157,8 +157,8 @@ The application validates all environment variables at build time using Zod sche
 3. **"Cognito Domain must be in format: domain.auth.region.amazoncognito.com"**
    - Fix: Use the full Cognito domain including `.auth.<region>.amazoncognito.com`
 
-4. **"OAuth Redirect URI should end with / for Amplify to handle callback"**
-   - Fix: Add a trailing slash to your redirect URI (e.g., `http://localhost:3000/`)
+4. **"OAuth Redirect URI must be a valid URL"**
+   - Fix: Ensure the redirect URI is a fully qualified URL that exactly matches the value configured in Cognito (including path and optional trailing slash)
 
 ## Troubleshooting
 
@@ -171,7 +171,7 @@ The application validates all environment variables at build time using Zod sche
 ### Authentication redirects to wrong URL
 
 1. Verify `NEXT_PUBLIC_OAUTH_REDIRECT_URI` matches your Cognito App Client's allowed callback URLs
-2. Ensure the redirect URI ends with `/`
+2. Ensure the redirect URI matches exactly (including trailing slash if you added one in Cognito)
 3. Check that the domain matches (localhost vs production domain)
 
 ### "Not authenticated" errors when making API calls
@@ -189,7 +189,7 @@ NEXT_PUBLIC_AWS_REGION=us-east-1
 NEXT_PUBLIC_COGNITO_USER_POOL_ID=us-east-1_devPoolId
 NEXT_PUBLIC_COGNITO_USER_POOL_CLIENT_ID=devClientId123456789012345
 NEXT_PUBLIC_COGNITO_DOMAIN=collectiq-dev.auth.us-east-1.amazoncognito.com
-NEXT_PUBLIC_OAUTH_REDIRECT_URI=http://localhost:3000/
+NEXT_PUBLIC_OAUTH_REDIRECT_URI=http://localhost:3000/auth/callback
 NEXT_PUBLIC_OAUTH_LOGOUT_URI=http://localhost:3000
 NEXT_PUBLIC_API_BASE=https://dev-api.execute-api.us-east-1.amazonaws.com
 ```
@@ -201,7 +201,7 @@ NEXT_PUBLIC_AWS_REGION=us-east-1
 NEXT_PUBLIC_COGNITO_USER_POOL_ID=us-east-1_prodPoolId
 NEXT_PUBLIC_COGNITO_USER_POOL_CLIENT_ID=prodClientId123456789012345
 NEXT_PUBLIC_COGNITO_DOMAIN=collectiq.auth.us-east-1.amazoncognito.com
-NEXT_PUBLIC_OAUTH_REDIRECT_URI=https://app.collectiq.com/
+NEXT_PUBLIC_OAUTH_REDIRECT_URI=https://app.collectiq.com/auth/callback
 NEXT_PUBLIC_OAUTH_LOGOUT_URI=https://app.collectiq.com
 NEXT_PUBLIC_API_BASE=https://api.collectiq.com
 ```

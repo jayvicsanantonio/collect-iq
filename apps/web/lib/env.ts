@@ -20,8 +20,7 @@ const envSchema = z.object({
     ),
   NEXT_PUBLIC_COGNITO_USER_POOL_CLIENT_ID: z
     .string()
-    .min(1, 'Cognito Client ID is required')
-    .min(26, 'Cognito Client ID should be 26 characters'),
+    .min(1, 'Cognito Client ID is required'),
   NEXT_PUBLIC_COGNITO_DOMAIN: z
     .string()
     .min(1, 'Cognito Domain is required')
@@ -34,10 +33,7 @@ const envSchema = z.object({
   NEXT_PUBLIC_OAUTH_REDIRECT_URI: z
     .string()
     .url('OAuth Redirect URI must be a valid URL')
-    .refine(
-      (url) => url.endsWith('/'),
-      'OAuth Redirect URI should end with / for Amplify to handle callback'
-    ),
+    .describe('Must match Cognito callback exactly (with or without trailing slash)'),
   NEXT_PUBLIC_OAUTH_LOGOUT_URI: z
     .string()
     .url('OAuth Logout URI must be a valid URL'),

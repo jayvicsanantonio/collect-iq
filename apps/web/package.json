@@ -5,8 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "NEXT_DISABLE_ESLINT_PLUGIN=1 next build",
     "build:analyze": "ANALYZE=true next build",
+    "postbuild": "node ./bin/generate-amplify-hosting.mjs",
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
@@ -36,6 +37,7 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@aws-amplify/adapter-nextjs": "^1.6.10",
     "@eslint/eslintrc": "^3.2.0",
     "@next/bundle-analyzer": "^14.2.18",
     "@tailwindcss/postcss": "^4.0.0",

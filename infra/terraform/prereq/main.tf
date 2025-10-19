@@ -3,6 +3,6 @@
 
 module "prereq" {
   source        = "../modules/prereq"
-  bucket_name   = "collectiq-tfstate"
-  dynamodb_name = "collectiq-terraform-locks"
+  bucket_name   = "collectiq-hackathon-tfstate"
+  dynamodb_name = "collectiq-hackathon-terraform-locks"
 }

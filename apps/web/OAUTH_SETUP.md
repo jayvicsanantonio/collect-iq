@@ -105,7 +105,7 @@ This means the redirect URI in your request doesn't match what's configured in C
 
 - `.env.local` has correct `NEXT_PUBLIC_OAUTH_REDIRECT_URI`
 - Cognito App Client has the URL in "Allowed callback URLs"
-- No trailing slashes mismatch (be consistent)
+- Ensure trailing slash usage matches between `.env` and Cognito configuration
 
 ### "invalid_request" Error
 

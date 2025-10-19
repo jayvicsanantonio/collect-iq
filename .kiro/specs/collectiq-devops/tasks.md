@@ -295,6 +295,8 @@
   - Enable PR preview environments
   - Configure build failure alarms
   - _Requirements: 2.2, 2.3, 14.4_
+  - [x] 2025-02-05: Updated Amplify build_spec to package .amplify-hosting outputs so deploy-manifest.json is detected during hosting deploys.
+  - [x] 2025-02-05: Added standalone-based postbuild bundler and normalized redirect URI handling so Amplify hosting bundles and Cognito callbacks stay in sync with CodeBuild using CODEBUILD_SRC_DIR.
 
 - [ ] 7.4 Implement Lambda canary deployments
   - Configure Lambda aliases in lambda_fn module

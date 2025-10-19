@@ -116,6 +116,9 @@ importers:
         specifier: ^3.23.8
         version: 3.25.76
     devDependencies:
+      '@aws-amplify/adapter-nextjs':
+        specifier: ^1.6.10
+        version: 1.6.10(aws-amplify@6.15.7)(next@14.2.33(@babel/core@7.28.4)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))
       '@eslint/eslintrc':
         specifier: ^3.2.0
         version: 3.3.1
@@ -290,6 +293,15 @@ packages:
         integrity: sha512-30iZtAPgz+LTIYoeivqYo853f02jBYSd5uGnGpkFV0M3xOt9aN73erkgYAmZU43x4VfqcnLxW9Kpg3R5LC4YYw==,
       }
     engines: { node: '>=6.0.0' }
+
+  '@aws-amplify/adapter-nextjs@1.6.10':
+    resolution:
+      {
+        integrity: sha512-Ka2khUGg9R4i1pztX830/Nnaoqivm/AhkXjkektF/vvb10+tvpUqHweFtTQF1Kn+eNQeYpZD9ZLyzfjRNdAgyA==,
+      }
+    peerDependencies:
+      aws-amplify: ^6.13.1
+      next: '>=13.5.0 <16.0.0'
 
   '@aws-amplify/analytics@7.0.88':
     resolution:
@@ -4574,6 +4586,13 @@ packages:
         integrity: sha512-ikCa5sRsUaZ5UteINjAtlmNsJnSOEtsqid+/Erc60ZbKB9tyF0W1etG4Xiu+azTZatiO5wTncGo7fzLXQZZIYw==,
       }
 
+  aws-jwt-verify@4.0.1:
+    resolution:
+      {
+        integrity: sha512-kzvi71eD3w/mCpYRUY7cz6DX4bfYihGdI2yV3FYQ2JuZZenqAqDPz0gWj0ew6vlAtdEVBNb7p+Dm2TAIxpVYMA==,
+      }
+    engines: { node: '>=14.0.0' }
+
   aws-xray-sdk-core@3.11.0:
     resolution:
       {
@@ -7977,6 +7996,12 @@ snapshots:
     dependencies:
       '@jridgewell/gen-mapping': 0.3.13
       '@jridgewell/trace-mapping': 0.3.31
+
+  '@aws-amplify/adapter-nextjs@1.6.10(aws-amplify@6.15.7)(next@14.2.33(@babel/core@7.28.4)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))':
+    dependencies:
+      aws-amplify: 6.15.7
+      aws-jwt-verify: 4.0.1
+      next: 14.2.33(@babel/core@7.28.4)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
 
   '@aws-amplify/analytics@7.0.88(@aws-amplify/core@6.13.3)':
     dependencies:
@@ -12024,6 +12049,8 @@ snapshots:
     transitivePeerDependencies:
       - '@aws-amplify/react-native'
       - aws-crt
+
+  aws-jwt-verify@4.0.1: {}
 
   aws-xray-sdk-core@3.11.0:
     dependencies:

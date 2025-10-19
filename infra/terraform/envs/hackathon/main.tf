@@ -27,7 +27,7 @@ module "vpc" {
 
   project_name         = var.project_name
   environment          = var.environment
-  vpc_cidr             = "172.28.0.0/21"
+  vpc_cidr             = "172.29.0.0/21"
   public_subnet_count  = 2
   private_subnet_count = 2
 }
@@ -204,8 +204,67 @@ module "eventbridge_bus" {
 
   bus_name = "${local.name_prefix}-events"
 
-  # Event rules will be added when Lambda targets are deployed
+  # Event rules for card processing workflow
   event_rules = {}
+  #event_rules = {
+  #  # Rule 1: Card processing completed successfully
+  #  card_processing_completed = {
+  #    description = "Trigger when card processing completes successfully"
+  #    event_pattern = jsonencode({
+  #      source      = ["collectiq.card.processing"]
+  #      detail-type = ["Card Processing Completed"]
+  #      detail = {
+  #        status = ["success"]
+  #      }
+  #    })
+  #    target_arn           = module.lambda_aggregator.function_arn
+  #    target_type          = "lambda"
+  #    target_function_name = module.lambda_aggregator.function_name
+  #    input_transformer    = null
+  #  }
+
+  #  # Rule 2: Card processing failed
+  #  card_processing_failed = {
+  #    description = "Trigger when card processing fails"
+  #    event_pattern = jsonencode({
+  #      source      = ["collectiq.card.processing"]
+  #      detail-type = ["Card Processing Failed"]
+  #      detail = {
+  #        status = ["failed", "error"]
+  #      }
+  #    })
+  #    target_arn           = module.lambda_error_handler.function_arn
+  #    target_type          = "lambda"
+  #    target_function_name = module.lambda_error_handler.function_name
+  #    input_transformer    = null
+  #  }
+
+  #  # Rule 3: Card valuation updated
+  #  card_valuation_updated = {
+  #    description = "Trigger when card valuation is updated"
+  #    event_pattern = jsonencode({
+  #      source      = ["collectiq.card.valuation"]
+  #      detail-type = ["Card Valuation Updated"]
+  #    })
+  #    target_arn           = module.lambda_aggregator.function_arn
+  #    target_type          = "lambda"
+  #    target_function_name = module.lambda_aggregator.function_name
+  #    input_transformer    = null
+  #  }
+
+  #  # Rule 4: Authenticity check completed
+  #  authenticity_check_completed = {
+  #    description = "Trigger when authenticity check completes"
+  #    event_pattern = jsonencode({
+  #      source      = ["collectiq.card.authenticity"]
+  #      detail-type = ["Authenticity Check Completed"]
+  #    })
+  #    target_arn           = module.lambda_aggregator.function_arn
+  #    target_type          = "lambda"
+  #    target_function_name = module.lambda_aggregator.function_name
+  #    input_transformer    = null
+  #  }
+  #}
 
   dlq_message_retention_seconds = 1209600 # 14 days
   retry_maximum_event_age       = 86400   # 24 hours
@@ -213,70 +272,3 @@ module "eventbridge_bus" {
 
   tags = local.common_tags
 }
-
-## ============================================================================
-## Amplify Hosting (Frontend)
-## ============================================================================
-module "amplify_hosting" {
-  source = "../../modules/amplify_hosting"
-
-  app_name   = "${local.name_prefix}-web"
-  repository = var.github_repo_url
-  access_token = var.github_access_token
-
-  main_branch_name    = "main"
-  enable_develop_branch = false
-
-  enable_auto_branch_creation   = true
-  auto_branch_creation_patterns = ["pr*"]
-
-  # Use Amplify default domain (no custom domain for hackathon)
-  custom_domain        = ""
-  custom_domain_prefix = ""
-
-  environment_variables = {
-    NEXT_PUBLIC_AWS_REGION                  = var.aws_region
-    NEXT_PUBLIC_COGNITO_USER_POOL_ID        = module.cognito_user_pool.user_pool_id
-    NEXT_PUBLIC_COGNITO_USER_POOL_CLIENT_ID = module.cognito_user_pool.client_id
-    NEXT_PUBLIC_COGNITO_DOMAIN              = module.cognito_user_pool.hosted_ui_domain_name
-    # OAuth redirect URIs - will be set after first deployment
-    # Use: terraform output amplify_main_branch_url to get the URL
-    # Then update these values and run terraform apply again
-    NEXT_PUBLIC_OAUTH_REDIRECT_URI          = var.amplify_oauth_redirect_uri
-    NEXT_PUBLIC_OAUTH_LOGOUT_URI            = var.amplify_oauth_logout_uri
-    NEXT_PUBLIC_API_BASE                    = module.api_gateway_http.api_endpoint
-    _LIVE_UPDATES                           = jsonencode([{
-      pkg     = "next-version"
-      type    = "internal"
-      version = "latest"
-    }])
-  }
-
-  build_spec = <<-EOT
-    version: 1
-    applications:
-      - appRoot: apps/web
-        frontend:
-          phases:
-            preBuild:
-              commands:
-                - npm install -g pnpm@9
-                - pnpm install --frozen-lockfile
-            build:
-              commands:
-                - pnpm build
-          artifacts:
-            baseDirectory: .next
-            files:
-              - '**/*'
-          cache:
-            paths:
-              - node_modules/**/*
-              - .next/cache/**/*
-  EOT
-
-  tags = local.common_tags
-}
-
-## Note: Lambda functions, Step Functions, and CloudWatch dashboards
-## will be added in subsequent tasks when function code is ready for deployment

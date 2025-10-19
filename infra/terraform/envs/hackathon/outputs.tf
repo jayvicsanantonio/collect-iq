@@ -55,25 +55,6 @@ output "eventbridge_bus_arn" {
 }
 
 ## ============================================================================
-## Frontend Outputs
-## ============================================================================
-#
-#output "amplify_app_id" {
-#  description = "Amplify app ID"
-#  value       = module.amplify_hosting.app_id
-#}
-#
-#output "amplify_default_domain" {
-#  description = "Amplify default domain"
-#  value       = module.amplify_hosting.default_domain
-#}
-#
-#output "amplify_main_branch_url" {
-#  description = "Amplify main branch URL"
-#  value       = module.amplify_hosting.main_branch_url
-#}
-#
-## ============================================================================
 ## Authentication Outputs
 ## ============================================================================
 
@@ -129,18 +110,4 @@ output "secret_arns" {
   description = "Map of secret names to ARNs"
   value       = module.ssm_secrets.secret_arns
   sensitive   = true
-}
-
-## ============================================================================
-## Monitoring Outputs
-## ============================================================================
-
-output "cloudwatch_dashboard_names" {
-  description = "List of CloudWatch dashboard names"
-  value       = module.cloudwatch_dashboards.dashboard_names
-}
-
-output "cloudwatch_alarms_topic_arn" {
-  description = "SNS topic ARN for CloudWatch alarms"
-  value       = aws_sns_topic.cloudwatch_alarms.arn
 }

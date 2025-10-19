@@ -4,10 +4,10 @@
 
 terraform {
   backend "s3" {
-    bucket         = "collectiq-tfstate"
+    bucket         = "collectiq-hackathon-tfstate"
     key            = "hackathon/terraform.tfstate"
     region         = "us-east-1"
     encrypt        = true
-    dynamodb_table = "collectiq-terraform-locks"
+    dynamodb_table = "collectiq-hackathon-terraform-locks"
   }
 }
