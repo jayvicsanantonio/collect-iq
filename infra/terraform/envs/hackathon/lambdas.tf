@@ -298,11 +298,12 @@ module "lambda_cards_create" {
     REGION            = var.aws_region
     DDB_TABLE             = module.dynamodb_collectiq.table_name
     COGNITO_USER_POOL_ID  = "" # Will be added when Cognito is deployed
+    XRAY_ENABLED         = "false"
   }
 
   custom_iam_policy_json = data.aws_iam_policy_document.cards_create_dynamodb.json
 
-  enable_xray_tracing = true
+  enable_xray_tracing = false
   log_retention_days  = 30
 
   tags = local.common_tags
@@ -334,7 +335,7 @@ module "lambda_cards_list" {
 
   custom_iam_policy_json = data.aws_iam_policy_document.cards_list_dynamodb.json
 
-  enable_xray_tracing = true
+  enable_xray_tracing = false
   log_retention_days  = 30
 
   tags = local.common_tags
@@ -366,7 +367,7 @@ module "lambda_cards_get" {
 
   custom_iam_policy_json = data.aws_iam_policy_document.cards_get_dynamodb.json
 
-  enable_xray_tracing = true
+  enable_xray_tracing = false
   log_retention_days  = 30
 
   tags = local.common_tags
@@ -399,7 +400,7 @@ module "lambda_cards_delete" {
 
   custom_iam_policy_json = data.aws_iam_policy_document.cards_delete_dynamodb.json
 
-  enable_xray_tracing = true
+  enable_xray_tracing = false
   log_retention_days  = 30
 
   tags = local.common_tags
@@ -431,7 +432,7 @@ module "lambda_cards_revalue" {
 
   custom_iam_policy_json = data.aws_iam_policy_document.cards_revalue_sfn.json
 
-  enable_xray_tracing = true
+  enable_xray_tracing = false
   log_retention_days  = 30
 
   tags = local.common_tags
@@ -467,7 +468,7 @@ module "lambda_rekognition_extract" {
   custom_iam_policy_json = data.aws_iam_policy_document.rekognition_extract_s3.json
   additional_policy_arns = [module.rekognition_access.policy_arn]
 
-  enable_xray_tracing = true
+  enable_xray_tracing = false
   log_retention_days  = 30
 
   tags = local.common_tags
@@ -501,7 +502,7 @@ module "lambda_pricing_agent" {
 
   # additional_policy_arns will include ssm_secrets policy when deployed
 
-  enable_xray_tracing = true
+  enable_xray_tracing = false
   log_retention_days  = 30
 
   tags = local.common_tags
@@ -535,7 +536,7 @@ module "lambda_authenticity_agent" {
   custom_iam_policy_json = data.aws_iam_policy_document.rekognition_extract_s3.json
   additional_policy_arns = [module.bedrock_access.policy_arn]
 
-  enable_xray_tracing = true
+  enable_xray_tracing = false
   log_retention_days  = 30
 
   tags = local.common_tags
@@ -573,7 +574,7 @@ module "lambda_aggregator" {
     )
   })
 
-  enable_xray_tracing = true
+  enable_xray_tracing = false
   log_retention_days  = 30
 
   tags = local.common_tags
@@ -605,7 +606,7 @@ module "lambda_error_handler" {
 
   custom_iam_policy_json = data.aws_iam_policy_document.error_handler_sqs.json
 
-  enable_xray_tracing = true
+  enable_xray_tracing = false
   log_retention_days  = 30
 
   tags = local.common_tags
