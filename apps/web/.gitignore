@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+.pnp/
+.pnp.js
+
+# Next.js build output
+.next/
+out/
+dist/
+build/
+
+# Testing & coverage
+coverage/
+.vitest/
+
+# Environment & local config
+.env*
+!.env.example
+!.env.sample
+
+# Logs & diagnostics
+pnpm-debug.log*
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDE/editor
+.DS_Store
+.idea/
+.vscode/
+
+# TypeScript
+*.tsbuildinfo
+
+# Amplify local artifacts
+amplify/\#current-cloud-backend/
+amplify/.config/local-env-info.json
+amplify/backend/awscloudformation/
