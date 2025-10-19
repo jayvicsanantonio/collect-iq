@@ -208,31 +208,64 @@ export default function IdentifyPage() {
   // Loading State
   if (state.status === 'loading') {
     return (
-      <div className="container mx-auto max-w-4xl px-4 py-8">
-        <div className="mb-8 text-center">
-          <h1
-            className="mb-2 text-4xl font-bold"
-            style={{ fontFamily: 'var(--font-display)' }}
-          >
-            Identifying Card
-          </h1>
-          <p className="text-[var(--muted-foreground)]">
-            Analyzing your card with AI...
-          </p>
+      <div className="min-h-screen flex flex-col relative bg-[var(--background)]">
+        {/* Gradient Background */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute inset-0 landing-gradient" />
+        </div>
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute inset-0 landing-radials" />
         </div>
 
-        <Card>
-          <CardContent className="p-12">
-            <div className="flex flex-col items-center justify-center space-y-4">
-              <div className="relative">
-                <div className="h-16 w-16 animate-spin rounded-full border-4 border-[var(--muted)] border-t-[var(--vault-blue)]" />
-              </div>
-              <p className="text-sm text-[var(--muted-foreground)]">
-                This may take a few moments...
+        <main className="flex-1 relative z-10 flex items-start justify-center px-6 pt-20 pb-12">
+          <div className="max-w-4xl w-full">
+            <div className="mb-12 text-center">
+              <h1
+                className="mb-4 text-5xl sm:text-6xl md:text-7xl font-bold font-display tracking-[-0.02em]"
+                style={{
+                  textShadow:
+                    'var(--text-shadow, 0 2px 8px rgba(0, 0, 0, 0.3))',
+                }}
+              >
+                <span
+                  className="bg-gradient-to-tr from-[var(--color-holo-cyan)] via-[var(--color-emerald-glow)] to-[var(--color-vault-blue)] bg-clip-text text-transparent"
+                  style={{
+                    textShadow: 'none',
+                    filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2))',
+                  }}
+                >
+                  Identifying Card
+                </span>
+              </h1>
+              <p
+                className="text-xl sm:text-2xl"
+                style={{
+                  color: 'var(--foreground)',
+                  opacity: 0.9,
+                  textShadow: '0 1px 4px rgba(0, 0, 0, 0.3)',
+                }}
+              >
+                Analyzing your card with AI...
               </p>
             </div>
-          </CardContent>
-        </Card>
+
+            <Card
+              className="border-2 border-gray-200 dark:border-white/10 shadow-lg"
+              style={{ backgroundColor: 'var(--background)' }}
+            >
+              <CardContent className="p-12">
+                <div className="flex flex-col items-center justify-center space-y-4">
+                  <div className="relative">
+                    <div className="h-16 w-16 animate-spin rounded-full border-4 border-[var(--muted)] border-t-[var(--color-holo-cyan)]" />
+                  </div>
+                  <p className="text-sm text-[var(--muted-foreground)]">
+                    This may take a few moments...
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </main>
       </div>
     );
   }
@@ -240,21 +273,45 @@ export default function IdentifyPage() {
   // Error State
   if (state.status === 'error') {
     return (
-      <div className="container mx-auto max-w-4xl px-4 py-8">
-        <div className="mb-8">
-          <Button variant="ghost" onClick={handleBack} className="mb-4">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Upload
-          </Button>
-          <h1
-            className="mb-2 text-4xl font-bold"
-            style={{ fontFamily: 'var(--font-display)' }}
-          >
-            Identification Failed
-          </h1>
+      <div className="min-h-screen flex flex-col relative bg-[var(--background)]">
+        {/* Gradient Background */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute inset-0 landing-gradient" />
+        </div>
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute inset-0 landing-radials" />
         </div>
 
-        <Card className="border-[var(--crimson-red)]">
+        <main className="flex-1 relative z-10 flex items-start justify-center px-6 pt-20 pb-12">
+          <div className="max-w-4xl w-full">
+            <div className="mb-8">
+              <Button variant="ghost" onClick={handleBack} className="mb-4">
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back to Upload
+              </Button>
+              <h1
+                className="mb-4 text-5xl sm:text-6xl font-bold font-display tracking-[-0.02em]"
+                style={{
+                  textShadow:
+                    'var(--text-shadow, 0 2px 8px rgba(0, 0, 0, 0.3))',
+                }}
+              >
+                <span
+                  className="bg-gradient-to-tr from-[var(--color-holo-cyan)] via-[var(--color-emerald-glow)] to-[var(--color-vault-blue)] bg-clip-text text-transparent"
+                  style={{
+                    textShadow: 'none',
+                    filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2))',
+                  }}
+                >
+                  Identification Failed
+                </span>
+              </h1>
+            </div>
+
+            <Card
+              className="border-2 border-[var(--crimson-red)] shadow-lg"
+              style={{ backgroundColor: 'var(--background)' }}
+            >
           <CardHeader>
             <div className="flex items-start gap-3">
               <AlertCircle className="h-5 w-5 text-[var(--crimson-red)] mt-0.5" />
@@ -279,9 +336,11 @@ export default function IdentifyPage() {
               <Button onClick={handleManualEntry} variant="ghost">
                 Enter Manually
               </Button>
-            </div>
-          </CardContent>
-        </Card>
+              </div>
+            </CardContent>
+          </Card>
+          </div>
+        </main>
       </div>
     );
   }
@@ -289,21 +348,45 @@ export default function IdentifyPage() {
   // No Results State
   if (state.status === 'no-results') {
     return (
-      <div className="container mx-auto max-w-4xl px-4 py-8">
-        <div className="mb-8">
-          <Button variant="ghost" onClick={handleBack} className="mb-4">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Upload
-          </Button>
-          <h1
-            className="mb-2 text-4xl font-bold"
-            style={{ fontFamily: 'var(--font-display)' }}
-          >
-            No Matches Found
-          </h1>
+      <div className="min-h-screen flex flex-col relative bg-[var(--background)]">
+        {/* Gradient Background */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute inset-0 landing-gradient" />
+        </div>
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute inset-0 landing-radials" />
         </div>
 
-        <Card>
+        <main className="flex-1 relative z-10 flex items-start justify-center px-6 pt-20 pb-12">
+          <div className="max-w-4xl w-full">
+            <div className="mb-8">
+              <Button variant="ghost" onClick={handleBack} className="mb-4">
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back to Upload
+              </Button>
+              <h1
+                className="mb-4 text-5xl sm:text-6xl font-bold font-display tracking-[-0.02em]"
+                style={{
+                  textShadow:
+                    'var(--text-shadow, 0 2px 8px rgba(0, 0, 0, 0.3))',
+                }}
+              >
+                <span
+                  className="bg-gradient-to-tr from-[var(--color-holo-cyan)] via-[var(--color-emerald-glow)] to-[var(--color-vault-blue)] bg-clip-text text-transparent"
+                  style={{
+                    textShadow: 'none',
+                    filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2))',
+                  }}
+                >
+                  No Matches Found
+                </span>
+              </h1>
+            </div>
+
+            <Card
+              className="border-2 border-gray-200 dark:border-white/10 shadow-lg"
+              style={{ backgroundColor: 'var(--background)' }}
+            >
           <CardHeader>
             <CardTitle>We couldn&apos;t find any matching cards</CardTitle>
             <CardDescription>
@@ -323,33 +406,62 @@ export default function IdentifyPage() {
               <Button onClick={handleManualEntry} variant="ghost">
                 Enter Manually
               </Button>
-            </div>
-          </CardContent>
-        </Card>
+              </div>
+            </CardContent>
+          </Card>
+          </div>
+        </main>
       </div>
     );
   }
 
   // Success State (with candidates)
   return (
-    <div className="container mx-auto max-w-4xl px-4 py-8">
-      <div className="mb-8">
-        <Button variant="ghost" onClick={handleBack} className="mb-4">
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Upload
-        </Button>
-        <h1
-          className="mb-2 text-4xl font-bold"
-          style={{ fontFamily: 'var(--font-display)' }}
-        >
-          Select Your Card
-        </h1>
-        <p className="text-[var(--muted-foreground)]">
-          {state.status === 'low-confidence'
-            ? 'We found some possible matches. Please confirm which card this is.'
-            : 'We found the following matches. Select the correct one to continue.'}
-        </p>
+    <div className="min-h-screen flex flex-col relative bg-[var(--background)]">
+      {/* Gradient Background */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute inset-0 landing-gradient" />
       </div>
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute inset-0 landing-radials" />
+      </div>
+
+      <main className="flex-1 relative z-10 px-6 pt-8 pb-12">
+        <div className="container mx-auto max-w-4xl">
+          <div className="mb-8">
+            <Button variant="ghost" onClick={handleBack} className="mb-4">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Upload
+            </Button>
+            <h1
+              className="mb-4 text-5xl sm:text-6xl font-bold font-display tracking-[-0.02em]"
+              style={{
+                textShadow:
+                  'var(--text-shadow, 0 2px 8px rgba(0, 0, 0, 0.3))',
+              }}
+            >
+              <span
+                className="bg-gradient-to-tr from-[var(--color-holo-cyan)] via-[var(--color-emerald-glow)] to-[var(--color-vault-blue)] bg-clip-text text-transparent"
+                style={{
+                  textShadow: 'none',
+                  filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2))',
+                }}
+              >
+                Select Your Card
+              </span>
+            </h1>
+            <p
+              className="text-lg sm:text-xl"
+              style={{
+                color: 'var(--foreground)',
+                opacity: 0.9,
+              }}
+            >
+              {state.status === 'low-confidence'
+                ? 'We found some possible matches. Please confirm which card this is.'
+                : 'We found the following matches. Select the correct one to continue.'}
+            </p>
+          </div>
 
       {/* Low Confidence Warning */}
       {state.status === 'low-confidence' && (
@@ -396,9 +508,11 @@ export default function IdentifyPage() {
         </div>
         <Button onClick={handleRetry} variant="ghost" size="lg">
           <RefreshCw className="mr-2 h-4 w-4" />
-          Retry
-        </Button>
-      </div>
+            Retry
+          </Button>
+        </div>
+        </div>
+      </main>
     </div>
   );
 }

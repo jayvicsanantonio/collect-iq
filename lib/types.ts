@@ -40,12 +40,24 @@ export type PresignResponse = z.infer<typeof PresignResponseSchema>;
 // -----------------------------------------------------------------------------
 
 const AuthenticitySignalsSchema = z.object({
-  visualHashConfidence: z.number().min(0).max(1).optional().nullable(),
+  visualHashConfidence: z
+    .number()
+    .min(0)
+    .max(1)
+    .optional()
+    .nullable(),
   textMatchConfidence: z.number().min(0).max(1).optional().nullable(),
-  holoPatternConfidence: z.number().min(0).max(1).optional().nullable(),
+  holoPatternConfidence: z
+    .number()
+    .min(0)
+    .max(1)
+    .optional()
+    .nullable(),
 });
 
-export type AuthenticitySignals = z.infer<typeof AuthenticitySignalsSchema>;
+export type AuthenticitySignals = z.infer<
+  typeof AuthenticitySignalsSchema
+>;
 
 export const CardSchema = z.object({
   cardId: z.string().uuid(),
@@ -59,7 +71,8 @@ export const CardSchema = z.object({
   type: z.string().optional().nullable(),
   imageUrl: z.string().url().optional().nullable(),
   authenticityScore: z.number().min(0).max(1).optional().nullable(),
-  authenticitySignals: AuthenticitySignalsSchema.optional().nullable(),
+  authenticitySignals:
+    AuthenticitySignalsSchema.optional().nullable(),
   valueLow: z.number().optional().nullable(),
   valueMedian: z.number().optional().nullable(),
   valueHigh: z.number().optional().nullable(),
@@ -75,7 +88,9 @@ export const ListCardsResponseSchema = z.object({
   nextCursor: z.string().optional().nullable(),
 });
 
-export type ListCardsResponse = z.infer<typeof ListCardsResponseSchema>;
+export type ListCardsResponse = z.infer<
+  typeof ListCardsResponseSchema
+>;
 
 export const CreateCardRequestSchema = z.object({
   frontS3Key: z.string().min(1),
@@ -93,7 +108,9 @@ export const CreateCardRequestSchema = z.object({
   valueHigh: z.number().optional(),
 });
 
-export type CreateCardRequest = z.infer<typeof CreateCardRequestSchema>;
+export type CreateCardRequest = z.infer<
+  typeof CreateCardRequestSchema
+>;
 
 // -----------------------------------------------------------------------------
 // Card Identification & Authenticity
@@ -119,7 +136,9 @@ export const AuthenticityDetailsSchema = z.object({
   fakeDetected: z.boolean(),
 });
 
-export type AuthenticityDetails = z.infer<typeof AuthenticityDetailsSchema>;
+export type AuthenticityDetails = z.infer<
+  typeof AuthenticityDetailsSchema
+>;
 
 // -----------------------------------------------------------------------------
 // Valuation / Revaluation
@@ -138,3 +157,12 @@ export const RevalueResponseSchema = z.object({
 });
 
 export type RevalueResponse = z.infer<typeof RevalueResponseSchema>;
+
+// -----------------------------------------------------------------------------
+// Processing Types
+// -----------------------------------------------------------------------------
+
+export type ProcessingStage =
+  | 'extraction'
+  | 'authenticity'
+  | 'valuation';

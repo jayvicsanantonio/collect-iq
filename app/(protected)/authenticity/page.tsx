@@ -204,32 +204,65 @@ export default function AuthenticityPage() {
   // Loading State
   if (state.status === 'loading') {
     return (
-      <div className="container mx-auto max-w-6xl px-4 py-8">
-        <div className="mb-8 text-center">
-          <h1
-            className="mb-2 text-4xl font-bold"
-            style={{ fontFamily: 'var(--font-display)' }}
-          >
-            Analyzing Authenticity
-          </h1>
-          <p className="text-[var(--muted-foreground)]">
-            Running AI-powered authenticity checks...
-          </p>
+      <div className="min-h-screen flex flex-col relative bg-[var(--background)]">
+        {/* Gradient Background */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute inset-0 landing-gradient" />
+        </div>
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute inset-0 landing-radials" />
         </div>
 
-        <Card>
-          <CardContent className="p-12">
-            <div className="flex flex-col items-center justify-center space-y-4">
-              <div className="relative">
-                <div className="h-16 w-16 animate-spin rounded-full border-4 border-[var(--muted)] border-t-[var(--vault-blue)]" />
-              </div>
-              <p className="text-sm text-[var(--muted-foreground)]">
-                Analyzing visual hash, text patterns, and holographic
-                signals...
+        <main className="flex-1 relative z-10 flex items-start justify-center px-6 pt-20 pb-12">
+          <div className="max-w-4xl w-full">
+            <div className="mb-12 text-center">
+              <h1
+                className="mb-4 text-5xl sm:text-6xl md:text-7xl font-bold font-display tracking-[-0.02em]"
+                style={{
+                  textShadow:
+                    'var(--text-shadow, 0 2px 8px rgba(0, 0, 0, 0.3))',
+                }}
+              >
+                <span
+                  className="bg-gradient-to-tr from-[var(--color-holo-cyan)] via-[var(--color-emerald-glow)] to-[var(--color-vault-blue)] bg-clip-text text-transparent"
+                  style={{
+                    textShadow: 'none',
+                    filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2))',
+                  }}
+                >
+                  Analyzing Authenticity
+                </span>
+              </h1>
+              <p
+                className="text-xl sm:text-2xl"
+                style={{
+                  color: 'var(--foreground)',
+                  opacity: 0.9,
+                  textShadow: '0 1px 4px rgba(0, 0, 0, 0.3)',
+                }}
+              >
+                Running AI-powered authenticity checks...
               </p>
             </div>
-          </CardContent>
-        </Card>
+
+            <Card
+              className="border-2 border-gray-200 dark:border-white/10 shadow-lg"
+              style={{ backgroundColor: 'var(--background)' }}
+            >
+              <CardContent className="p-12">
+                <div className="flex flex-col items-center justify-center space-y-4">
+                  <div className="relative">
+                    <div className="h-16 w-16 animate-spin rounded-full border-4 border-[var(--muted)] border-t-[var(--color-holo-cyan)]" />
+                  </div>
+                  <p className="text-sm text-[var(--muted-foreground)]">
+                    Analyzing visual hash, text patterns, and holographic
+                    signals...
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </main>
       </div>
     );
   }
@@ -237,74 +270,122 @@ export default function AuthenticityPage() {
   // Error State
   if (state.status === 'error') {
     return (
-      <div className="container mx-auto max-w-6xl px-4 py-8">
-        <div className="mb-8">
-          <Button
-            variant="ghost"
-            onClick={handleBack}
-            className="mb-4"
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back
-          </Button>
-          <h1
-            className="mb-2 text-4xl font-bold"
-            style={{ fontFamily: 'var(--font-display)' }}
-          >
-            Analysis Failed
-          </h1>
+      <div className="min-h-screen flex flex-col relative bg-[var(--background)]">
+        {/* Gradient Background */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute inset-0 landing-gradient" />
+        </div>
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute inset-0 landing-radials" />
         </div>
 
-        <Card className="border-[var(--crimson-red)]">
-          <CardHeader>
-            <div className="flex items-start gap-3">
-              <AlertTriangle className="h-5 w-5 text-[var(--crimson-red)] mt-0.5" />
-              <div>
-                <CardTitle>Unable to Analyze Authenticity</CardTitle>
-                <CardDescription className="mt-2">
-                  {state.error ||
-                    'An error occurred during analysis.'}
-                </CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <Button onClick={fetchAuthenticity} variant="primary">
-                <RotateCw className="mr-2 h-4 w-4" />
-                Try Again
+        <main className="flex-1 relative z-10 flex items-start justify-center px-6 pt-20 pb-12">
+          <div className="max-w-4xl w-full">
+            <div className="mb-8">
+              <Button variant="ghost" onClick={handleBack} className="mb-4">
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back
               </Button>
-              <Button onClick={handleBack} variant="outline">
-                Go Back
-              </Button>
+              <h1
+                className="mb-4 text-5xl sm:text-6xl font-bold font-display tracking-[-0.02em]"
+                style={{
+                  textShadow:
+                    'var(--text-shadow, 0 2px 8px rgba(0, 0, 0, 0.3))',
+                }}
+              >
+                <span
+                  className="bg-gradient-to-tr from-[var(--color-holo-cyan)] via-[var(--color-emerald-glow)] to-[var(--color-vault-blue)] bg-clip-text text-transparent"
+                  style={{
+                    textShadow: 'none',
+                    filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2))',
+                  }}
+                >
+                  Analysis Failed
+                </span>
+              </h1>
             </div>
-          </CardContent>
-        </Card>
+
+            <Card
+              className="border-2 border-[var(--crimson-red)] shadow-lg"
+              style={{ backgroundColor: 'var(--background)' }}
+            >
+              <CardHeader>
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="h-5 w-5 text-[var(--crimson-red)] mt-0.5" />
+                  <div>
+                    <CardTitle>Unable to Analyze Authenticity</CardTitle>
+                    <CardDescription className="mt-2">
+                      {state.error || 'An error occurred during analysis.'}
+                    </CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <Button onClick={fetchAuthenticity} variant="primary">
+                    <RotateCw className="mr-2 h-4 w-4" />
+                    Try Again
+                  </Button>
+                  <Button onClick={handleBack} variant="outline">
+                    Go Back
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </main>
       </div>
     );
   }
 
   // Success State
   return (
-    <div className="container mx-auto max-w-6xl px-4 py-8">
-      {/* Header */}
-      <div className="mb-8">
-        <Button variant="ghost" onClick={handleBack} className="mb-4">
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Identification
-        </Button>
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1
-              className="mb-2 text-4xl font-bold"
-              style={{ fontFamily: 'var(--font-display)' }}
-            >
-              Authenticity Analysis
-            </h1>
-            <p className="text-[var(--muted-foreground)]">
-              {state.cardName} • {state.cardSet}
-            </p>
-          </div>
+    <div className="min-h-screen flex flex-col relative bg-[var(--background)]">
+      {/* Gradient Background */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute inset-0 landing-gradient" />
+      </div>
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute inset-0 landing-radials" />
+      </div>
+
+      <main className="flex-1 relative z-10 px-6 pt-8 pb-12">
+        <div className="container mx-auto max-w-6xl">
+          {/* Header */}
+          <div className="mb-8">
+            <Button variant="ghost" onClick={handleBack} className="mb-4">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Identification
+            </Button>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <h1
+                  className="mb-2 text-4xl sm:text-5xl font-bold font-display tracking-[-0.02em]"
+                  style={{
+                    textShadow:
+                      'var(--text-shadow, 0 2px 8px rgba(0, 0, 0, 0.3))',
+                  }}
+                >
+                  <span
+                    className="bg-gradient-to-tr from-[var(--color-holo-cyan)] via-[var(--color-emerald-glow)] to-[var(--color-vault-blue)] bg-clip-text text-transparent"
+                    style={{
+                      textShadow: 'none',
+                      filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2))',
+                    }}
+                  >
+                    Authenticity Analysis
+                  </span>
+                </h1>
+                <p
+                  className="text-lg"
+                  style={{
+                    color: 'var(--foreground)',
+                    opacity: 0.9,
+                  }}
+                >
+                  {state.cardName} • {state.cardSet}
+                </p>
+              </div>
           <AuthenticityBadge
             score={state.score}
             rationale={state.details?.rationale}
@@ -582,6 +663,8 @@ export default function AuthenticityPage() {
         cardId={cardId || undefined}
         cardName={state.cardName}
       />
+        </div>
+      </main>
     </div>
   );
 }

@@ -20,4 +20,14 @@ export type {
 } from './ValuationHistoryChart';
 
 export { MarketDataTable } from './MarketDataTable';
-export type { MarketDataTableProps, ComparableSale } from './MarketDataTable';
+export type {
+  MarketDataTableProps,
+  ComparableSale,
+} from './MarketDataTable';
+
+export { CardProcessing } from './CardProcessing';
+export type {
+  CardProcessingProps,
+  ProcessingStatus,
+  ProcessingStage,
+} from './CardProcessing';

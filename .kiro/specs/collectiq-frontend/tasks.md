@@ -1,6 +1,7 @@
 # Implementation Plan
 
 - [x] 1. Project setup and configuration
+
   - Initialize Next.js 14 project in apps/web with TypeScript and App Router
   - Configure Tailwind CSS v4 with @theme directive
   - Set up ESLint, Prettier, and Husky pre-commit hooks (using packages/config)
@@ -12,6 +13,7 @@
 
 - [x] 2. Design system foundation
 - [x] 2.1 Implement core design tokens and CSS variables
+
   - Create globals.css with @theme directive for Tailwind v4
   - Define color tokens (Vault Blue, Holo Cyan, Carbon Gray, etc.)
   - Set up typography tokens (Inter, Space Grotesk, JetBrains Mono)
@@ -22,6 +24,7 @@
   - Maintenance (2025-10-17): Moved global base reset into `@layer base` and removed `* { padding: 0 }` which was overriding Tailwind utilities (e.g., `px-*`). Verified Tailwind v4 setup with `@tailwindcss/postcss` and `@import 'tailwindcss'` is correct.
 
 - [x] 2.2 Create base UI components (shadcn/ui)
+
   - Install and configure shadcn/ui CLI
   - Create Button component with all variants (primary, secondary, gradient, outline, ghost)
   - Create Card component with sub-components (CardHeader, CardTitle, CardDescription, CardContent, CardFooter)
@@ -33,6 +36,7 @@
   - _Requirements: 13.4, 13.5, 13.6_
 
 - [x] 2.3 Implement theme toggle and dark mode support
+
   - Create ThemeProvider context with localStorage persistence
   - Create ThemeToggle component
   - Implement prefers-color-scheme detection
@@ -44,6 +48,7 @@
 
 - [x] 3. Authentication infrastructure
 - [x] 3.1 Set up Cognito Hosted UI integration
+
   - Install AWS Amplify or Cognito SDK
   - Create Cognito configuration with environment variables (User Pool ID, Client ID, Domain, Redirect URIs)
   - Configure OAuth 2.0 settings (authorization code flow with PKCE)
@@ -54,6 +59,7 @@
   - _Requirements: 1.2, 1.8, 1.9, 12.1_
 
 - [x] 3.2 Create OAuth callback handler
+
   - Create /auth/callback route to handle OAuth redirects
   - Implement authorization code exchange for tokens
   - Validate state parameter to prevent CSRF attacks
@@ -64,6 +70,7 @@
   - _Requirements: 1.2, 1.8, 1.9_
 
 - [x] 3.3 Implement AuthGuard and route protection
+
   - Create AuthGuard component with session verification
   - Implement loading spinner for auth status check
   - Add redirect logic to Cognito Hosted UI with state parameter preserving intended destination
@@ -73,6 +80,7 @@
   - _Requirements: 1.1, 1.5, 1.9_
 
 - [x] 3.4 Implement sign out functionality
+
   - Create sign out handler that clears cookies
   - Call Cognito logout endpoint to invalidate session
   - Redirect to Cognito Hosted UI or landing page after logout
@@ -80,6 +88,7 @@
   - _Requirements: 1.4_
 
 - [x] 3.5 Write authentication tests
+
   - Unit tests for auth helper functions (code verifier, code challenge, URL building)
   - Unit tests for state parameter validation
   - Integration tests for OAuth callback flow
@@ -90,6 +99,7 @@
 
 - [x] 4. API client and data layer
 - [x] 4.1 Create typed API client
+
   - Implement base API client in apps/web/lib/api.ts with fetch wrapper
   - Import types and schemas from @collectiq/shared
   - Add automatic credential inclusion (cookies)
@@ -100,6 +110,7 @@
   - _Requirements: 11.1, 11.2_
 
 - [x] 4.2 Set up shared schemas
+
   - Ensure packages/shared is set up with Zod schemas (may already exist from backend setup)
   - Verify CardSchema, ValuationDataSchema, AuthenticityDetailsSchema, ProblemDetailsSchema are defined
   - Import schemas from @collectiq/shared in API client
@@ -108,6 +119,7 @@
   - _Requirements: 11.1_
 
 - [x] 4.3 Implement API endpoints
+
   - Implement getPresignedUrl() for POST /upload/presign in apps/web/lib/api.ts
   - Implement createCard() for POST /cards with Idempotency-Key header
   - Implement getCards() for GET /cards with cursor-based pagination
@@ -120,6 +132,7 @@
   - _Requirements: 2.4, 5.8, 6.9, 7.6_
 
 - [x] 4.4 Set up SWR for data fetching
+
   - Configure SWR with global settings
   - Create custom hooks for common queries (useCards, useCard)
   - Implement cache key strategy (user-scoped)
@@ -128,6 +141,7 @@
   - _Requirements: 6.9_
 
 - [x] 4.5 Write API client tests
+
   - Unit tests for API client methods in apps/web/lib/api.ts
   - Test error handling and ProblemDetails parsing using schemas from @collectiq/shared
   - Test retry logic with exponential backoff
@@ -135,8 +149,9 @@
   - Mock API responses for integration tests
   - _Requirements: 15.1_
 
-- [ ] 5. Upload flow implementation
-- [ ] 5.1 Create UploadDropzone component with validation
+- [x] 5. Upload flow implementation
+- [x] 5.1 Create UploadDropzone component with validation
+
   - Create component in apps/web/components/upload/UploadDropzone.tsx
   - Implement drag-and-drop area with visual feedback
   - Add file picker integration
@@ -148,7 +163,8 @@
   - **See detailed spec**: `.kiro/specs/collectiq-frontend/image-upload-validation.md`
   - _Requirements: 2.1, 2.2, 2.3_
 
-- [ ] 5.2 Create CameraCapture component
+- [x] 5.2 Create CameraCapture component
+
   - Create component in apps/web/components/upload/CameraCapture.tsx
   - Implement getUserMedia API integration
   - Add camera permission request handling
@@ -159,7 +175,8 @@
   - Add camera preview with capture button
   - _Requirements: 2.6, 2.7_
 
-- [ ] 5.3 Create UploadProgress component
+- [x] 5.3 Create UploadProgress component
+
   - Create component in apps/web/components/upload/UploadProgress.tsx
   - Implement progress bar with percentage display
   - Add thumbnail preview of uploading image
@@ -168,7 +185,8 @@
   - Implement error state display
   - _Requirements: 2.8, 2.9_
 
-- [ ] 5.4 Implement upload workflow
+- [x] 5.4 Implement upload workflow
+
   - Create apps/web/app/(protected)/upload/page.tsx with UploadDropzone
   - Implement presigned URL request flow using POST /upload/presign
   - Add direct S3 upload with progress tracking using XMLHttpRequest
@@ -180,7 +198,8 @@
   - Handle upload errors with retry option
   - _Requirements: 2.4, 2.5, 2.8, 2.9, 2.10_
 
-- [ ] 5.5 Create first-run empty state
+- [x] 5.5 Create first-run empty state
+
   - Design hero layout for empty vault
   - Add "Let's scan your first card" headline
   - Create CTAs for camera and file upload
@@ -188,6 +207,7 @@
   - _Requirements: 2.10_
 
 - [ ]\* 5.6 Write upload flow tests
+
   - Unit tests for file validation logic
   - Integration test for presign → upload → redirect flow
   - E2E test for complete upload workflow
@@ -195,8 +215,9 @@
   - Test error handling and retry logic
   - _Requirements: 15.2, 15.5_
 
-- [ ] 6. Card processing and analysis interface
-- [ ] 6.1 Create CardProcessing component
+- [x] 6. Card processing and analysis interface
+- [x] 6.1 Create CardProcessing component
+
   - Design processing screen with status indicators
   - Display progress for: feature extraction, authenticity analysis, valuation
   - Show animated loading states for each stage
@@ -204,7 +225,8 @@
   - Create error state with retry option
   - _Requirements: 3.1, 3.2_
 
-- [ ] 6.2 Create card processing page
+- [x] 6.2 Create card processing page
+
   - Create /cards/{id}/processing route or use card detail with loading state
   - Poll GET /cards/{id} to check for updated analysis results
   - Display processing status while authenticityScore or valueLow are undefined
@@ -214,14 +236,16 @@
   - _Requirements: 3.3, 3.4, 3.5, 3.6, 3.7_
 
 - [ ]\* 6.3 Write processing tests
+
   - Unit tests for CardProcessing component
   - Integration test for polling logic
   - Test automatic redirect on completion
   - Test error states and retry
   - _Requirements: 15.1_
 
-- [x] 7. Authenticity analysis interface
-- [x] 7.1 Create AuthenticityBadge component
+- [ ] 7. Authenticity analysis interface
+- [ ] 7.1 Create AuthenticityBadge component
+
   - Design rounded pill badge with authenticityScore display (0-1 scale)
   - Implement color coding based on score (green > 0.8, yellow 0.5-0.8, red < 0.5)
   - Create tooltip with detailed breakdown from authenticitySignals
@@ -230,7 +254,8 @@
   - Ensure accessibility (not relying solely on color)
   - _Requirements: 4.2, 4.3, 4.5, 4.7_
 
-- [x] 7.2 Create authenticity analysis section in card detail
+- [ ] 7.2 Create authenticity analysis section in card detail
+
   - Display card image from frontS3Key with zoom capability
   - Integrate AuthenticityBadge component with card.authenticityScore
   - Display authenticitySignals breakdown in visual format
@@ -240,6 +265,7 @@
   - _Requirements: 4.1, 4.4_
 
 - [ ] 7.3 Implement feedback reporting (future enhancement)
+
   - Create "Report Incorrect Result" button
   - Design feedback modal with reason selection
   - Implement feedback submission to backend (endpoint TBD)
@@ -247,14 +273,16 @@
   - _Requirements: 4.6_
 
 - [ ]\* 7.4 Write authenticity tests
+
   - Unit tests for AuthenticityBadge component
   - Test score color coding logic
   - Test tooltip display with authenticitySignals
   - Test accessibility compliance
   - _Requirements: 15.1, 15.8_
 
-- [x] 8. Valuation interface
-- [x] 8.1 Create ValuationPanel component
+- [ ] 8. Valuation interface
+- [ ] 8.1 Create ValuationPanel component
+
   - Design panel layout with price range display from card.valueLow, card.valueMedian, card.valueHigh
   - Implement low/median/high price visualization
   - Create trend indicator (future enhancement - requires historical data)
@@ -264,7 +292,8 @@
   - Add last updated timestamp from card.updatedAt
   - _Requirements: 5.2, 5.3, 5.4, 5.5_
 
-- [x] 8.2 Implement valuation refresh functionality
+- [ ] 8.2 Implement valuation refresh functionality
+
   - Add refresh button that calls POST /cards/{id}/revalue with forceRefresh=true
   - Generate Idempotency-Key for revalue request
   - Display 202 Accepted response with executionArn and status
@@ -274,14 +303,16 @@
   - Show toast notification when new valuation data is available
   - _Requirements: 5.8_
 
-- [x] 8.3 Handle unavailable valuation data
+- [ ] 8.3 Handle unavailable valuation data
+
   - Display message when valueLow, valueMedian, or valueHigh are undefined
   - Show "Analysis in progress" if card was recently created
   - Add "Refresh" button to trigger POST /cards/{id}/revalue
   - Provide explanation and retry option
   - _Requirements: 5.6_
 
-- [x] 8.4 Integrate valuation in card detail page
+- [ ] 8.4 Integrate valuation in card detail page
+
   - Display ValuationPanel in card detail view
   - Show authenticity and valuation sections together
   - Add refresh action for revaluation
@@ -289,6 +320,7 @@
   - _Requirements: 5.7_
 
 - [ ]\* 8.5 Write valuation tests
+
   - Unit tests for ValuationPanel component
   - Test price range display from Card object
   - Test refresh functionality with POST /cards/{id}/revalue
@@ -296,8 +328,9 @@
   - Test unavailable data states
   - _Requirements: 15.1_
 
-- [x] 9. Vault and portfolio management
-- [x] 9.1 Create VaultGrid component
+- [ ] 9. Vault and portfolio management
+- [ ] 9.1 Create VaultGrid component
+
   - Implement responsive grid layout (1-4 columns based on screen size)
   - Create card thumbnail component with image and value
   - Add hover/long-press quick actions (refresh, delete)
@@ -306,7 +339,8 @@
   - Implement virtualization for collections > 200 items
   - _Requirements: 6.1, 6.6, 6.7, 6.8, 6.9_
 
-- [x] 9.2 Create PortfolioSummary component
+- [ ] 9.2 Create PortfolioSummary component
+
   - Design summary card layout
   - Display total collection value
   - Display total card count
@@ -315,7 +349,8 @@
   - Add loading state
   - _Requirements: 6.2_
 
-- [x] 9.3 Create VaultFilters component
+- [ ] 9.3 Create VaultFilters component
+
   - Implement filter UI for set, type, rarity, authenticity
   - Create sort dropdown (value, date added, rarity)
   - Add filter chips showing active filters
@@ -323,7 +358,8 @@
   - Persist filter state in URL query parameters
   - _Requirements: 6.4, 6.5_
 
-- [x] 9.4 Implement vault page
+- [ ] 9.4 Implement vault page
+
   - Create /vault route
   - Integrate PortfolioSummary at top
   - Add VaultFilters component
@@ -333,7 +369,8 @@
   - Create empty vault state with upload CTA
   - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 6.6_
 
-- [x] 9.5 Implement card deletion
+- [ ] 9.5 Implement card deletion
+
   - Add delete confirmation dialog
   - Implement optimistic UI update (remove card from list immediately)
   - Call DELETE /cards/{id} endpoint (returns 204 No Content)
@@ -343,6 +380,7 @@
   - _Requirements: 6.7_
 
 - [ ]\* 9.6 Write vault tests
+
   - Unit tests for VaultGrid component
   - Unit tests for PortfolioSummary component
   - Unit tests for VaultFilters component
@@ -352,8 +390,9 @@
   - Test virtualization performance
   - _Requirements: 15.1, 15.2, 15.6_
 
-- [x] 10. Card detail view
-- [x] 10.1 Create CardDetail component
+- [ ] 10. Card detail view
+- [ ] 10.1 Create CardDetail component
+
   - Design detail page layout
   - Implement large card image with zoom functionality
   - Display card metadata (name, set, rarity, condition)
@@ -361,7 +400,8 @@
   - Add action buttons (Re-evaluate, Delete, Share)
   - _Requirements: 7.1, 7.2, 7.3, 7.6_
 
-- [x] 10.2 Create valuation history chart
+- [ ] 10.2 Create valuation history chart
+
   - Lazy-load Recharts library
   - Create line chart component for valuation history
   - Display low/median/high price bands over time
@@ -371,14 +411,16 @@
   - Include aria-descriptions for accessibility
   - _Requirements: 7.4, 10.5, 10.6, 10.7, 10.8, 10.9_
 
-- [x] 10.3 Create market data sources table
+- [ ] 10.3 Create market data sources table
+
   - Display recent comparable sales
   - Show source, date, price, condition for each comp
   - Add sorting by date or price
   - Implement responsive table (cards on mobile)
   - _Requirements: 7.5_
 
-- [x] 10.4 Implement card detail page
+- [ ] 10.4 Implement card detail page
+
   - Create /cards/[id] route
   - Fetch card data with SWR
   - Integrate CardDetail component
@@ -389,7 +431,8 @@
   - Handle 403 (not owner) error
   - _Requirements: 7.1, 7.8, 7.9_
 
-- [x] 10.5 Implement card actions
+- [ ] 10.5 Implement card actions
+
   - Implement re-evaluate action via POST /cards/{id}/revalue with Idempotency-Key
   - Display 202 Accepted response and poll for updates
   - Implement delete action via DELETE /cards/{id} with confirmation dialog
@@ -399,6 +442,7 @@
   - _Requirements: 7.6_
 
 - [ ]\* 10.6 Write card detail tests
+
   - Unit tests for CardDetail component
   - Unit tests for valuation history chart
   - Integration test for card detail page
@@ -408,7 +452,8 @@
   - _Requirements: 15.1, 15.6_
 
 - [ ] 11. Error handling and user feedback
-- [x] 11.1 Create ProblemDetails error handler
+- [ ] 11.1 Create ProblemDetails error handler
+
   - Create error handler in apps/web/lib/errors.ts
   - Use ProblemDetails type and schema from @collectiq/shared
   - Implement error parsing utility
@@ -417,14 +462,16 @@
   - Add requestId tracking
   - _Requirements: 11.1, 11.2, 11.9_
 
-- [x] 11.2 Create ErrorAlert component
+- [ ] 11.2 Create ErrorAlert component
+
   - Design alert component with icon and message
   - Add retry button when applicable
   - Add dismiss button
   - Implement different severity levels (error, warning, info)
   - _Requirements: 11.2, 11.9_
 
-- [x] 11.3 Implement error states for all flows
+- [ ] 11.3 Implement error states for all flows
+
   - Add 401 redirect to Cognito Hosted UI
   - Add 403 forbidden message
   - Add 404 not found message
@@ -434,7 +481,8 @@
   - Add 5xx server error with retry
   - _Requirements: 11.3, 11.4, 11.5, 11.6, 11.7, 11.8_
 
-- [x] 11.4 Implement toast notifications
+- [ ] 11.4 Implement toast notifications
+
   - Create toast system using shadcn/ui Toast
   - Add success toasts for actions (card saved, deleted, etc.)
   - Add error toasts for failures
@@ -442,6 +490,7 @@
   - _Requirements: 11.10_
 
 - [ ]\* 11.5 Write error handling tests
+
   - Unit tests for error parsing
   - Unit tests for error mapping
   - Integration tests for each error scenario
@@ -450,6 +499,7 @@
 
 - [ ] 12. Responsive design and mobile optimization
 - [ ] 12.1 Implement responsive layouts
+
   - Create mobile-first CSS with Tailwind breakpoints
   - Implement single-column layouts for mobile
   - Add responsive grid columns (1-4 based on screen)
@@ -458,6 +508,7 @@
   - _Requirements: 8.1, 8.5_
 
 - [ ] 12.2 Optimize mobile upload experience
+
   - Integrate native camera on mobile devices
   - Implement file picker for mobile
   - Add image compression for large files on mobile
@@ -465,6 +516,7 @@
   - _Requirements: 8.2_
 
 - [ ] 12.3 Implement mobile-specific UI patterns
+
   - Use bottom sheets for filters and modals
   - Implement swipe gestures where appropriate
   - Add pull-to-refresh for vault
@@ -473,6 +525,7 @@
   - _Requirements: 8.3, 8.6, 8.7_
 
 - [ ]\* 12.4 Test responsive design
+
   - Manual testing on physical devices
   - Browser DevTools responsive testing
   - E2E tests on mobile viewports
@@ -481,6 +534,7 @@
 
 - [ ] 13. Accessibility implementation
 - [ ] 13.1 Implement keyboard navigation
+
   - Ensure all interactive elements are keyboard accessible
   - Add visible focus indicators (2px Holo Cyan ring)
   - Implement roving tabindex for card grids
@@ -489,6 +543,7 @@
   - _Requirements: 9.1, 9.2, 9.9_
 
 - [ ] 13.2 Implement ARIA attributes
+
   - Add aria-live regions for async status updates
   - Add aria-labels for icon buttons
   - Add aria-descriptions for complex widgets
@@ -497,6 +552,7 @@
   - _Requirements: 9.3, 9.4_
 
 - [ ] 13.3 Ensure semantic HTML
+
   - Use semantic elements (nav, main, article, section)
   - Proper heading hierarchy (h1-h6)
   - Use button elements for actions (not divs)
@@ -504,6 +560,7 @@
   - _Requirements: 9.8_
 
 - [ ] 13.4 Implement color accessibility
+
   - Ensure all color combinations meet WCAG AA contrast (4.5:1)
   - Never rely solely on color to convey information
   - Add patterns or icons alongside color coding
@@ -511,6 +568,7 @@
   - _Requirements: 9.6_
 
 - [ ] 13.5 Implement motion accessibility
+
   - Respect prefers-reduced-motion media query
   - Disable animations when reduced motion is preferred
   - Use instant transitions instead of animations
@@ -518,12 +576,14 @@
   - _Requirements: 9.7_
 
 - [ ] 13.6 Add descriptive alt text
+
   - Write descriptive alt text for all card images
   - Use empty alt for decorative images
   - Provide context in alt text
   - _Requirements: 9.5_
 
 - [ ]\* 13.7 Run accessibility audits
+
   - Run axe-core automated tests
   - Manual keyboard navigation testing
   - Screen reader testing (VoiceOver, NVDA)
@@ -533,6 +593,7 @@
 
 - [ ] 14. Performance optimization
 - [ ] 14.1 Implement code splitting
+
   - Configure route-based code splitting (automatic with Next.js)
   - Lazy load Recharts library
   - Dynamic import for CameraCapture component
@@ -541,6 +602,7 @@
   - _Requirements: 10.4, 10.5_
 
 - [ ] 14.2 Optimize images
+
   - Use Next.js Image component for all images
   - Add blur placeholders for smooth loading
   - Implement responsive images with srcset
@@ -549,6 +611,7 @@
   - _Requirements: 10.6_
 
 - [ ] 14.3 Implement caching strategies
+
   - Configure SWR with appropriate revalidation settings
   - Implement stale-while-revalidate for vault lists
   - Add cache invalidation on mutations
@@ -556,6 +619,7 @@
   - _Requirements: 10.7_
 
 - [ ] 14.4 Optimize animations
+
   - Use CSS transforms and opacity for animations
   - Avoid expensive reflows (layout thrashing)
   - Add will-change sparingly
@@ -564,6 +628,7 @@
   - _Requirements: 10.8_
 
 - [ ] 14.5 Implement virtualization
+
   - Add virtualization for vault grid when > 200 items
   - Use react-window or similar library
   - Implement dynamic row heights
@@ -571,6 +636,7 @@
   - _Requirements: 6.8_
 
 - [ ]\* 14.6 Run performance audits
+
   - Run Lighthouse CI on all pages
   - Verify LCP < 2.5s on mobile
   - Verify CLS < 0.1
@@ -581,6 +647,7 @@
 
 - [ ] 15. Security hardening
 - [ ] 15.1 Implement secure authentication
+
   - Store JWT in HTTP-only, Secure, SameSite=Lax cookies
   - Never store tokens in localStorage
   - Implement automatic token refresh
@@ -588,6 +655,7 @@
   - _Requirements: 12.1_
 
 - [ ] 15.2 Configure Content Security Policy
+
   - Set strict CSP headers
   - Disallow inline scripts
   - Whitelist trusted domains
@@ -595,6 +663,7 @@
   - _Requirements: 12.2_
 
 - [ ] 15.3 Implement security headers
+
   - Add Referrer-Policy: strict-origin-when-cross-origin
   - Add X-Frame-Options: DENY
   - Add X-Content-Type-Options: nosniff
@@ -602,6 +671,7 @@
   - _Requirements: 12.3_
 
 - [ ] 15.4 Implement input validation
+
   - Use Zod schemas from @collectiq/shared for client-side validation
   - Validate file types and sizes before upload
   - Sanitize user input in forms
@@ -609,6 +679,7 @@
   - _Requirements: 12.5_
 
 - [ ] 15.5 Implement privacy protections
+
   - Never log PII in analytics or errors
   - Respect Do Not Track (DNT) header
   - Implement GDPR-compliant data handling
@@ -616,6 +687,7 @@
   - _Requirements: 12.6, 14.9, 14.10_
 
 - [ ]\* 15.6 Run security audit
+
   - Check for common vulnerabilities (OWASP Top 10)
   - Verify CSP is working correctly
   - Test authentication flows for security issues
@@ -624,6 +696,7 @@
 
 - [ ] 16. Analytics and telemetry
 - [ ] 16.1 Implement event tracking
+
   - Create analytics utility in apps/web/lib/analytics.ts
   - Consider using telemetry utilities from packages/telemetry if applicable
   - Implement upload_started event
@@ -635,6 +708,7 @@
   - _Requirements: 14.1, 14.2, 14.3, 14.4, 14.5, 14.6_
 
 - [ ] 16.2 Implement privacy-safe logging
+
   - Never include PII in events
   - Include requestId for traceability
   - Add event timestamp
@@ -642,6 +716,7 @@
   - _Requirements: 14.7, 14.8_
 
 - [ ] 16.3 Implement feature flags
+
   - Create feature flag system
   - Add flags for pricing, authenticity, charts
   - Guard risky features behind flags
@@ -649,6 +724,7 @@
   - _Requirements: 14.9_
 
 - [ ]\* 16.4 Test analytics implementation
+
   - Verify events are fired correctly
   - Test DNT respect
   - Verify no PII in logs
@@ -657,6 +733,7 @@
 
 - [ ] 17. Testing and quality assurance
 - [ ]\* 17.1 Write unit tests
+
   - Test utility functions (formatters, validators) in apps/web/lib
   - Test Zod schema parsing using schemas from @collectiq/shared
   - Test API client methods
@@ -666,6 +743,7 @@
   - _Requirements: 15.1_
 
 - [ ]\* 17.2 Write integration tests
+
   - Test upload flow end-to-end
   - Test vault pagination and filtering
   - Test error state handling
@@ -673,6 +751,7 @@
   - _Requirements: 15.2_
 
 - [ ]\* 17.3 Write E2E tests
+
   - Test auth redirect for unauthenticated users
   - Test happy path: upload → identify → valuation → save
   - Test session expiry modal
@@ -681,6 +760,7 @@
   - _Requirements: 15.4, 15.5, 15.6, 15.7_
 
 - [ ]\* 17.4 Run accessibility tests
+
   - Run axe-core automated checks
   - Manual keyboard navigation testing
   - Screen reader testing
@@ -688,6 +768,7 @@
   - _Requirements: 15.8, 15.9_
 
 - [ ]\* 17.5 Run performance tests
+
   - Run Lighthouse CI
   - Verify Core Web Vitals thresholds
   - Test on slow 3G network
@@ -696,6 +777,7 @@
 
 - [ ] 18. Documentation and deployment
 - [ ] 18.1 Write developer documentation
+
   - Create comprehensive README with setup instructions
   - Document environment variables
   - Document common development scripts
@@ -704,6 +786,7 @@
   - _Requirements: All_
 
 - [ ] 18.2 Configure CI/CD pipeline
+
   - Set up GitHub Actions workflow
   - Add lint and typecheck steps
   - Add test execution step
@@ -712,6 +795,7 @@
   - _Requirements: All_
 
 - [ ] 18.3 Configure production deployment
+
   - Set up AWS Amplify or Vercel hosting
   - Configure environment variables
   - Set up custom domain with SSL
@@ -720,6 +804,7 @@
   - _Requirements: All_
 
 - [ ] 18.4 Create demo and user documentation
+
   - Create demo script for judges/users
   - Record demo video
   - Write user guide

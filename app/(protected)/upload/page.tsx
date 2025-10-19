@@ -4,7 +4,6 @@ import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import type { Route } from 'next';
 import { Camera } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { UploadDropzone } from '@/components/upload/UploadDropzone';
 import { CameraCapture } from '@/components/upload/CameraCapture';
 import { UploadProgress } from '@/components/upload/UploadProgress';
@@ -76,7 +75,8 @@ export default function UploadPage() {
         // Track upload progress
         xhr.upload.addEventListener('progress', (event) => {
           if (event.lengthComputable) {
-            const percentComplete = (event.loaded / event.total) * 100;
+            const percentComplete =
+              (event.loaded / event.total) * 100;
             setUploadState((prev) => ({
               ...prev,
               progress: percentComplete,
@@ -90,7 +90,9 @@ export default function UploadPage() {
             if (xhr.status >= 200 && xhr.status < 300) {
               resolve();
             } else {
-              reject(new Error(`Upload failed with status ${xhr.status}`));
+              reject(
+                new Error(`Upload failed with status ${xhr.status}`)
+              );
             }
           });
 
@@ -113,7 +115,7 @@ export default function UploadPage() {
           xhr.send(file);
         });
 
-        // Step 3: Upload successful
+        // Step 3: Upload successful - update state
         setUploadState((prev) => ({
           ...prev,
           progress: 100,
@@ -122,23 +124,34 @@ export default function UploadPage() {
           abortController: null,
         }));
 
-        // Step 4: Redirect to identification screen
+        // Step 4: Create card record with S3 key
         toast({
           title: 'Upload successful',
+          description: 'Creating card record...',
+        });
+
+        const card = await api.createCard({
+          frontS3Key: presignResponse.key,
+        });
+
+        // Step 5: Redirect to card detail/processing screen
+        toast({
+          title: 'Card created',
           description: 'Analyzing your card...',
         });
 
-        // Navigate to identification page with the S3 key
         setTimeout(() => {
-          const identifyUrl =
-            `/identify?key=${encodeURIComponent(presignResponse.key)}` as Route;
-          router.push(identifyUrl);
+          const cardUrl = `/cards/${card.cardId}` as Route;
+          router.push(cardUrl);
         }, 500);
       } catch (error) {
         console.error('Upload error:', error);
 
         // Check if upload was cancelled
-        if (error instanceof Error && error.message === 'Upload cancelled') {
+        if (
+          error instanceof Error &&
+          error.message === 'Upload cancelled'
+        ) {
           setUploadState({
             file: null,
             progress: 0,
@@ -150,11 +163,21 @@ export default function UploadPage() {
           return;
         }
 
-        // Handle API errors
+        // Handle API errors with specific messages
         let errorMessage = 'Failed to upload file. Please try again.';
         if (error instanceof ApiError) {
-          errorMessage =
-            error.problem?.detail || error.problem?.title || error.message;
+          // Map specific error codes to user-friendly messages
+          if (error.status === 413) {
+            errorMessage = `File is too large. Max is 12 MB.`;
+          } else if (error.status === 415) {
+            errorMessage =
+              'Unsupported format. Use JPG, PNG, or HEIC.';
+          } else {
+            errorMessage =
+              error.problem?.detail ||
+              error.problem?.title ||
+              error.message;
+          }
         } else if (error instanceof Error) {
           errorMessage = error.message;
         }
@@ -239,13 +262,15 @@ export default function UploadPage() {
   // ============================================================================
 
   React.useEffect(() => {
-    // Cleanup on unmount
+    // Cleanup on unmount - abort any ongoing uploads
     return () => {
       if (uploadState.abortController) {
         uploadState.abortController.abort();
       }
     };
   }, [uploadState.abortController]);
+
+  // Note: Object URLs for image previews are managed by UploadProgress component
 
   // ============================================================================
   // Render
@@ -255,67 +280,121 @@ export default function UploadPage() {
   const hasUpload = uploadState.file !== null;
 
   return (
-    <div className="container mx-auto max-w-4xl px-4 py-8">
-      {/* Header */}
-      <div className="mb-8 text-center">
-        <h1 className="mb-2 text-4xl font-bold font-display">Upload Card</h1>
-        <p className="text-[var(--muted-foreground)]">
-          Take a photo or upload an image of your trading card
-        </p>
+    <div className="min-h-screen flex flex-col relative bg-[var(--background)]">
+      {/* Gradient Background */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute inset-0 landing-gradient" />
+      </div>
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute inset-0 landing-radials" />
       </div>
 
-      {/* Upload Progress */}
-      {hasUpload && (
-        <div className="mb-6">
-          <UploadProgress
-            file={uploadState.file!}
-            progress={uploadState.progress}
-            status={uploadState.status}
-            error={uploadState.error || undefined}
-            onCancel={isUploading ? handleCancelUpload : undefined}
-            onRetry={
-              uploadState.status === 'error' ? handleRetryUpload : undefined
-            }
-          />
-        </div>
-      )}
-
-      {/* Upload Options */}
-      {!hasUpload && (
-        <>
-          {/* Camera Button */}
-          <div className="mb-6">
-            <Button
-              variant="gradient"
-              size="lg"
-              onClick={() => setShowCamera(true)}
-              className="w-full"
+      <main className="flex-1 relative z-10 flex items-start justify-center px-6 pt-20 pb-12">
+        <div className="max-w-6xl w-full">
+          {/* Header */}
+          <div className="mb-12 text-center">
+            <h1
+              className="mb-4 text-5xl sm:text-6xl md:text-7xl font-bold font-display tracking-[-0.02em]"
+              style={{
+                textShadow: 'var(--text-shadow, 0 2px 8px rgba(0, 0, 0, 0.3))',
+              }}
             >
-              <Camera className="mr-2 h-5 w-5" />
-              Take Photo
-            </Button>
-          </div>
-
-          {/* Divider */}
-          <div className="relative mb-6">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-[var(--border)]" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-[var(--background)] px-2 text-[var(--muted-foreground)]">
-                Or
+              <span
+                className="bg-gradient-to-tr from-[var(--color-holo-cyan)] via-[var(--color-emerald-glow)] to-[var(--color-vault-blue)] bg-clip-text text-transparent"
+                style={{
+                  textShadow: 'none',
+                  filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2))',
+                }}
+              >
+                Scan Your Card
               </span>
-            </div>
+            </h1>
+            <p
+              className="text-xl sm:text-2xl"
+              style={{
+                color: 'var(--foreground)',
+                opacity: 0.9,
+                textShadow: '0 1px 4px rgba(0, 0, 0, 0.3)',
+              }}
+            >
+              Choose how you&apos;d like to add your trading card
+            </p>
           </div>
 
-          {/* Dropzone */}
-          <UploadDropzone
-            onSelected={handleFileSelected}
-            onError={handleUploadError}
-            disabled={isUploading}
-          />
-        </>
-      )}
+          {/* Upload Progress */}
+          {hasUpload && (
+            <div className="mb-8 max-w-2xl mx-auto">
+              <UploadProgress
+                file={uploadState.file!}
+                progress={uploadState.progress}
+                status={uploadState.status}
+                error={uploadState.error || undefined}
+                onCancel={isUploading ? handleCancelUpload : undefined}
+                onRetry={
+                  uploadState.status === 'error' ? handleRetryUpload : undefined
+                }
+              />
+            </div>
+          )}
+
+          {/* Upload Options - Card Layout */}
+          {!hasUpload && (
+            <div className="flex justify-center items-center gap-8">
+              {/* Camera Capture Card */}
+              <button
+                onClick={() => setShowCamera(true)}
+                disabled={isUploading}
+                className="group relative p-10 rounded-2xl transition-all duration-300 flex flex-col items-center justify-center border-2 border-gray-200 dark:border-white/10 shadow-lg dark:shadow-[0_8px_32px_rgba(0,0,0,0.12)] hover:border-[var(--color-holo-cyan)] hover:shadow-xl hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                style={{
+                  backgroundColor: 'var(--background)',
+                  width: '340px',
+                  height: '476px',
+                }}
+              >
+                <div className="flex flex-col items-center justify-center text-center space-y-6">
+                  <div className="rounded-full p-6 bg-[var(--color-holo-cyan)]/10 group-hover:bg-[var(--color-holo-cyan)]/20 transition-colors">
+                    <Camera
+                      className="w-14 h-14 text-[var(--color-holo-cyan)]"
+                      strokeWidth={1.5}
+                    />
+                  </div>
+                  <div className="space-y-3">
+                    <h3 className="text-2xl font-bold font-display">
+                      Capture Photo
+                    </h3>
+                    <p className="text-base text-[var(--muted-foreground)] leading-relaxed px-4">
+                      Use your camera to snap a photo of your card
+                    </p>
+                  </div>
+                  <div className="pt-4">
+                    <div className="inline-flex items-center gap-2 text-sm font-medium text-[var(--color-holo-cyan)] group-hover:gap-3 transition-all">
+                      Open Camera
+                      <span className="text-base">→</span>
+                    </div>
+                  </div>
+                </div>
+              </button>
+
+              {/* File Upload Card */}
+              <div
+                className="group relative rounded-2xl transition-all duration-300 border-2 border-gray-200 dark:border-white/10 shadow-lg dark:shadow-[0_8px_32px_rgba(0,0,0,0.12)] hover:border-[var(--color-emerald-glow)] hover:shadow-xl hover:scale-[1.02] overflow-hidden"
+                style={{
+                  backgroundColor: 'var(--background)',
+                  width: '340px',
+                  height: '476px',
+                }}
+              >
+                <UploadDropzone
+                  onSelected={handleFileSelected}
+                  onError={handleUploadError}
+                  disabled={isUploading}
+                  className="h-full w-full border-0 rounded-none p-10 min-h-0 hover:border-0 hover:bg-transparent"
+                />
+              </div>
+            </div>
+          )}
+        </div>
+      </main>
 
       {/* Camera Capture Modal */}
       {showCamera && (
