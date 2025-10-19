@@ -4,7 +4,8 @@
  */
 
 import type { APIGatewayProxyEventV2, APIGatewayProxyResultV2 } from 'aws-lambda';
-import { CreateCardRequestSchema } from '@collectiq/shared';
+import { EventBridgeClient, PutEventsCommand } from '@aws-sdk/client-eventbridge';
+import { CreateCardRequestSchema, type Card } from '@collectiq/shared';
 import { getUserId, type APIGatewayProxyEventV2WithJWT } from '../auth/jwt-claims.js';
 import { createCard } from '../store/card-service.js';
 import { formatErrorResponse, BadRequestError, UnauthorizedError } from '../utils/errors.js';
@@ -13,6 +14,86 @@ import { metrics } from '../utils/metrics.js';
 import { tracing } from '../utils/tracing.js';
 import { withIdempotency } from '../utils/idempotency-middleware.js';
 import { getJsonHeaders } from '../utils/response-headers.js';
+
+/**
+ * EventBridge client singleton
+ */
+let eventBridgeClient: EventBridgeClient | null = null;
+
+/**
+ * Get or create EventBridge client
+ */
+function getEventBridgeClient(): EventBridgeClient {
+  if (!eventBridgeClient) {
+    const client = new EventBridgeClient({
+      region: process.env.AWS_REGION || 'us-east-1',
+    });
+    eventBridgeClient = tracing.captureAWSv3Client(client);
+  }
+  return eventBridgeClient;
+}
+
+/**
+ * Emit CardCreated event to EventBridge for auto-trigger revaluation
+ */
+async function emitCardCreatedEvent(card: Card, userId: string, requestId: string): Promise<void> {
+  const eventBusName = process.env.EVENT_BUS_NAME || 'collectiq-hackathon-events';
+
+  logger.info('Emitting CardCreated event for auto-trigger', {
+    cardId: card.cardId,
+    userId,
+    eventBusName,
+    requestId,
+  });
+
+  try {
+    const client = getEventBridgeClient();
+
+    const eventDetail = {
+      cardId: card.cardId,
+      userId: card.userId,
+      frontS3Key: card.frontS3Key,
+      backS3Key: card.backS3Key,
+      name: card.name,
+      set: card.set,
+      number: card.number,
+      rarity: card.rarity,
+      conditionEstimate: card.conditionEstimate,
+      timestamp: new Date().toISOString(),
+    };
+
+    await tracing.trace(
+      'eventbridge_emit_card_created',
+      () =>
+        client.send(
+          new PutEventsCommand({
+            Entries: [
+              {
+                Source: 'collectiq.cards',
+                DetailType: 'CardCreated',
+                Detail: JSON.stringify(eventDetail),
+                EventBusName: eventBusName,
+              },
+            ],
+          })
+        ),
+      { cardId: card.cardId, userId, requestId }
+    );
+
+    logger.info('CardCreated event emitted successfully', {
+      cardId: card.cardId,
+      userId,
+      requestId,
+    });
+  } catch (error) {
+    // Don't fail card creation if event emission fails
+    logger.error(
+      'Failed to emit CardCreated event',
+      error instanceof Error ? error : new Error(String(error)),
+      { cardId: card.cardId, userId, requestId }
+    );
+  }
+}
 
 /**
  * Lambda handler for creating a new card
@@ -76,6 +157,11 @@ async function cardsCreateHandler(event: APIGatewayProxyEventV2): Promise<APIGat
       cardId: card.cardId,
       requestId,
     });
+
+    // Emit CardCreated event for auto-trigger revaluation (if enabled)
+    if (process.env.AUTO_TRIGGER_REVALUE === 'true') {
+      await emitCardCreatedEvent(card, userId, requestId);
+    }
 
     // Emit metrics
     const latency = Date.now() - startTime;

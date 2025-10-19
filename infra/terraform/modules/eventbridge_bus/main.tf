@@ -32,6 +32,7 @@ resource "aws_cloudwatch_event_target" "targets" {
   event_bus_name = aws_cloudwatch_event_bus.bus.name
   target_id      = "${each.key}-target"
   arn            = each.value.target_arn
+  role_arn       = try(each.value.target_role_arn, null)
 
   # Dead letter config for failed deliveries
   dead_letter_config {

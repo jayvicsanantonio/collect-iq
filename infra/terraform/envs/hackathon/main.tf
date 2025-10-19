@@ -214,7 +214,49 @@ module "eventbridge_bus" {
   bus_name = "${local.name_prefix}-events"
 
   # Event rules for card processing workflow
-  event_rules = {}
+  event_rules = {
+    # Auto-trigger revaluation when card is created
+    card_created_auto_revalue = {
+      description = "Automatically trigger AI analysis when card is created"
+      event_pattern = jsonencode({
+        source      = ["collectiq.cards"]
+        detail-type = ["CardCreated"]
+      })
+      target_arn  = module.step_functions.state_machine_arn
+      target_type = "stepfunctions"
+      target_role_arn = aws_iam_role.eventbridge_sfn_role.arn
+      input_transformer = {
+        input_paths = {
+          cardId            = "$.detail.cardId"
+          userId            = "$.detail.userId"
+          frontS3Key        = "$.detail.frontS3Key"
+          backS3Key         = "$.detail.backS3Key"
+          name              = "$.detail.name"
+          set               = "$.detail.set"
+          number            = "$.detail.number"
+          rarity            = "$.detail.rarity"
+          conditionEstimate = "$.detail.conditionEstimate"
+        }
+        input_template = jsonencode({
+          userId = "<userId>"
+          cardId = "<cardId>"
+          s3Keys = {
+            front = "<frontS3Key>"
+          }
+          cardMeta = {
+            name              = "<name>"
+            set               = "<set>"
+            number            = "<number>"
+            rarity            = "<rarity>"
+            conditionEstimate = "<conditionEstimate>"
+            frontS3Key        = "<frontS3Key>"
+          }
+          requestId    = "$$.Execution.Name"
+          forceRefresh = false
+        })
+      }
+    }
+  }
   #event_rules = {
   #  # Rule 1: Card processing completed successfully
   #  card_processing_completed = {
@@ -280,4 +322,43 @@ module "eventbridge_bus" {
   retry_maximum_retry_attempts  = 3
 
   tags = local.common_tags
+}
+
+# ============================================================================
+# IAM Role for EventBridge to Invoke Step Functions
+# ============================================================================
+
+resource "aws_iam_role" "eventbridge_sfn_role" {
+  name = "${local.name_prefix}-eventbridge-sfn-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Principal = {
+        Service = "events.amazonaws.com"
+      }
+      Action = "sts:AssumeRole"
+    }]
+  })
+
+  tags = local.common_tags
+}
+
+resource "aws_iam_role_policy" "eventbridge_sfn_policy" {
+  name = "${local.name_prefix}-eventbridge-sfn-policy"
+  role = aws_iam_role.eventbridge_sfn_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Action = [
+        "states:StartExecution"
+      ]
+      Resource = [
+        module.step_functions.state_machine_arn
+      ]
+    }]
+  })
 }
