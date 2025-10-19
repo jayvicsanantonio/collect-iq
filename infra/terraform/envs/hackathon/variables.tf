@@ -34,13 +34,13 @@ variable "github_access_token" {
 variable "amplify_oauth_redirect_uri" {
   description = "OAuth redirect URI for Amplify app (set after first deployment)"
   type        = string
-  default     = "https://localhost:3000/auth/callback/"
+  default     = "https://main.ddtufp5of4bf.amplifyapp.com/auth/callback"
 }
 
 variable "amplify_oauth_logout_uri" {
   description = "OAuth logout URI for Amplify app (set after first deployment)"
   type        = string
-  default     = "https://localhost:3000/landing"
+  default     = "https://main.ddtufp5of4bf.amplifyapp.com/landing"
 }
 
 variable "budget_amount" {
