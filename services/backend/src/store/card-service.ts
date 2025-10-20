@@ -10,6 +10,7 @@ import {
   DeleteCommand,
   ScanCommand,
 } from '@aws-sdk/lib-dynamodb';
+import { DeleteObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { v4 as uuidv4 } from 'uuid';
 import { Card, CardSchema } from '@collectiq/shared';
 import {
@@ -26,6 +27,7 @@ import {
 } from '../utils/errors.js';
 import { enforceCardOwnership } from '../auth/ownership.js';
 import { logger } from '../utils/logger.js';
+import { tracing } from '../utils/tracing.js';
 
 /**
  * DynamoDB item structure for cards
@@ -545,6 +547,81 @@ export async function updateCard(
 }
 
 /**
+ * Delete S3 objects for a card
+ */
+async function deleteCardS3Objects(
+  frontS3Key: string,
+  backS3Key?: string,
+  requestId?: string
+): Promise<void> {
+  const bucketName = process.env.S3_BUCKET || process.env.BUCKET_UPLOADS;
+  if (!bucketName) {
+    logger.warn('S3 bucket not configured, skipping S3 deletion', {
+      operation: 'deleteCardS3Objects',
+      requestId,
+    });
+    return;
+  }
+
+  const s3Client = tracing.captureAWSv3Client(
+    new S3Client({
+      region: process.env.AWS_REGION || process.env.REGION || 'us-east-1',
+    })
+  );
+
+  const deletePromises: Promise<unknown>[] = [];
+
+  // Delete front image
+  deletePromises.push(
+    s3Client
+      .send(
+        new DeleteObjectCommand({
+          Bucket: bucketName,
+          Key: frontS3Key,
+        })
+      )
+      .catch((error) => {
+        logger.warn('Failed to delete front S3 object', {
+          operation: 'deleteCardS3Objects',
+          frontS3Key,
+          requestId,
+          error: error instanceof Error ? error.message : String(error),
+        });
+      })
+  );
+
+  // Delete back image if exists
+  if (backS3Key) {
+    deletePromises.push(
+      s3Client
+        .send(
+          new DeleteObjectCommand({
+            Bucket: bucketName,
+            Key: backS3Key,
+          })
+        )
+        .catch((error) => {
+          logger.warn('Failed to delete back S3 object', {
+            operation: 'deleteCardS3Objects',
+            backS3Key,
+            requestId,
+            error: error instanceof Error ? error.message : String(error),
+          });
+        })
+    );
+  }
+
+  await Promise.all(deletePromises);
+
+  logger.info('S3 objects deleted', {
+    operation: 'deleteCardS3Objects',
+    frontS3Key,
+    backS3Key,
+    requestId,
+  });
+}
+
+/**
  * Delete a card (soft or hard delete based on configuration)
  *
  * @param userId - Cognito user ID
@@ -568,15 +645,18 @@ export async function deleteCard(
     requestId,
   });
 
-  // First verify ownership
-  await getCard(userId, cardId, requestId);
+  // First verify ownership and get card data
+  const card = await getCard(userId, cardId, requestId);
 
   try {
     const client = getDynamoDBClient();
     const tableName = getTableName();
 
     if (hardDelete) {
-      // Permanently delete the item
+      // Delete S3 objects first (before DynamoDB record)
+      await deleteCardS3Objects(card.frontS3Key, card.backS3Key, requestId);
+
+      // Permanently delete the DynamoDB item
       await client.send(
         new DeleteCommand({
           TableName: tableName,
@@ -588,7 +668,7 @@ export async function deleteCard(
         })
       );
     } else {
-      // Soft delete: set deletedAt timestamp
+      // Soft delete: set deletedAt timestamp (keep S3 objects for potential recovery)
       await client.send(
         new UpdateCommand({
           TableName: tableName,
@@ -611,6 +691,7 @@ export async function deleteCard(
       userId,
       cardId,
       hardDelete,
+      s3Deleted: hardDelete,
       requestId,
     });
   } catch (error) {
