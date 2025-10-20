@@ -70,27 +70,81 @@ export const handler: Handler<PricingAgentInput, PricingAgentOutput> = async (ev
     let cardName = cardMeta.name;
 
     if (!cardName && event.features?.ocr && event.features.ocr.length > 0) {
-      // Extract card name from OCR blocks (usually the largest text at the top)
-      const sortedBlocks = [...event.features.ocr].sort((a, b) => {
-        // Sort by size (height * width) and confidence
-        const sizeA = (a.boundingBox?.height || 0) * (a.boundingBox?.width || 0);
-        const sizeB = (b.boundingBox?.height || 0) * (b.boundingBox?.width || 0);
-        const confidenceA = a.confidence || 0;
-        const confidenceB = b.confidence || 0;
+      // Extract card name from OCR blocks
+      // Card names are typically:
+      // - At the top of the card (low Y position)
+      // - Short text (1-3 words, < 30 characters)
+      // - High confidence
+      // - Larger font than body text
 
-        // Prioritize larger text with high confidence
-        return sizeB * confidenceB - sizeA * confidenceA;
-      });
+      const candidateBlocks = event.features.ocr
+        .filter((block) => {
+          const text = block.text || '';
+          const wordCount = text.split(/\s+/).length;
+          const charCount = text.length;
+          const topPosition = block.boundingBox?.top || 1;
 
-      // Take the largest, most confident text block as the card name
-      cardName = sortedBlocks[0]?.text || 'Unknown Card';
+          // Filter criteria for card names:
+          // - Not too long (card names are usually 1-3 words)
+          // - Not too many characters (< 30 chars)
+          // - In the top 40% of the card
+          // - Not common ability words
+          const isReasonableLength = wordCount >= 1 && wordCount <= 4 && charCount <= 30;
+          const isNearTop = topPosition < 0.4;
+          const notAbilityText = !text
+            .toLowerCase()
+            .match(
+              /\b(flip|coin|heads|tails|damage|attack|energy|deck|discard|draw|search|your|opponent)\b/
+            );
 
-      logger.info('Extracted card name from OCR', {
-        cardName,
-        ocrBlockCount: event.features.ocr.length,
-        confidence: sortedBlocks[0]?.confidence,
-        requestId,
-      });
+          return isReasonableLength && isNearTop && notAbilityText;
+        })
+        .sort((a, b) => {
+          // Among candidates, prefer:
+          // 1. Higher position (lower Y value)
+          // 2. Larger text
+          // 3. Higher confidence
+          const topA = a.boundingBox?.top || 1;
+          const topB = b.boundingBox?.top || 1;
+          const sizeA = (a.boundingBox?.height || 0) * (a.boundingBox?.width || 0);
+          const sizeB = (b.boundingBox?.height || 0) * (b.boundingBox?.width || 0);
+          const confidenceA = a.confidence || 0;
+          const confidenceB = b.confidence || 0;
+
+          // Prioritize top position, then size, then confidence
+          if (Math.abs(topA - topB) > 0.05) {
+            return topA - topB; // Lower Y = higher on card
+          }
+          return sizeB * confidenceB - sizeA * confidenceA;
+        });
+
+      if (candidateBlocks.length > 0) {
+        cardName = candidateBlocks[0].text || 'Unknown Card';
+
+        logger.info('Extracted card name from OCR', {
+          cardName,
+          ocrBlockCount: event.features.ocr.length,
+          candidateCount: candidateBlocks.length,
+          confidence: candidateBlocks[0].confidence,
+          position: candidateBlocks[0].boundingBox?.top,
+          requestId,
+        });
+      } else {
+        // Fallback: if no good candidates, take the topmost text
+        const topBlock = [...event.features.ocr].sort((a, b) => {
+          const topA = a.boundingBox?.top || 1;
+          const topB = b.boundingBox?.top || 1;
+          return topA - topB;
+        })[0];
+
+        cardName = topBlock?.text || 'Unknown Card';
+
+        logger.warn('No good card name candidates, using topmost text', {
+          cardName,
+          ocrBlockCount: event.features.ocr.length,
+          requestId,
+        });
+      }
     }
 
     if (!cardName) {
