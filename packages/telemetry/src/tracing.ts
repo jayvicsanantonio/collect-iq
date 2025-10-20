@@ -28,9 +28,21 @@ class TracingService {
 
     if (this.enabled) {
       try {
-        AWSXRay.setContextMissingStrategy('LOG_ERROR');
-        if (typeof AWSXRay.capturePromise === 'function') {
-          AWSXRay.capturePromise();
+        // Set context missing strategy to avoid errors when X-Ray context is unavailable
+        // This prevents errors during module initialization before Lambda handler is invoked
+        AWSXRay.setContextMissingStrategy('IGNORE_ERROR');
+
+        // Only capture promises if we're in a Lambda environment with active tracing
+        // Skip this during module initialization to avoid context issues
+        if (typeof AWSXRay.capturePromise === 'function' && process.env.AWS_EXECUTION_ENV) {
+          try {
+            AWSXRay.capturePromise();
+          } catch (promiseError) {
+            // Silently ignore promise capture errors during initialization
+            logger.debug('Skipped X-Ray promise capture during initialization', {
+              operation: 'xray_init',
+            });
+          }
         }
       } catch (error) {
         this.enabled = false;
@@ -247,7 +259,18 @@ class TracingService {
    * Instrument an AWS SDK v3 client so calls emit X-Ray subsegments
    */
   captureAWSv3Client<T extends { middlewareStack: unknown }>(client: T): T {
+    // Return uninstrumented client if X-Ray is disabled
     if (!this.enabled) {
+      return client;
+    }
+
+    // Also check if we're in a Lambda environment with active tracing
+    // If not, skip instrumentation to avoid context errors
+    const lambdaTraceId = process.env._X_AMZN_TRACE_ID;
+    if (!lambdaTraceId) {
+      logger.debug('Skipping X-Ray instrumentation: no Lambda trace context available', {
+        operation: 'xray_capture_client',
+      });
       return client;
     }
 
