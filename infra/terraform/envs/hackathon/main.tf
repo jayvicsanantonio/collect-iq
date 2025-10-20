@@ -292,15 +292,17 @@ module "eventbridge_bus" {
           {
             "userId": "<userId>",
             "cardId": "<cardId>",
-            "s3Key": "<frontS3Key>",
-            "s3Bucket": "<s3Bucket>",
-            "cardMetadata": {
+            "s3Keys": {
+              "front": "<frontS3Key>"
+            },
+            "cardMeta": {
               "name": "<name>",
               "set": "<set>",
               "number": "<number>",
               "rarity": "<rarity>",
               "conditionEstimate": "<conditionEstimate>"
-            }
+            },
+            "requestId": "<cardId>"
           }
         EOT
       }
