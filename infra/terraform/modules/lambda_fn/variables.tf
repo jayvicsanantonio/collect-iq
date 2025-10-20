@@ -127,3 +127,9 @@ variable "tags" {
   type        = map(string)
   default     = {}
 }
+
+variable "layers" {
+  description = "List of Lambda Layer ARNs to attach"
+  type        = list(string)
+  default     = []
+}

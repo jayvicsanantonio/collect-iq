@@ -5,15 +5,25 @@
  */
 
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
-import * as sharpModule from 'sharp';
-const sharp = sharpModule.default;
 import { logger } from './logger.js';
 import { tracing } from './tracing.js';
+
+// Lazy load sharp to avoid bundling issues in Lambdas that don't need it
+type SharpModule = typeof import('sharp');
+let sharpInstance: SharpModule | null = null;
+
+async function getSharp(): Promise<SharpModule> {
+  if (!sharpInstance) {
+    const sharpModule = await import('sharp');
+    sharpInstance = sharpModule.default as unknown as SharpModule;
+  }
+  return sharpInstance;
+}
 
 const s3Client = tracing.captureAWSv3Client(
   new S3Client({
     region: process.env.AWS_REGION || 'us-east-1',
-  }),
+  })
 );
 
 /**
@@ -61,10 +71,10 @@ async function downloadImageFromS3(s3Key: string, bucket?: string): Promise<Buff
     logger.error(
       'Failed to download image for pHash',
       error instanceof Error ? error : new Error(String(error)),
-      { s3Key, bucket: bucketName },
+      { s3Key, bucket: bucketName }
     );
     throw new Error(
-      `S3 image download failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      `S3 image download failed: ${error instanceof Error ? error.message : 'Unknown error'}`
     );
   }
 }
@@ -123,6 +133,9 @@ export async function computePerceptualHash(imageBuffer: Buffer): Promise<string
   logger.debug('Computing perceptual hash');
 
   try {
+    // Lazy load sharp
+    const sharp = await getSharp();
+
     // Step 1 & 2: Resize to 32x32 and convert to grayscale
     const resized = await sharp(imageBuffer)
       .resize(32, 32, { fit: 'fill' })
@@ -182,10 +195,10 @@ export async function computePerceptualHash(imageBuffer: Buffer): Promise<string
   } catch (error) {
     logger.error(
       'Failed to compute perceptual hash',
-      error instanceof Error ? error : new Error(String(error)),
+      error instanceof Error ? error : new Error(String(error))
     );
     throw new Error(
-      `Perceptual hash computation failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      `Perceptual hash computation failed: ${error instanceof Error ? error.message : 'Unknown error'}`
     );
   }
 }
@@ -210,7 +223,7 @@ export async function computePerceptualHashFromS3(s3Key: string, bucket?: string
     logger.error(
       'Failed to compute perceptual hash from S3',
       error instanceof Error ? error : new Error(String(error)),
-      { s3Key },
+      { s3Key }
     );
     throw error;
   }
@@ -260,7 +273,7 @@ export function calculateHammingDistance(hash1: string, hash2: string): number {
  */
 export function calculateSimilarityScore(
   hammingDistance: number,
-  maxDistance: number = 64,
+  maxDistance: number = 64
 ): number {
   return Math.max(0, 1 - hammingDistance / maxDistance);
 }

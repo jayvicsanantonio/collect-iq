@@ -39,6 +39,9 @@ resource "aws_lambda_function" "function" {
   # Reserved concurrent executions
   reserved_concurrent_executions = var.reserved_concurrent_executions
 
+  # Lambda layers
+  layers = var.layers
+
   tags = var.tags
 
   depends_on = [
