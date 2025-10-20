@@ -10,8 +10,8 @@
         "Payload": {
           "userId.$": "$.userId",
           "cardId.$": "$.cardId",
-          "s3Key.$": "$.s3Key",
-          "s3Bucket.$": "$.s3Bucket"
+          "s3Keys.$": "$.s3Keys",
+          "requestId.$": "$.requestId"
         }
       },
       "ResultPath": "$.featureEnvelope",
@@ -54,13 +54,9 @@
                 "Payload": {
                   "userId.$": "$.userId",
                   "cardId.$": "$.cardId",
-                  "featureEnvelope.$": "$.featureEnvelope.Payload",
-                  "cardMetadata": {
-                    "name.$": "$.cardMetadata.name",
-                    "set.$": "$.cardMetadata.set",
-                    "number.$": "$.cardMetadata.number",
-                    "rarity.$": "$.cardMetadata.rarity"
-                  }
+                  "features.$": "$.featureEnvelope.Payload.features",
+                  "cardMeta.$": "$.cardMeta",
+                  "requestId.$": "$.requestId"
                 }
               },
               "ResultPath": "$.pricingResult",
@@ -115,15 +111,9 @@
                 "Payload": {
                   "userId.$": "$.userId",
                   "cardId.$": "$.cardId",
-                  "s3Key.$": "$.s3Key",
-                  "s3Bucket.$": "$.s3Bucket",
-                  "featureEnvelope.$": "$.featureEnvelope.Payload",
-                  "cardMetadata": {
-                    "name.$": "$.cardMetadata.name",
-                    "set.$": "$.cardMetadata.set",
-                    "number.$": "$.cardMetadata.number",
-                    "rarity.$": "$.cardMetadata.rarity"
-                  }
+                  "features.$": "$.featureEnvelope.Payload.features",
+                  "cardMeta.$": "$.cardMeta",
+                  "requestId.$": "$.requestId"
                 }
               },
               "ResultPath": "$.authenticityResult",
@@ -185,12 +175,18 @@
         "Payload": {
           "userId.$": "$.userId",
           "cardId.$": "$.cardId",
-          "s3Key.$": "$.s3Key",
-          "s3Bucket.$": "$.s3Bucket",
-          "featureEnvelope.$": "$.featureEnvelope.Payload",
-          "pricingResult.$": "$.parallelResults[0].pricingResult.Payload",
-          "authenticityResult.$": "$.parallelResults[1].authenticityResult.Payload",
-          "cardMetadata.$": "$.cardMetadata"
+          "requestId.$": "$.requestId",
+          "agentResults": [
+            {
+              "pricingResult.$": "$.parallelResults[0].pricingResult.Payload.pricingResult",
+              "valuationSummary.$": "$.parallelResults[0].pricingResult.Payload.valuationSummary",
+              "requestId.$": "$.parallelResults[0].pricingResult.Payload.requestId"
+            },
+            {
+              "authenticityResult.$": "$.parallelResults[1].authenticityResult.Payload.authenticityResult",
+              "requestId.$": "$.parallelResults[1].authenticityResult.Payload.requestId"
+            }
+          ]
         }
       },
       "ResultPath": "$.aggregatorResult",
