@@ -578,6 +578,12 @@ resource "aws_iam_role_policy" "pricing_agent_dynamodb" {
   })
 }
 
+# Grant pricing agent access to Secrets Manager
+resource "aws_iam_role_policy_attachment" "secrets_lambda" {
+  role = module.lambda_pricing_agent.role_name
+  policy_arn = module.ssm_secrets.policy_arn
+}
+
 # 4.6 Authenticity Agent Lambda
 module "lambda_authenticity_agent" {
   source = "../../modules/lambda_fn"
