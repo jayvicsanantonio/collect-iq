@@ -7,12 +7,16 @@ resource "null_resource" "sharp_layer" {
   triggers = {
     # Rebuild if sharp version changes
     sharp_version = var.sharp_version
+    output_path   = var.output_path
   }
 
   provisioner "local-exec" {
     command = <<-EOT
       set -e
       echo "Building sharp layer for Lambda..."
+      
+      # Create output directory if it doesn't exist
+      mkdir -p $(dirname "${var.output_path}")
       
       # Create temporary directory
       LAYER_DIR=$(mktemp -d)
@@ -25,7 +29,7 @@ resource "null_resource" "sharp_layer" {
       
       # Create zip
       cd $LAYER_DIR
-      zip -r ${var.output_path} nodejs/
+      zip -r ${abspath(var.output_path)} nodejs/
       
       # Cleanup
       rm -rf $LAYER_DIR
@@ -35,13 +39,19 @@ resource "null_resource" "sharp_layer" {
   }
 }
 
+data "local_file" "sharp_layer_zip" {
+  filename = var.output_path
+  
+  depends_on = [null_resource.sharp_layer]
+}
+
 resource "aws_lambda_layer_version" "sharp" {
   filename            = var.output_path
   layer_name          = var.layer_name
   description         = "Sharp ${var.sharp_version} image processing library for Lambda"
   compatible_runtimes = ["nodejs18.x", "nodejs20.x"]
   
-  source_code_hash = filebase64sha256(var.output_path)
+  source_code_hash = data.local_file.sharp_layer_zip.content_base64sha256
 
   depends_on = [null_resource.sharp_layer]
 }
