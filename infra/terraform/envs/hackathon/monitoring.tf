@@ -13,6 +13,7 @@ module "cloudwatch_dashboards" {
   # Lambda function names for monitoring
   lambda_function_names = [
     module.lambda_upload_presign.function_name,
+    module.lambda_image_presign.function_name,
     module.lambda_cards_create.function_name,
     module.lambda_cards_list.function_name,
     module.lambda_cards_get.function_name,
@@ -127,6 +128,7 @@ resource "aws_sns_topic_subscription" "cloudwatch_alarms_email" {
 resource "aws_cloudwatch_metric_alarm" "lambda_error_rate" {
   for_each = toset([
     module.lambda_upload_presign.function_name,
+    module.lambda_image_presign.function_name,
     module.lambda_cards_create.function_name,
     module.lambda_cards_list.function_name,
     module.lambda_cards_get.function_name,
