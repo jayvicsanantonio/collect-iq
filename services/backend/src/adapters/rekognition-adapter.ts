@@ -73,6 +73,16 @@ function convertBoundingBox(bbox: {
 }
 
 /**
+ * Card bounding box in pixel coordinates
+ */
+interface CardBoundingBox {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+/**
  * RekognitionAdapter class
  * Provides methods for text detection and feature extraction
  */
@@ -185,6 +195,165 @@ export class RekognitionAdapter {
   }
 
   /**
+   * Detect card boundaries in the image
+   * Uses label detection to find rectangular objects that likely represent the card
+   * @param imageBuffer - Image buffer to analyze
+   * @param metadata - Image metadata with dimensions
+   * @returns Card bounding box in pixel coordinates, or null if card not detected
+   */
+  private async detectCardBoundaries(
+    imageBuffer: Buffer,
+    metadata: { width: number; height: number }
+  ): Promise<CardBoundingBox | null> {
+    logger.debug('Detecting card boundaries');
+
+    try {
+      const sharp = await getSharp();
+      const image = sharp(imageBuffer);
+      const { data, info } = await image.raw().toBuffer({ resolveWithObject: true });
+      const { width, height, channels } = info;
+
+      if (channels < 3) {
+        logger.warn('Image does not have RGB channels for edge detection');
+        return null;
+      }
+
+      // Convert to grayscale for edge detection
+      const grayscale: number[] = [];
+      for (let i = 0; i < data.length; i += channels) {
+        const gray = Math.round((data[i] + data[i + 1] + data[i + 2]) / 3);
+        grayscale.push(gray);
+      }
+
+      // Simple edge detection using gradient magnitude
+      const edges: number[] = new Array(grayscale.length).fill(0);
+      const threshold = 30; // Edge detection threshold
+
+      for (let y = 1; y < height - 1; y++) {
+        for (let x = 1; x < width - 1; x++) {
+          const idx = y * width + x;
+
+          // Sobel operator for gradient
+          const gx =
+            -grayscale[idx - width - 1] +
+            grayscale[idx - width + 1] -
+            2 * grayscale[idx - 1] +
+            2 * grayscale[idx + 1] -
+            grayscale[idx + width - 1] +
+            grayscale[idx + width + 1];
+
+          const gy =
+            -grayscale[idx - width - 1] -
+            2 * grayscale[idx - width] -
+            grayscale[idx - width + 1] +
+            grayscale[idx + width - 1] +
+            2 * grayscale[idx + width] +
+            grayscale[idx + width + 1];
+
+          const magnitude = Math.sqrt(gx * gx + gy * gy);
+          edges[idx] = magnitude > threshold ? 255 : 0;
+        }
+      }
+
+      // Find bounding box of edge pixels
+      let minX = width;
+      let minY = height;
+      let maxX = 0;
+      let maxY = 0;
+      let edgeCount = 0;
+
+      for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+          const idx = y * width + x;
+          if (edges[idx] > 0) {
+            minX = Math.min(minX, x);
+            minY = Math.min(minY, y);
+            maxX = Math.max(maxX, x);
+            maxY = Math.max(maxY, y);
+            edgeCount++;
+          }
+        }
+      }
+
+      // Check if we found enough edges to constitute a card
+      const edgeRatio = edgeCount / (width * height);
+      if (edgeRatio < 0.01 || edgeRatio > 0.5) {
+        logger.warn('Edge detection failed: unusual edge ratio', { edgeRatio });
+        return null;
+      }
+
+      // Add padding to ensure we capture the full card (5% on each side)
+      const paddingX = Math.floor((maxX - minX) * 0.05);
+      const paddingY = Math.floor((maxY - minY) * 0.05);
+
+      const cardBox: CardBoundingBox = {
+        x: Math.max(0, minX - paddingX),
+        y: Math.max(0, minY - paddingY),
+        width: Math.min(width - (minX - paddingX), maxX - minX + 2 * paddingX),
+        height: Math.min(height - (minY - paddingY), maxY - minY + 2 * paddingY),
+      };
+
+      // Validate aspect ratio (trading cards are typically 2.5:3.5 ratio, ~0.71)
+      const aspectRatio = cardBox.width / cardBox.height;
+      if (aspectRatio < 0.5 || aspectRatio > 1.0) {
+        logger.warn('Detected card has unusual aspect ratio', { aspectRatio });
+        // Still return it, but log the warning
+      }
+
+      logger.info('Card boundaries detected', {
+        cardBox,
+        aspectRatio,
+        edgeRatio,
+        coveragePercent: ((cardBox.width * cardBox.height) / (width * height)) * 100,
+      });
+
+      return cardBox;
+    } catch (error) {
+      logger.error(
+        'Failed to detect card boundaries',
+        error instanceof Error ? error : new Error(String(error))
+      );
+      return null;
+    }
+  }
+
+  /**
+   * Crop image to card boundaries
+   * @param imageBuffer - Original image buffer
+   * @param cardBox - Card bounding box in pixel coordinates
+   * @returns Cropped image buffer
+   */
+  private async cropToCard(imageBuffer: Buffer, cardBox: CardBoundingBox): Promise<Buffer> {
+    logger.debug('Cropping image to card boundaries', { cardBox });
+
+    try {
+      const sharp = await getSharp();
+      const croppedBuffer = await sharp(imageBuffer)
+        .extract({
+          left: cardBox.x,
+          top: cardBox.y,
+          width: cardBox.width,
+          height: cardBox.height,
+        })
+        .toBuffer();
+
+      logger.info('Image cropped to card', {
+        originalSize: imageBuffer.length,
+        croppedSize: croppedBuffer.length,
+      });
+
+      return croppedBuffer;
+    } catch (error) {
+      logger.error(
+        'Failed to crop image',
+        error instanceof Error ? error : new Error(String(error))
+      );
+      // Return original buffer if cropping fails
+      return imageBuffer;
+    }
+  }
+
+  /**
    * Download image from S3 for pixel-level analysis
    * @param s3Key - S3 key of the image
    * @returns Image buffer
@@ -247,20 +416,41 @@ export class RekognitionAdapter {
     logger.info('Starting feature extraction', { s3Key });
 
     try {
-      // Run OCR and label detection in parallel
-      const [ocrBlocks, labelsResponse, imageBuffer] = await Promise.all([
+      // Step 1: Download image first for card detection
+      const imageBuffer = await this.downloadImage(s3Key);
+
+      // Step 2: Get image metadata for card detection
+      const sharp = await getSharp();
+      const metadata = await sharp(imageBuffer).metadata();
+      const { width = 0, height = 0 } = metadata;
+
+      // Step 3: Detect card boundaries in the image
+      logger.info('Detecting card boundaries before feature extraction');
+      const cardBox = await this.detectCardBoundaries(imageBuffer, { width, height });
+
+      // Step 4: Crop to card if detected, otherwise use full image
+      let processedBuffer = imageBuffer;
+      if (cardBox) {
+        logger.info('Card detected, cropping to card boundaries', { cardBox });
+        processedBuffer = await this.cropToCard(imageBuffer, cardBox);
+      } else {
+        logger.warn('Card boundaries not detected, using full image for analysis');
+      }
+
+      // Step 5: Run OCR and label detection on the original image (for better text detection)
+      // But use cropped image for visual analysis
+      const [ocrBlocks, labelsResponse] = await Promise.all([
         this.detectText(s3Key),
         this.detectLabels(s3Key),
-        this.downloadImage(s3Key),
       ]);
 
-      // Extract visual features from image buffer
+      // Step 6: Extract visual features from cropped/processed image buffer
       const [borders, holoVariance, fontMetrics, quality, imageMeta] = await Promise.all([
-        this.computeBorderMetrics(imageBuffer),
-        this.computeHolographicVariance(imageBuffer, labelsResponse),
+        this.computeBorderMetrics(processedBuffer),
+        this.computeHolographicVariance(processedBuffer, labelsResponse),
         this.extractFontMetrics(ocrBlocks),
-        this.analyzeImageQuality(imageBuffer),
-        this.extractImageMetadata(imageBuffer, s3Key),
+        this.analyzeImageQuality(processedBuffer),
+        this.extractImageMetadata(processedBuffer, s3Key),
       ]);
 
       const envelope: FeatureEnvelope = {
@@ -274,6 +464,7 @@ export class RekognitionAdapter {
 
       logger.info('Feature extraction complete', {
         s3Key,
+        cardDetected: !!cardBox,
         ocrBlockCount: ocrBlocks.length,
         holoVariance,
         blurScore: quality.blurScore,
