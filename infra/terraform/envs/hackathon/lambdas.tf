@@ -160,6 +160,17 @@ data "aws_iam_policy_document" "cards_delete_dynamodb" {
       "${module.dynamodb_collectiq.table_arn}/index/*"
     ]
   }
+
+  # S3 DeleteObject for cleaning up card images
+  statement {
+    effect = "Allow"
+    actions = [
+      "s3:DeleteObject"
+    ]
+    resources = [
+      "${module.s3_uploads.bucket_arn}/*"
+    ]
+  }
 }
 
 # Step Functions StartExecution policy for cards_revalue Lambda
@@ -420,8 +431,9 @@ module "lambda_cards_delete" {
   environment_variables = {
     REGION            = var.aws_region
     DDB_TABLE             = module.dynamodb_collectiq.table_name
+    S3_BUCKET             = module.s3_uploads.bucket_name
     COGNITO_USER_POOL_ID  = "" # Will be added when Cognito is deployed
-    HARD_DELETE_CARDS     = "false"
+    HARD_DELETE_CARDS     = "true" # Permanently delete cards and S3 objects
     XRAY_ENABLED          = "false" # Disable X-Ray SDK to avoid context issues
   }
 
