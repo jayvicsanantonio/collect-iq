@@ -68,14 +68,29 @@ function ErrorState({
 // ============================================================================
 
 export function UnauthorizedError() {
+  const [isRedirecting, setIsRedirecting] = React.useState(false);
+
+  const handleSignIn = React.useCallback(async () => {
+    if (isRedirecting) return;
+    setIsRedirecting(true);
+
+    try {
+      const { signIn } = await import('@/lib/auth');
+      await signIn();
+    } catch (error) {
+      console.error('Failed to redirect to sign in:', error);
+      setIsRedirecting(false);
+    }
+  }, [isRedirecting]);
+
   React.useEffect(() => {
     // Redirect to auth after a short delay
     const timeout = setTimeout(() => {
-      window.location.href = '/api/auth/signin';
+      handleSignIn();
     }, 2000);
 
     return () => clearTimeout(timeout);
-  }, []);
+  }, [handleSignIn]);
 
   return (
     <ErrorState
@@ -83,10 +98,8 @@ export function UnauthorizedError() {
       title="Session Expired"
       message="Your session has expired. You will be redirected to sign in."
       action={{
-        label: 'Sign In Now',
-        onClick: () => {
-          window.location.href = '/api/auth/signin';
-        },
+        label: isRedirecting ? 'Redirecting...' : 'Sign In Now',
+        onClick: handleSignIn,
       }}
     />
   );
