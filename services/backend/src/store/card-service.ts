@@ -35,7 +35,7 @@ interface CardItem {
   SK: string;
   entityType: 'CARD';
   cardId: string;
-  userId: string;
+  userId: string; // Also serves as GSI1 hash key
   name?: string;
   set?: string;
   number?: string;
@@ -51,11 +51,9 @@ interface CardItem {
   valueHigh?: number;
   compsCount?: number;
   sources?: string[];
-  createdAt: string;
+  createdAt: string; // Also serves as GSI1 range key
   updatedAt: string;
   deletedAt?: string;
-  GSI1PK?: string;
-  GSI1SK?: string;
 }
 
 /**
@@ -212,13 +210,10 @@ function cardToItem(card: Partial<Card>, userId: string, cardId: string): CardIt
     SK: generateCardSK(cardId),
     entityType: 'CARD',
     cardId,
-    userId,
+    userId, // GSI1 hash key
     frontS3Key: card.frontS3Key!,
-    createdAt: card.createdAt || now,
+    createdAt: card.createdAt || now, // GSI1 range key
     updatedAt: now,
-    // GSI1 for listing cards by user
-    GSI1PK: userId,
-    GSI1SK: card.createdAt || now,
   };
 
   // Add optional fields
@@ -337,7 +332,7 @@ export async function listCards(
     } = {
       TableName: tableName,
       IndexName: 'GSI1',
-      KeyConditionExpression: 'GSI1PK = :userId',
+      KeyConditionExpression: 'userId = :userId',
       ExpressionAttributeValues: {
         ':userId': userId,
       },
