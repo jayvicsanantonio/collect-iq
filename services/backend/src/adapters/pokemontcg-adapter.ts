@@ -115,7 +115,7 @@ export class PokemonTCGAdapter extends BasePriceAdapter {
 
     try {
       // Try to get API key from Secrets Manager
-      this.apiKey = await getSecret('POKEMON_TCG_API_KEY');
+      this.apiKey = await getSecret('collectiq-hackathon/tcgplayer-api-keys');
       logger.info('Pokémon TCG API key loaded');
     } catch (error) {
       // API key is optional - free tier works without it
