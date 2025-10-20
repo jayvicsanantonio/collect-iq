@@ -276,23 +276,24 @@ module "eventbridge_bus" {
           rarity            = "$.detail.rarity"
           conditionEstimate = "$.detail.conditionEstimate"
         }
-        input_template = jsonencode({
-          userId = "<userId>"
-          cardId = "<cardId>"
-          s3Keys = {
-            front = "<frontS3Key>"
+        input_template = <<-EOT
+          {
+            "userId": "<userId>",
+            "cardId": "<cardId>",
+            "s3Keys": {
+              "front": "<frontS3Key>"
+            },
+            "cardMeta": {
+              "name": "<name>",
+              "set": "<set>",
+              "number": "<number>",
+              "rarity": "<rarity>",
+              "conditionEstimate": "<conditionEstimate>",
+              "frontS3Key": "<frontS3Key>"
+            },
+            "forceRefresh": false
           }
-          cardMeta = {
-            name              = "<name>"
-            set               = "<set>"
-            number            = "<number>"
-            rarity            = "<rarity>"
-            conditionEstimate = "<conditionEstimate>"
-            frontS3Key        = "<frontS3Key>"
-          }
-          requestId    = "$$.Execution.Name"
-          forceRefresh = false
-        })
+        EOT
       }
     }
   }
