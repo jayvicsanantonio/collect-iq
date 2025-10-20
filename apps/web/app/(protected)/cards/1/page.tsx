@@ -1,20 +1,21 @@
 'use client';
 
 import * as React from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import type { Route } from 'next';
-import { RefreshCw, Trash2, Share2, ArrowLeft } from 'lucide-react';
-import { api, ApiError } from '@/lib/api';
-import { useToast } from '@/hooks/use-toast';
-import type { Card as CardType } from '@/lib/types';
+import { ArrowLeft, RefreshCw, Trash2, Share2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import { ErrorAlert } from '@/components/ui/error-alert';
+import { CardDetail } from '@/components/cards/CardDetail';
 import {
   CardProcessing,
   type ProcessingStage,
 } from '@/components/cards/CardProcessing';
-import { CardDetail } from '@/components/cards/CardDetail';
-import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
-import { ErrorAlert } from '@/components/ui/error-alert';
+import { useToast } from '@/hooks/use-toast';
+import { api, ApiError } from '@/lib/api';
+import type { Card as CardType } from '@/lib/types';
+// import { mockCharizardCard } from '@/lib/mock-card-data';
 
 // ============================================================================
 // Types
@@ -101,9 +102,9 @@ function getCompletedStages(card: CardType): ProcessingStage[] {
  */
 function estimateTimeRemaining(stage: ProcessingStage): number {
   const estimates: Record<ProcessingStage, number> = {
-    extraction: 20, // 5s for extraction + 8s for auth + 10s for valuation - 3s elapsed
-    authenticity: 18, // 8s for auth + 10s for valuation
-    valuation: 10, // 10s for valuation
+    extraction: 20,
+    authenticity: 18,
+    valuation: 10,
   };
   return estimates[stage];
 }
@@ -112,18 +113,20 @@ function estimateTimeRemaining(stage: ProcessingStage): number {
 // Component
 // ============================================================================
 
-export default function CardPage() {
-  const params = useParams();
+/**
+ * Card detail page at /cards/1
+ * Uses real API to fetch and display card data
+ */
+export default function Card1Page() {
   const router = useRouter();
   const { toast } = useToast();
-  const cardId = params.id as string;
+  const cardId = '1'; // Static card ID for this route
 
   const [state, setState] = React.useState<PageState>({
     type: 'loading',
   });
-  const pollingIntervalRef = React.useRef<NodeJS.Timeout | null>(
-    null
-  );
+  const pollingIntervalRef = React.useRef<NodeJS.Timeout | null>(null);
+  const [isRefreshing, setIsRefreshing] = React.useState(false);
 
   // ============================================================================
   // Fetch Card Data
@@ -194,8 +197,6 @@ export default function CardPage() {
   // Action Handlers
   // ============================================================================
 
-  const [isRefreshing, setIsRefreshing] = React.useState(false);
-
   const handleRetryAnalysis = React.useCallback(async () => {
     try {
       toast({
@@ -248,13 +249,13 @@ export default function CardPage() {
       const pollInterval = setInterval(async () => {
         try {
           const updatedCard = await api.getCard(cardId);
-          
+
           // Check if valuation has been updated
           if (state.type === 'complete' && state.card.updatedAt !== updatedCard.updatedAt) {
             clearInterval(pollInterval);
             setState({ type: 'complete', card: updatedCard });
             setIsRefreshing(false);
-            
+
             toast({
               title: 'Valuation updated',
               description: 'New market data is now available.',
@@ -370,109 +371,159 @@ export default function CardPage() {
   // ============================================================================
 
   return (
-    <div className="container mx-auto max-w-4xl px-4 py-8">
-      {/* Header */}
-      <div className="mb-6 flex items-center justify-between">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleBackToVault}
-          className="gap-2"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back to Vault
-        </Button>
-
-        {state.type === 'complete' && (
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleManualRefresh}
-              className="gap-2"
-            >
-              <RefreshCw className="h-4 w-4" />
-              Refresh
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleShare}
-              className="gap-2"
-            >
-              <Share2 className="h-4 w-4" />
-              Share
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleDelete}
-              className="gap-2 text-[var(--destructive)] hover:text-[var(--destructive)]"
-            >
-              <Trash2 className="h-4 w-4" />
-              Delete
-            </Button>
-          </div>
-        )}
+    <div className="min-h-screen flex flex-col relative bg-[var(--background)]">
+      {/* Gradient Background - matching landing/upload pages */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute inset-0 landing-gradient" />
+      </div>
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute inset-0 landing-radials" />
       </div>
 
-      {/* Loading State */}
-      {state.type === 'loading' && (
-        <div className="space-y-4">
-          <Skeleton className="h-[400px] w-full" />
-          <Skeleton className="h-[200px] w-full" />
-        </div>
-      )}
+      <main className="flex-1 relative z-10 px-4 py-8">
+        <div className="container mx-auto max-w-5xl">
+          {/* Header */}
+          <div className="mb-6 flex items-center justify-between">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleBackToVault}
+              className="gap-2"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back to Vault
+            </Button>
 
-      {/* Processing State */}
-      {state.type === 'processing' && (
-        <div className="space-y-6">
-          <CardProcessing
-            status={{
-              stage: getCurrentStage(state.card),
-              completed: getCompletedStages(state.card),
-              estimatedTimeRemaining: estimateTimeRemaining(
-                getCurrentStage(state.card)
-              ),
-            }}
-            onRetry={handleRetryAnalysis}
-          />
+            {state.type === 'complete' && (
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleManualRefresh}
+                  className="gap-2"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                  Refresh
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleShare}
+                  className="gap-2"
+                >
+                  <Share2 className="h-4 w-4" />
+                  Share
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleDelete}
+                  className="gap-2 text-[var(--destructive)] hover:text-[var(--destructive)]"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Delete
+                </Button>
+              </div>
+            )}
+          </div>
 
-          {/* Show partial card details if available */}
-          {state.card.name && (
-            <div className="text-center text-[var(--muted-foreground)]">
-              <p className="text-sm">
-                Analyzing:{' '}
-                <span className="font-medium">{state.card.name}</span>
-                {state.card.set && ` from ${state.card.set}`}
-              </p>
+          {/* Page Title */}
+          <div className="mb-8 text-center">
+            <h1
+              className="mb-3 text-3xl sm:text-4xl md:text-5xl font-bold font-display tracking-[-0.02em]"
+              style={{
+                textShadow: 'var(--text-shadow, 0 2px 8px rgba(0, 0, 0, 0.3))',
+              }}
+            >
+              <span
+                className="bg-gradient-to-tr from-[var(--color-holo-cyan)] via-[var(--color-emerald-glow)] to-[var(--color-vault-blue)] bg-clip-text text-transparent"
+                style={{
+                  textShadow: 'none',
+                  filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2))',
+                }}
+              >
+                Card Analysis
+              </span>
+            </h1>
+            <p
+              className="text-base sm:text-lg"
+              style={{
+                color: 'var(--foreground)',
+                opacity: 0.9,
+                textShadow: '0 1px 4px rgba(0, 0, 0, 0.3)',
+              }}
+            >
+              Complete authenticity and valuation report
+            </p>
+          </div>
+
+          {/* Loading State */}
+          {state.type === 'loading' && (
+            <div className="space-y-4">
+              <Skeleton className="h-[400px] w-full" />
+              <Skeleton className="h-[200px] w-full" />
             </div>
           )}
-        </div>
-      )}
 
-      {/* Complete State */}
-      {state.type === 'complete' && (
-        <div className="space-y-6">
-          <CardDetail
-            card={state.card}
+          {/* Processing State */}
+          {state.type === 'processing' && (
+            <div className="space-y-6">
+              <CardProcessing
+                status={{
+                  stage: getCurrentStage(state.card),
+                  completed: getCompletedStages(state.card),
+                  estimatedTimeRemaining: estimateTimeRemaining(
+                    getCurrentStage(state.card)
+                  ),
+                }}
+                onRetry={handleRetryAnalysis}
+              />
+
+              {/* Show partial card details if available */}
+              {state.card.name && (
+                <div className="text-center text-[var(--muted-foreground)]">
+                  <p className="text-sm">
+                    Analyzing:{' '}
+                    <span className="font-medium">{state.card.name}</span>
+                    {state.card.set && ` from ${state.card.set}`}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Complete State */}
+          {state.type === 'complete' && (
+            <CardDetail
+              card={state.card}
+              onRefreshValuation={handleRefreshValuation}
+              isRefreshing={isRefreshing}
+              onReEvaluate={handleRetryAnalysis}
+              onDelete={handleDelete}
+              onShare={handleShare}
+            />
+          )}
+
+          {/* Error State */}
+          {state.type === 'error' && (
+            <ErrorAlert
+              title="Failed to load card"
+              message={state.error}
+              onRetry={state.canRetry ? handleManualRefresh : undefined}
+            />
+          )}
+
+          {/* DEMO MODE - Uncomment to use mock data instead of real API */}
+          {/* <CardDetail
+            card={mockCharizardCard}
             onRefreshValuation={handleRefreshValuation}
             isRefreshing={isRefreshing}
             onReEvaluate={handleRetryAnalysis}
             onDelete={handleDelete}
             onShare={handleShare}
-          />
+          /> */}
         </div>
-      )}
-
-      {/* Error State */}
-      {state.type === 'error' && (
-        <ErrorAlert
-          title="Failed to load card"
-          message={state.error}
-          onRetry={state.canRetry ? handleManualRefresh : undefined}
-        />
-      )}
+      </main>
     </div>
   );
 }

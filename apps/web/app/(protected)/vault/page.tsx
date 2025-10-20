@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { type Card } from '@/lib/types';
 import { EmptyVault } from '@/components/vault/EmptyVault';
 import { VaultGrid } from '@/components/vault/VaultGrid';
@@ -10,7 +10,7 @@ import {
   VaultFilters,
   type VaultFilters as VaultFiltersType,
 } from '@/components/vault/VaultFilters';
-// import { api } from '@/lib/api';
+import { api } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -43,6 +43,7 @@ interface PortfolioStats {
 export default function VaultPage() {
   const searchParams = useSearchParams();
   const { toast } = useToast();
+  const router = useRouter();
 
   // State
   const [isLoading, setIsLoading] = React.useState(true);
@@ -65,6 +66,30 @@ export default function VaultPage() {
       (searchParams.get('sortBy') as 'value' | 'date' | 'rarity') || 'date',
     sortOrder: (searchParams.get('sortOrder') as 'asc' | 'desc') || 'desc',
   });
+
+  // Update URL when filters change
+  const handleFiltersChange = React.useCallback(
+    (newFilters: VaultFiltersType) => {
+      setFilters(newFilters);
+
+      // Build query string
+      const params = new URLSearchParams();
+      if (newFilters.set) params.set('set', newFilters.set);
+      if (newFilters.type) params.set('type', newFilters.type);
+      if (newFilters.rarity) params.set('rarity', newFilters.rarity);
+      if (newFilters.authenticityMin !== undefined) {
+        params.set('authenticityMin', newFilters.authenticityMin.toString());
+      }
+      params.set('sortBy', newFilters.sortBy);
+      params.set('sortOrder', newFilters.sortOrder);
+
+      // Update URL without page reload
+      const queryString = params.toString();
+      const url = queryString ? `/vault?${queryString}` : '/vault';
+      router.push(url as any, { scroll: false });
+    },
+    [router]
+  );
 
   // Calculate portfolio stats from cards
   const calculatePortfolioStats = React.useCallback(
@@ -159,13 +184,26 @@ export default function VaultPage() {
   const fetchCards = React.useCallback(
     async (cursor?: string) => {
       try {
-        // TODO: Remove mock data once backend is ready
-        // const response = await api.getCards({
-        //   cursor,
-        //   limit: 20,
-        // });
+        // Fetch cards from real API
+        const response = await api.getCards({
+          cursor,
+          limit: 20,
+        });
 
-        // Mock data with sample cards
+        // Update state with real data
+        if (cursor) {
+          // Append to existing cards (load more)
+          setCards((prev) => [...prev, ...response.items]);
+        } else {
+          // Replace cards (initial load or refresh)
+          setCards(response.items);
+        }
+
+        setNextCursor(response.nextCursor || undefined);
+        setHasMore(!!response.nextCursor);
+        setIsLoading(false);
+
+        /* DEMO MODE - Mock data (commented out)
         const mockCards: Card[] = [
           {
             cardId: '1',
@@ -298,8 +336,11 @@ export default function VaultPage() {
 
         setNextCursor(response.nextCursor);
         setHasMore(!!response.nextCursor);
+        setIsLoading(false);
+        */ // End of DEMO MODE
       } catch (error) {
         console.error('Failed to fetch cards:', error);
+        setIsLoading(false);
         toast({
           title: 'Error',
           description: 'Failed to load your vault. Please try again.',
@@ -341,15 +382,15 @@ export default function VaultPage() {
   // Handle refresh valuation
   const handleRefresh = async (cardId: string) => {
     try {
-      // TODO: Uncomment once backend is ready
-      // await api.revalueCard(cardId, { forceRefresh: true });
-      console.log('Refreshing card:', cardId); // Using cardId to avoid lint error
+      // Call real API to refresh valuation
+      await api.revalueCard(cardId, { forceRefresh: true });
+      
       toast({
         title: 'Valuation refresh started',
         description: 'Your card valuation is being updated.',
       });
 
-      // Refresh the card list after a delay
+      // Refresh the card list after a delay to allow processing
       setTimeout(() => {
         fetchCards();
       }, 2000);
@@ -383,9 +424,8 @@ export default function VaultPage() {
     setCards((prev) => prev.filter((c) => c.cardId !== deleteCardId));
 
     try {
-      // TODO: Uncomment once backend is ready
-      // await api.deleteCard(deleteCardId);
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // Call real API to delete card
+      await api.deleteCard(deleteCardId);
 
       toast({
         title: 'Card deleted',
@@ -514,7 +554,7 @@ export default function VaultPage() {
         <section className="mb-6" aria-label="Filter and sort options">
           <VaultFilters
             filters={filters}
-            onFiltersChange={setFilters}
+            onFiltersChange={handleFiltersChange}
             availableSets={availableSets}
             availableTypes={availableTypes}
           />
@@ -526,6 +566,7 @@ export default function VaultPage() {
             cards={filteredCards}
             onRefresh={handleRefresh}
             onDelete={handleDelete}
+            isLoading={false}
           />
         </section>
 

@@ -16,9 +16,10 @@ export interface VaultCardProps {
   card: CardType;
   onRefresh: (cardId: string) => void;
   onDelete: (cardId: string) => void;
+  onClick?: (cardId: string) => void;
 }
 
-export function VaultCard({ card, onRefresh, onDelete }: VaultCardProps) {
+export function VaultCard({ card, onRefresh, onDelete, onClick }: VaultCardProps) {
   const formatCurrency = (value: number | undefined) => {
     if (value === undefined) return 'N/A';
     return new Intl.NumberFormat('en-US', {
@@ -27,8 +28,20 @@ export function VaultCard({ card, onRefresh, onDelete }: VaultCardProps) {
     }).format(value);
   };
 
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Don't navigate if clicking on the dropdown menu
+    if ((e.target as HTMLElement).closest('[role="menu"]') || 
+        (e.target as HTMLElement).closest('button')) {
+      return;
+    }
+    onClick?.(card.cardId);
+  };
+
   return (
-    <Card className="overflow-hidden hover:shadow-lg transition-shadow">
+    <Card 
+      className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+      onClick={handleCardClick}
+    >
       <div className="relative aspect-[2.5/3.5] bg-[var(--muted)]">
         {/* Card actions */}
         <div className="absolute top-2 right-2 z-10">
@@ -38,17 +51,26 @@ export function VaultCard({ card, onRefresh, onDelete }: VaultCardProps) {
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8 bg-white/90"
+                onClick={(e) => e.stopPropagation()}
               >
                 <MoreVertical className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => onRefresh(card.cardId)}>
+              <DropdownMenuItem 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onRefresh(card.cardId);
+                }}
+              >
                 <RefreshCw className="mr-2 h-4 w-4" />
                 Refresh Valuation
               </DropdownMenuItem>
               <DropdownMenuItem
-                onClick={() => onDelete(card.cardId)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(card.cardId);
+                }}
                 className="text-[var(--crimson-red)]"
               >
                 <Trash2 className="mr-2 h-4 w-4" />

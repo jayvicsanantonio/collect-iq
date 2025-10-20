@@ -12,12 +12,13 @@ import { AlertTriangle, CheckCircle, AlertCircle } from 'lucide-react';
 
 export interface AuthenticityBadgeProps {
   score: number; // 0-1
-  rationale?: string;
+  rationale?: string | null;
   breakdown?: {
-    visualHashConfidence: number;
-    textMatchConfidence: number;
-    holoPatternConfidence: number;
+    visualHashConfidence: number | null;
+    textMatchConfidence: number | null;
+    holoPatternConfidence: number | null;
   };
+  fakeDetected?: boolean | null;
   className?: string;
 }
 
@@ -36,6 +37,7 @@ export function AuthenticityBadge({
   score,
   rationale,
   breakdown,
+  fakeDetected,
   className,
 }: AuthenticityBadgeProps) {
   // Determine color and icon based on score
@@ -67,6 +69,9 @@ export function AuthenticityBadge({
   const variant = getScoreVariant(score);
   const Icon = variant.icon;
   const percentage = Math.round(score * 100);
+  
+  // Show warning if fake detected
+  const showWarning = fakeDetected || score < 0.5;
 
   return (
     <TooltipProvider>
@@ -103,44 +108,66 @@ export function AuthenticityBadge({
                 </div>
 
                 <div className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <span className="flex items-center gap-2">
-                      <span
-                        className="w-2 h-2 rounded-full bg-blue-500"
-                        aria-hidden="true"
-                      />
-                      Visual Hash
-                    </span>
-                    <span className="font-medium">
-                      {Math.round(breakdown.visualHashConfidence * 100)}%
-                    </span>
-                  </div>
+                  {breakdown.visualHashConfidence !== null && 
+                   breakdown.visualHashConfidence !== undefined && (
+                    <div className="flex items-center justify-between">
+                      <span className="flex items-center gap-2">
+                        <span
+                          className="w-2 h-2 rounded-full bg-blue-500"
+                          aria-hidden="true"
+                        />
+                        Visual Hash
+                      </span>
+                      <span className="font-medium">
+                        {Math.round(breakdown.visualHashConfidence * 100)}%
+                      </span>
+                    </div>
+                  )}
 
-                  <div className="flex items-center justify-between">
-                    <span className="flex items-center gap-2">
-                      <span
-                        className="w-2 h-2 rounded-full bg-purple-500"
-                        aria-hidden="true"
-                      />
-                      Text Match
-                    </span>
-                    <span className="font-medium">
-                      {Math.round(breakdown.textMatchConfidence * 100)}%
-                    </span>
-                  </div>
+                  {breakdown.textMatchConfidence !== null && 
+                   breakdown.textMatchConfidence !== undefined && (
+                    <div className="flex items-center justify-between">
+                      <span className="flex items-center gap-2">
+                        <span
+                          className="w-2 h-2 rounded-full bg-purple-500"
+                          aria-hidden="true"
+                        />
+                        Text Match
+                      </span>
+                      <span className="font-medium">
+                        {Math.round(breakdown.textMatchConfidence * 100)}%
+                      </span>
+                    </div>
+                  )}
 
-                  <div className="flex items-center justify-between">
-                    <span className="flex items-center gap-2">
-                      <span
-                        className="w-2 h-2 rounded-full bg-cyan-500"
-                        aria-hidden="true"
-                      />
-                      Holo Pattern
-                    </span>
-                    <span className="font-medium">
-                      {Math.round(breakdown.holoPatternConfidence * 100)}%
-                    </span>
-                  </div>
+                  {breakdown.holoPatternConfidence !== null && 
+                   breakdown.holoPatternConfidence !== undefined && (
+                    <div className="flex items-center justify-between">
+                      <span className="flex items-center gap-2">
+                        <span
+                          className="w-2 h-2 rounded-full bg-cyan-500"
+                          aria-hidden="true"
+                        />
+                        Holo Pattern
+                      </span>
+                      <span className="font-medium">
+                        {Math.round(breakdown.holoPatternConfidence * 100)}%
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+            
+            {showWarning && (
+              <div className="pt-2 border-t border-border">
+                <div className="flex items-center gap-2 text-xs text-[var(--destructive)]">
+                  <AlertTriangle className="w-3 h-3" />
+                  <span className="font-medium">
+                    {fakeDetected 
+                      ? 'Potential counterfeit detected' 
+                      : 'Low authenticity score - verify carefully'}
+                  </span>
                 </div>
               </div>
             )}

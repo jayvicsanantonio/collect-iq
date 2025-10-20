@@ -1,8 +1,16 @@
 'use client';
 
 import * as React from 'react';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from 'recharts';
 
 // ============================================================================
 // Types
@@ -15,9 +23,8 @@ export interface ValuationHistoryDataPoint {
   high: number;
 }
 
-export interface ValuationHistoryChartProps {
+interface ValuationHistoryChartInnerProps {
   data: ValuationHistoryDataPoint[];
-  className?: string;
 }
 
 // ============================================================================
@@ -86,74 +93,79 @@ function CustomTooltip({ active, payload, label }: any) {
 }
 
 // ============================================================================
-// Loading Skeleton
-// ============================================================================
-
-function ChartSkeleton() {
-  return (
-    <div className="space-y-4">
-      <Skeleton className="h-8 w-48" />
-      <Skeleton className="h-[320px] w-full" />
-    </div>
-  );
-}
-
-// ============================================================================
 // Component
 // ============================================================================
 
-export function ValuationHistoryChart({
+export default function ValuationHistoryChartInner({
   data,
-  className,
-}: ValuationHistoryChartProps) {
-  const [ChartComponent, setChartComponent] = React.useState<React.ComponentType<{ data: ValuationHistoryDataPoint[] }> | null>(null);
-  const [isLoading, setIsLoading] = React.useState(true);
-
-  // Lazy-load the chart component
-  React.useEffect(() => {
-    import('./ValuationHistoryChartInner')
-      .then((mod) => {
-        setChartComponent(() => mod.default);
-        setIsLoading(false);
-      })
-      .catch((error) => {
-        console.error('Failed to load chart component:', error);
-        setIsLoading(false);
-      });
-  }, []);
-
-  // Show empty state if no data
-  if (!data || data.length === 0) {
-    return (
-      <Card className={className}>
-        <CardHeader>
-          <CardTitle>Valuation History</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-center h-[320px] text-[var(--muted-foreground)]">
-            <p className="text-sm">No historical data available yet</p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
+}: ValuationHistoryChartInnerProps) {
   return (
-    <Card className={className}>
-      <CardHeader>
-        <CardTitle>Valuation History</CardTitle>
-      </CardHeader>
-      <CardContent>
-        {isLoading ? (
-          <ChartSkeleton />
-        ) : ChartComponent ? (
-          <ChartComponent data={data} />
-        ) : (
-          <div className="flex items-center justify-center h-[320px] text-[var(--muted-foreground)]">
-            <p className="text-sm">Failed to load chart</p>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+    <div
+      className="w-full"
+      style={{ minHeight: '320px' }}
+      role="img"
+      aria-label={`Valuation history chart showing price trends from ${formatDate(
+        data[0].date
+      )} to ${formatDate(data[data.length - 1].date)}`}
+    >
+      <ResponsiveContainer width="100%" height={320}>
+        <LineChart
+          data={data}
+          margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
+        >
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+          <XAxis
+            dataKey="date"
+            tickFormatter={formatDate}
+            stroke="var(--muted-foreground)"
+            style={{ fontSize: '12px' }}
+          />
+          <YAxis
+            tickFormatter={formatCurrency}
+            stroke="var(--muted-foreground)"
+            style={{ fontSize: '12px' }}
+          />
+          <Tooltip content={<CustomTooltip />} />
+          <Legend
+            wrapperStyle={{ fontSize: '12px' }}
+            iconType="circle"
+          />
+          <Line
+            type="monotone"
+            dataKey="low"
+            stroke="rgb(239, 68, 68)"
+            strokeWidth={2}
+            dot={{ r: 3 }}
+            activeDot={{ r: 5 }}
+            name="Low"
+          />
+          <Line
+            type="monotone"
+            dataKey="median"
+            stroke="var(--vault-blue)"
+            strokeWidth={2}
+            dot={{ r: 3 }}
+            activeDot={{ r: 5 }}
+            name="Median"
+          />
+          <Line
+            type="monotone"
+            dataKey="high"
+            stroke="rgb(34, 197, 94)"
+            strokeWidth={2}
+            dot={{ r: 3 }}
+            activeDot={{ r: 5 }}
+            name="High"
+          />
+        </LineChart>
+      </ResponsiveContainer>
+
+      {/* Accessibility description */}
+      <p className="sr-only">
+        Line chart showing valuation history with three price bands: low,
+        median, and high prices over time. The chart displays data from{' '}
+        {formatDate(data[0].date)} to {formatDate(data[data.length - 1].date)}.
+      </p>
+    </div>
   );
 }

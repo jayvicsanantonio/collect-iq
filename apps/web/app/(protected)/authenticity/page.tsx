@@ -177,17 +177,16 @@ export default function AuthenticityPage() {
     setIsFeedbackModalOpen(false);
   };
 
-  const handleSubmitFeedback = async (
-    reason: string,
-    details: string
-  ) => {
+  const handleSubmitFeedback = async (feedback: {
+    reason: string;
+    details: string;
+  }) => {
     // TODO: Replace with actual API call when backend endpoint is ready
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
     console.log('Feedback submitted:', {
       cardId,
-      reason,
-      details,
+      ...feedback,
       timestamp: new Date().toISOString(),
     });
 
@@ -660,8 +659,7 @@ export default function AuthenticityPage() {
         isOpen={isFeedbackModalOpen}
         onClose={handleCloseFeedback}
         onSubmit={handleSubmitFeedback}
-        cardId={cardId || undefined}
-        cardName={state.cardName}
+        cardId={cardId || ''}
       />
         </div>
       </main>

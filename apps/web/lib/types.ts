@@ -53,6 +53,10 @@ const AuthenticitySignalsSchema = z.object({
     .max(1)
     .optional()
     .nullable(),
+  borderConsistency: z.number().min(0).max(1).optional().nullable(),
+  fontValidation: z.number().min(0).max(1).optional().nullable(),
+  rationale: z.string().optional().nullable(),
+  fakeDetected: z.boolean().optional().nullable(),
 });
 
 export type AuthenticitySignals = z.infer<

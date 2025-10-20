@@ -4,6 +4,26 @@ const nextConfig = {
   experimental: {
     typedRoutes: true,
   },
+  // Configure allowed image domains
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'images.pokemontcg.io',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.execute-api.us-east-1.amazonaws.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.amazonaws.com',
+        pathname: '/**',
+      },
+    ],
+  },
   // Ensure environment variables are available at build time
   env: {
     NEXT_PUBLIC_AWS_REGION: process.env.NEXT_PUBLIC_AWS_REGION,
