@@ -355,6 +355,7 @@ module "lambda_cards_list" {
     REGION            = var.aws_region
     DDB_TABLE             = module.dynamodb_collectiq.table_name
     COGNITO_USER_POOL_ID  = "" # Will be added when Cognito is deployed
+    XRAY_ENABLED          = "false" # Disable X-Ray SDK to avoid context issues
   }
 
   custom_iam_policy_json = data.aws_iam_policy_document.cards_list_dynamodb.json
@@ -387,6 +388,7 @@ module "lambda_cards_get" {
     REGION            = var.aws_region
     DDB_TABLE             = module.dynamodb_collectiq.table_name
     COGNITO_USER_POOL_ID  = "" # Will be added when Cognito is deployed
+    XRAY_ENABLED          = "false" # Disable X-Ray SDK to avoid context issues
   }
 
   custom_iam_policy_json = data.aws_iam_policy_document.cards_get_dynamodb.json
@@ -420,6 +422,7 @@ module "lambda_cards_delete" {
     DDB_TABLE             = module.dynamodb_collectiq.table_name
     COGNITO_USER_POOL_ID  = "" # Will be added when Cognito is deployed
     HARD_DELETE_CARDS     = "false"
+    XRAY_ENABLED          = "false" # Disable X-Ray SDK to avoid context issues
   }
 
   custom_iam_policy_json = data.aws_iam_policy_document.cards_delete_dynamodb.json
@@ -452,6 +455,7 @@ module "lambda_cards_revalue" {
     REGION           = var.aws_region
     STEP_FUNCTIONS_ARN   = try(module.step_functions.state_machine_arn, "") # Will be added when Step Functions is deployed
     DDB_TABLE            = module.dynamodb_collectiq.table_name
+    XRAY_ENABLED         = "false" # Disable X-Ray SDK to avoid context issues
   }
 
   custom_iam_policy_json = data.aws_iam_policy_document.cards_revalue_sfn.json
@@ -487,6 +491,7 @@ module "lambda_rekognition_extract" {
   environment_variables = {
     REGION     = var.aws_region
     BUCKET_UPLOADS = module.s3_uploads.bucket_name
+    XRAY_ENABLED   = "false" # Disable X-Ray SDK to avoid context issues
   }
 
   custom_iam_policy_json = data.aws_iam_policy_document.rekognition_extract_s3.json
@@ -525,6 +530,7 @@ module "lambda_pricing_agent" {
     EBAY_SECRET_ARN           = "" # Will be added when Secrets Manager is configured
     TCGPLAYER_SECRET_ARN      = "" # Will be added when Secrets Manager is configured
     PRICECHARTING_SECRET_ARN  = "" # Will be added when Secrets Manager is configured
+    XRAY_ENABLED              = "false" # Disable X-Ray SDK to avoid context issues
   }
 
   # additional_policy_arns will include ssm_secrets policy when deployed
@@ -558,6 +564,7 @@ module "lambda_authenticity_agent" {
     BEDROCK_MODEL_ID = "anthropic.claude-3-5-sonnet-20240620-v1:0"
     BUCKET_UPLOADS   = module.s3_uploads.bucket_name
     BUCKET_SAMPLES   = "" # Optional authentic samples bucket
+    XRAY_ENABLED     = "false" # Disable X-Ray SDK to avoid context issues
   }
 
   custom_iam_policy_json = data.aws_iam_policy_document.rekognition_extract_s3.json
@@ -594,6 +601,7 @@ module "lambda_aggregator" {
     REGION     = var.aws_region
     DDB_TABLE      = module.dynamodb_collectiq.table_name
     EVENT_BUS_NAME = module.eventbridge_bus.bus_name # Will be added when EventBridge is deployed
+    XRAY_ENABLED   = "false" # Disable X-Ray SDK to avoid context issues
   }
 
   custom_iam_policy_json = jsonencode({
@@ -632,6 +640,7 @@ module "lambda_error_handler" {
     REGION = var.aws_region
     DLQ_URL    = module.eventbridge_bus.dlq_url # Will be added when EventBridge DLQ is deployed
     DDB_TABLE  = module.dynamodb_collectiq.table_name
+    XRAY_ENABLED = "false" # Disable X-Ray SDK to avoid context issues
   }
 
   custom_iam_policy_json = data.aws_iam_policy_document.error_handler_sqs.json
