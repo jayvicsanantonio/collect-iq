@@ -5,6 +5,9 @@
 ✅ Step Functions data flow (input/output mapping)
 ✅ Replaced unavailable APIs with Pokémon TCG API (free)
 ✅ Built and tested backend code
+✅ Improved search logic with wildcard matching
+✅ Added fallback search for better card matching
+✅ Enhanced logging for debugging
 
 ## Pre-Deployment Checklist
 

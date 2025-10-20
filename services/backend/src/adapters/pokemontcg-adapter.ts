@@ -141,7 +141,14 @@ export class PokemonTCGAdapter extends BasePriceAdapter {
       headers['X-Api-Key'] = this.apiKey;
     }
 
-    logger.info('Searching Pokémon TCG API', { searchQuery, hasApiKey: !!this.apiKey });
+    logger.info('Searching Pokémon TCG API', {
+      searchQuery,
+      url,
+      hasApiKey: !!this.apiKey,
+      cardName: query.cardName,
+      set: query.set,
+      number: query.number,
+    });
 
     const response = await fetch(url, {
       method: 'GET',
@@ -149,36 +156,72 @@ export class PokemonTCGAdapter extends BasePriceAdapter {
     });
 
     if (!response.ok) {
+      const errorText = await response.text();
+      logger.error('Pokémon TCG API request failed', new Error(errorText), {
+        status: response.status,
+        statusText: response.statusText,
+        url,
+        searchQuery,
+      });
       throw new Error(`Pokémon TCG API search failed: ${response.status} ${response.statusText}`);
     }
 
     const data = (await response.json()) as PokemonTCGResponse;
 
-    logger.info(`Found ${data.data.length} cards`, {
+    logger.info(`Found ${data.data.length} cards from Pokémon TCG API`, {
       totalCount: data.totalCount,
       query: searchQuery,
+      cardNames: data.data.slice(0, 3).map((c) => c.name),
     });
+
+    // If no exact matches, try a simpler search with just the card name
+    if (data.data.length === 0 && query.cardName) {
+      logger.warn('No exact matches found, trying simplified search', {
+        originalQuery: searchQuery,
+        simplifiedQuery: query.cardName,
+      });
+
+      const simpleUrl = `${this.BASE_URL}/cards?q=name:${encodeURIComponent(query.cardName)}&pageSize=10`;
+      const simpleResponse = await fetch(simpleUrl, {
+        method: 'GET',
+        headers,
+      });
+
+      if (simpleResponse.ok) {
+        const simpleData = (await simpleResponse.json()) as PokemonTCGResponse;
+        logger.info(`Simplified search found ${simpleData.data.length} cards`, {
+          cardNames: simpleData.data.slice(0, 3).map((c) => c.name),
+        });
+        return simpleData.data;
+      }
+    }
 
     return data.data;
   }
 
   /**
    * Build search query string for Pokémon TCG API
+   * Uses fuzzy matching for card names to handle OCR variations
    */
   private buildSearchQuery(query: PriceQuery): string {
     const conditions: string[] = [];
 
-    // Card name (required)
+    // Card name (required) - use wildcard for fuzzy matching
     if (query.cardName) {
-      conditions.push(`name:"${query.cardName}"`);
+      // Clean up the card name (remove special characters that might confuse the API)
+      const cleanName = query.cardName.replace(/[^\w\s-]/g, '').trim();
+
+      // Use wildcard search for better matching with OCR results
+      conditions.push(`name:*${cleanName}*`);
     }
 
-    // Set name
+    // Set name - only add if we have it
     if (query.set) {
-      conditions.push(`set.name:"${query.set}"`);
+      const cleanSet = query.set.replace(/[^\w\s-]/g, '').trim();
+      conditions.push(`set.name:*${cleanSet}*`);
     }
 
-    // Card number
+    // Card number - exact match
     if (query.number) {
       conditions.push(`number:${query.number}`);
     }
