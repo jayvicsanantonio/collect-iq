@@ -11,9 +11,6 @@ import {
   type DetectLabelsCommandOutput,
 } from '@aws-sdk/client-rekognition';
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
-import * as sharpModule from 'sharp';
-
-const sharp = sharpModule.default;
 import type {
   OCRBlock,
   BoundingBox,
@@ -26,16 +23,28 @@ import type {
 import { logger } from '../utils/logger.js';
 import { tracing } from '../utils/tracing.js';
 
+// Lazy load sharp to avoid bundling issues in Lambdas that don't need it
+type SharpModule = typeof import('sharp');
+let sharpInstance: SharpModule | null = null;
+
+async function getSharp(): Promise<SharpModule> {
+  if (!sharpInstance) {
+    const sharpModule = await import('sharp');
+    sharpInstance = sharpModule.default as unknown as SharpModule;
+  }
+  return sharpInstance;
+}
+
 const rekognitionClient = tracing.captureAWSv3Client(
   new RekognitionClient({
     region: process.env.AWS_REGION || 'us-east-1',
-  }),
+  })
 );
 
 const s3Client = tracing.captureAWSv3Client(
   new S3Client({
     region: process.env.AWS_REGION || 'us-east-1',
-  }),
+  })
 );
 
 /**
@@ -91,7 +100,7 @@ export class RekognitionAdapter {
       const response: DetectTextCommandOutput = await tracing.trace(
         'rekognition_detect_text',
         () => rekognitionClient.send(command),
-        { bucket, key },
+        { bucket, key }
       );
 
       if (!response.TextDetections || response.TextDetections.length === 0) {
@@ -101,7 +110,7 @@ export class RekognitionAdapter {
 
       // Map Rekognition text detections to OCRBlock format
       const ocrBlocks: OCRBlock[] = response.TextDetections.filter(
-        (detection) => detection.Type === 'LINE' || detection.Type === 'WORD',
+        (detection) => detection.Type === 'LINE' || detection.Type === 'WORD'
       )
         .map((detection) => ({
           text: detection.DetectedText || '',
@@ -121,10 +130,10 @@ export class RekognitionAdapter {
       logger.error(
         'Failed to detect text',
         error instanceof Error ? error : new Error(String(error)),
-        { s3Key },
+        { s3Key }
       );
       throw new Error(
-        `Rekognition text detection failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        `Rekognition text detection failed: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
@@ -154,7 +163,7 @@ export class RekognitionAdapter {
       const response = await tracing.trace(
         'rekognition_detect_labels',
         () => rekognitionClient.send(command),
-        { bucket, key },
+        { bucket, key }
       );
 
       logger.info('Label detection complete', {
@@ -167,10 +176,10 @@ export class RekognitionAdapter {
       logger.error(
         'Failed to detect labels',
         error instanceof Error ? error : new Error(String(error)),
-        { s3Key },
+        { s3Key }
       );
       throw new Error(
-        `Rekognition label detection failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        `Rekognition label detection failed: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
@@ -194,7 +203,7 @@ export class RekognitionAdapter {
       const response = await tracing.trace(
         's3_get_image_for_rekognition',
         () => s3Client.send(command),
-        { bucket, key },
+        { bucket, key }
       );
 
       if (!response.Body) {
@@ -220,10 +229,10 @@ export class RekognitionAdapter {
       logger.error(
         'Failed to download image',
         error instanceof Error ? error : new Error(String(error)),
-        { s3Key },
+        { s3Key }
       );
       throw new Error(
-        `S3 image download failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        `S3 image download failed: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
@@ -275,7 +284,7 @@ export class RekognitionAdapter {
       logger.error(
         'Feature extraction failed',
         error instanceof Error ? error : new Error(String(error)),
-        { s3Key },
+        { s3Key }
       );
       throw error;
     }
@@ -289,6 +298,7 @@ export class RekognitionAdapter {
     logger.debug('Computing border metrics');
 
     try {
+      const sharp = await getSharp();
       const image = sharp(imageBuffer);
       const metadata = await image.metadata();
       const { width = 0, height = 0 } = metadata;
@@ -318,7 +328,7 @@ export class RekognitionAdapter {
         0,
         height - borderThickness,
         width,
-        borderThickness,
+        borderThickness
       );
       const leftBorder = this.analyzeBorderRegion(data, info, 0, 0, borderThickness, height);
       const rightBorder = this.analyzeBorderRegion(
@@ -327,7 +337,7 @@ export class RekognitionAdapter {
         width - borderThickness,
         0,
         borderThickness,
-        height,
+        height
       );
 
       // Calculate border ratios (normalized to 0-1)
@@ -359,7 +369,7 @@ export class RekognitionAdapter {
     } catch (error) {
       logger.error(
         'Failed to compute border metrics',
-        error instanceof Error ? error : new Error(String(error)),
+        error instanceof Error ? error : new Error(String(error))
       );
       return {
         topRatio: 0,
@@ -380,7 +390,7 @@ export class RekognitionAdapter {
     x: number,
     y: number,
     regionWidth: number,
-    regionHeight: number,
+    regionHeight: number
   ): number {
     const { width, channels } = info;
     let sum = 0;
@@ -406,7 +416,7 @@ export class RekognitionAdapter {
    */
   private async computeHolographicVariance(
     imageBuffer: Buffer,
-    labelsResponse: DetectLabelsCommandOutput,
+    labelsResponse: DetectLabelsCommandOutput
   ): Promise<number> {
     logger.debug('Computing holographic variance');
 
@@ -417,7 +427,7 @@ export class RekognitionAdapter {
           label.Name?.toLowerCase().includes('shiny') ||
           label.Name?.toLowerCase().includes('metallic') ||
           label.Name?.toLowerCase().includes('reflective') ||
-          label.Name?.toLowerCase().includes('glossy'),
+          label.Name?.toLowerCase().includes('glossy')
       );
 
       const hasHoloIndicators = (holoLabels?.length || 0) > 0;
@@ -428,6 +438,7 @@ export class RekognitionAdapter {
       }
 
       // Analyze pixel variance in RGB channels
+      const sharp = await getSharp();
       const image = sharp(imageBuffer);
       const { data, info } = await image.raw().toBuffer({ resolveWithObject: true });
 
@@ -481,7 +492,7 @@ export class RekognitionAdapter {
     } catch (error) {
       logger.error(
         'Failed to compute holographic variance',
-        error instanceof Error ? error : new Error(String(error)),
+        error instanceof Error ? error : new Error(String(error))
       );
       return 0;
     }
@@ -544,7 +555,7 @@ export class RekognitionAdapter {
 
         // Check right edge alignment
         const rightEdges = lineBlocks.map(
-          (block) => block.boundingBox.left + block.boundingBox.width,
+          (block) => block.boundingBox.left + block.boundingBox.width
         );
         const rightVariance = this.calculateVariance(rightEdges);
 
@@ -574,7 +585,7 @@ export class RekognitionAdapter {
     } catch (error) {
       logger.error(
         'Failed to extract font metrics',
-        error instanceof Error ? error : new Error(String(error)),
+        error instanceof Error ? error : new Error(String(error))
       );
       return {
         kerning: [],
@@ -592,6 +603,7 @@ export class RekognitionAdapter {
     logger.debug('Analyzing image quality');
 
     try {
+      const sharp = await getSharp();
       const image = sharp(imageBuffer);
       const { data, info } = await image.raw().toBuffer({ resolveWithObject: true });
 
@@ -635,7 +647,7 @@ export class RekognitionAdapter {
     } catch (error) {
       logger.error(
         'Failed to analyze image quality',
-        error instanceof Error ? error : new Error(String(error)),
+        error instanceof Error ? error : new Error(String(error))
       );
       return {
         blurScore: 0,
@@ -652,6 +664,7 @@ export class RekognitionAdapter {
   private async calculateBlurScore(imageBuffer: Buffer): Promise<number> {
     try {
       // Convert to grayscale and get stats
+      const sharp = await getSharp();
       const stats = await sharp(imageBuffer).grayscale().stats();
 
       // Use standard deviation as a proxy for sharpness
@@ -665,7 +678,7 @@ export class RekognitionAdapter {
     } catch (error) {
       logger.error(
         'Failed to calculate blur score',
-        error instanceof Error ? error : new Error(String(error)),
+        error instanceof Error ? error : new Error(String(error))
       );
       return 0;
     }
@@ -679,6 +692,7 @@ export class RekognitionAdapter {
     logger.debug('Extracting image metadata', { s3Key });
 
     try {
+      const sharp = await getSharp();
       const image = sharp(imageBuffer);
       const metadata = await image.metadata();
 
@@ -696,7 +710,7 @@ export class RekognitionAdapter {
       logger.error(
         'Failed to extract image metadata',
         error instanceof Error ? error : new Error(String(error)),
-        { s3Key },
+        { s3Key }
       );
       return {
         width: 0,

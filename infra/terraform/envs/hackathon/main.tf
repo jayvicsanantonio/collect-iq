@@ -245,6 +245,17 @@ resource "aws_iam_role_policy" "eventbridge_sfn_policy" {
 }
 
 ## ============================================================================
+## Lambda Sharp Layer
+## ============================================================================
+module "lambda_sharp_layer" {
+  source = "../../modules/lambda_sharp_layer"
+
+  layer_name    = "${local.name_prefix}-sharp"
+  sharp_version = "0.34.4"
+  output_path   = "${path.module}/.terraform/layers/sharp-layer.zip"
+}
+
+## ============================================================================
 ## EventBridge Event Bus
 ## ============================================================================
 module "eventbridge_bus" {

@@ -492,6 +492,9 @@ module "lambda_rekognition_extract" {
   custom_iam_policy_json = data.aws_iam_policy_document.rekognition_extract_s3.json
   additional_policy_arns = [module.rekognition_access.policy_arn]
 
+  # Sharp layer for image processing
+  layers = [module.lambda_sharp_layer.layer_arn]
+
   enable_xray_tracing = false
   log_retention_days  = 30
 
@@ -559,6 +562,9 @@ module "lambda_authenticity_agent" {
 
   custom_iam_policy_json = data.aws_iam_policy_document.rekognition_extract_s3.json
   additional_policy_arns = [module.bedrock_access.policy_arn]
+
+  # Sharp layer for image processing
+  layers = [module.lambda_sharp_layer.layer_arn]
 
   enable_xray_tracing = false
   log_retention_days  = 30
