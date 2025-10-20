@@ -39,6 +39,12 @@ module "api_gateway_http" {
       route_key            = "POST /upload/presign"
       require_auth         = true
     }
+    image_presign = {
+      lambda_function_name = module.lambda_image_presign.function_name
+      lambda_invoke_arn    = module.lambda_image_presign.invoke_arn
+      route_key            = "GET /images/presign"
+      require_auth         = true
+    }
     cards_create = {
       lambda_function_name = module.lambda_cards_create.function_name
       lambda_invoke_arn    = module.lambda_cards_create.invoke_arn

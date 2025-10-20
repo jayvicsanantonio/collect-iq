@@ -12,6 +12,12 @@ data "archive_file" "upload_presign" {
   output_path = "${path.module}/.terraform/lambda-packages/upload_presign.zip"
 }
 
+data "archive_file" "image_presign" {
+  type        = "zip"
+  source_file = "${path.module}/../../../../services/backend/dist/handlers/image_presign.mjs"
+  output_path = "${path.module}/.terraform/lambda-packages/image_presign.zip"
+}
+
 data "archive_file" "cards_create" {
   type        = "zip"
   source_file = "${path.module}/../../../../services/backend/dist/handlers/cards_create.mjs"
@@ -83,6 +89,19 @@ data "aws_iam_policy_document" "upload_presign_s3" {
     actions = [
       "s3:PutObject",
       "s3:PutObjectAcl"
+    ]
+    resources = [
+      "${module.s3_uploads.bucket_arn}/uploads/*"
+    ]
+  }
+}
+
+# S3 GetObject policy for image_presign Lambda
+data "aws_iam_policy_document" "image_presign_s3" {
+  statement {
+    effect = "Allow"
+    actions = [
+      "s3:GetObject"
     ]
     resources = [
       "${module.s3_uploads.bucket_arn}/uploads/*"
@@ -303,6 +322,38 @@ module "lambda_upload_presign" {
   custom_iam_policy_json = data.aws_iam_policy_document.upload_presign_s3.json
 
   enable_xray_tracing = false # Disabled due to context issues with module-level SDK initialization
+  log_retention_days  = 30
+
+  tags = local.common_tags
+}
+
+# 4.1.1 Image Presign Lambda
+module "lambda_image_presign" {
+  source = "../../modules/lambda_fn"
+
+  function_name = "${local.name_prefix}-image-presign"
+  description   = "Generate presigned URLs for viewing S3 images"
+  filename      = data.archive_file.image_presign.output_path
+  source_code_hash = data.archive_file.image_presign.output_base64sha256
+  handler       = "image_presign.handler"
+  runtime       = "nodejs20.x"
+
+  memory_size = 512
+  timeout     = 30
+
+  # VPC Configuration
+  vpc_subnet_ids         = module.vpc.private_subnet_ids
+  vpc_security_group_ids = [aws_security_group.lambda.id]
+
+  environment_variables = {
+    REGION         = var.aws_region
+    BUCKET_UPLOADS = module.s3_uploads.bucket_name
+    XRAY_ENABLED   = "false"
+  }
+
+  custom_iam_policy_json = data.aws_iam_policy_document.image_presign_s3.json
+
+  enable_xray_tracing = false
   log_retention_days  = 30
 
   tags = local.common_tags
@@ -709,6 +760,16 @@ output "lambda_upload_presign_arn" {
 output "lambda_upload_presign_invoke_arn" {
   description = "Invoke ARN of the upload_presign Lambda function"
   value       = module.lambda_upload_presign.invoke_arn
+}
+
+output "lambda_image_presign_arn" {
+  description = "ARN of the image_presign Lambda function"
+  value       = module.lambda_image_presign.function_arn
+}
+
+output "lambda_image_presign_invoke_arn" {
+  description = "Invoke ARN of the image_presign Lambda function"
+  value       = module.lambda_image_presign.invoke_arn
 }
 
 output "lambda_cards_create_arn" {
