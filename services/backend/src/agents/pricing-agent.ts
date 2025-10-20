@@ -65,18 +65,47 @@ export const handler: Handler<PricingAgentInput, PricingAgentOutput> = async (ev
   });
 
   try {
-    // Step 1: Extract card information for pricing query
-    const cardName = cardMeta.name || 'Unknown Card';
-    const set = cardMeta.set || '';
-    const condition = cardMeta.conditionEstimate || 'Near Mint';
+    // Step 1: Extract card information from features and metadata
+    // Try to get card name from metadata first, then fall back to OCR extraction
+    let cardName = cardMeta.name;
 
-    if (!cardMeta.name) {
-      logger.warn('Card name not provided, pricing may be inaccurate', {
-        userId,
-        cardId,
+    if (!cardName && event.features?.ocr && event.features.ocr.length > 0) {
+      // Extract card name from OCR blocks (usually the largest text at the top)
+      const sortedBlocks = [...event.features.ocr].sort((a, b) => {
+        // Sort by size (height * width) and confidence
+        const sizeA = (a.boundingBox?.height || 0) * (a.boundingBox?.width || 0);
+        const sizeB = (b.boundingBox?.height || 0) * (b.boundingBox?.width || 0);
+        const confidenceA = a.confidence || 0;
+        const confidenceB = b.confidence || 0;
+
+        // Prioritize larger text with high confidence
+        return sizeB * confidenceB - sizeA * confidenceA;
+      });
+
+      // Take the largest, most confident text block as the card name
+      cardName = sortedBlocks[0]?.text || 'Unknown Card';
+
+      logger.info('Extracted card name from OCR', {
+        cardName,
+        ocrBlockCount: event.features.ocr.length,
+        confidence: sortedBlocks[0]?.confidence,
         requestId,
       });
     }
+
+    if (!cardName) {
+      cardName = 'Unknown Card';
+      logger.warn('Card name not provided and could not extract from OCR', {
+        userId,
+        cardId,
+        hasFeatures: !!event.features,
+        ocrBlockCount: event.features?.ocr?.length || 0,
+        requestId,
+      });
+    }
+
+    const set = cardMeta.set || '';
+    const condition = cardMeta.conditionEstimate || 'Near Mint';
 
     // Step 2: Fetch pricing data from multiple sources
     logger.info('Fetching pricing data', {
@@ -101,9 +130,9 @@ export const handler: Handler<PricingAgentInput, PricingAgentOutput> = async (ev
           },
           userId,
           cardId,
-          forceRefresh,
+          forceRefresh
         ),
-      { userId, cardId, requestId },
+      { userId, cardId, requestId }
     );
 
     logger.info('Pricing data fetched successfully', {
@@ -129,7 +158,7 @@ export const handler: Handler<PricingAgentInput, PricingAgentOutput> = async (ev
           pricingResult,
           // historicalTrend could be added in future iterations
         }),
-      { userId, cardId, requestId },
+      { userId, cardId, requestId }
     );
 
     logger.info('Valuation summary generated', {
@@ -169,7 +198,7 @@ export const handler: Handler<PricingAgentInput, PricingAgentOutput> = async (ev
         cardId,
         cardName: cardMeta.name,
         requestId,
-      },
+      }
     );
 
     // Re-throw error to trigger Step Functions retry/error handling

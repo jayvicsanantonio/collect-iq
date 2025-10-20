@@ -553,6 +553,31 @@ module "lambda_pricing_agent" {
   tags = local.common_tags
 }
 
+# Grant pricing agent access to DynamoDB for caching
+resource "aws_iam_role_policy" "pricing_agent_dynamodb" {
+  name = "${local.name_prefix}-pricing-agent-dynamodb"
+  role = module.lambda_pricing_agent.role_name
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "dynamodb:Query",
+          "dynamodb:GetItem",
+          "dynamodb:PutItem",
+          "dynamodb:UpdateItem"
+        ]
+        Resource = [
+          module.dynamodb_collectiq.table_arn,
+          "${module.dynamodb_collectiq.table_arn}/index/*"
+        ]
+      }
+    ]
+  })
+}
+
 # 4.6 Authenticity Agent Lambda
 module "lambda_authenticity_agent" {
   source = "../../modules/lambda_fn"
