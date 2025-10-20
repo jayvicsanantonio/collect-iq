@@ -22,7 +22,7 @@ import { z } from 'zod';
 const bedrockClient = tracing.captureAWSv3Client(
   new BedrockRuntimeClient({
     region: process.env.AWS_REGION || 'us-east-1',
-  }),
+  })
 );
 
 /**
@@ -105,7 +105,7 @@ export class BedrockService {
         const response = await tracing.trace(
           'bedrock_converse',
           () => bedrockClient.send(command),
-          { modelId: input.modelId, attempt },
+          { modelId: input.modelId, attempt }
         );
 
         logger.info('Bedrock invocation successful', {
@@ -133,7 +133,7 @@ export class BedrockService {
     }
 
     throw new Error(
-      `Bedrock invocation failed after ${BEDROCK_CONFIG.maxRetries} attempts: ${lastError?.message}`,
+      `Bedrock invocation failed after ${BEDROCK_CONFIG.maxRetries} attempts: ${lastError?.message}`
     );
   }
 
@@ -152,7 +152,7 @@ Your task is to analyze card authenticity based on visual features and computed 
 
 Based on these signals, provide:
 1. An overall authenticity score (0.0 to 1.0)
-2. A boolean flag indicating if the card is likely fake (true if score < 0.85)
+2. A boolean flag indicating if the card is likely fake (true if score <= 0.50)
 3. A clear, concise rationale explaining your assessment
 
 Be thorough but concise. Focus on the most significant indicators of authenticity or fakeness.`;
@@ -270,7 +270,7 @@ Provide your analysis in the following JSON format:
         error instanceof Error ? error : new Error(String(error)),
         {
           responseText: jsonText,
-        },
+        }
       );
       throw new Error('Invalid JSON in Bedrock response');
     }
@@ -333,7 +333,7 @@ Provide your analysis in the following JSON format:
 
       // Construct final result
       const modelDetectedFake = validatedResponse.fakeDetected;
-      const scoreTriggersFake = validatedResponse.authenticityScore < 0.85;
+      const scoreTriggersFake = validatedResponse.authenticityScore <= 0.5;
       const result: AuthenticityResult = {
         authenticityScore: validatedResponse.authenticityScore,
         fakeDetected: modelDetectedFake || scoreTriggersFake,
@@ -352,7 +352,7 @@ Provide your analysis in the following JSON format:
       logger.error(
         'Bedrock authenticity analysis failed',
         error instanceof Error ? error : new Error(String(error)),
-        { cardName: context.cardMeta.name },
+        { cardName: context.cardMeta.name }
       );
 
       // Fallback: return signals-only result with reduced confidence
@@ -369,7 +369,7 @@ Provide your analysis in the following JSON format:
 
       return {
         authenticityScore: fallbackScore,
-        fakeDetected: fallbackScore < 0.85,
+        fakeDetected: fallbackScore <= 0.5,
         rationale:
           'AI analysis unavailable. Score based on automated signals only. Manual review recommended.',
         signals: context.signals,
@@ -445,7 +445,7 @@ Provide your analysis in the following JSON format:
       logger.error(
         'Bedrock valuation analysis failed',
         error instanceof Error ? error : new Error(String(error)),
-        { cardName: context.cardName },
+        { cardName: context.cardName }
       );
 
       // Fallback: return basic valuation based on pricing data
