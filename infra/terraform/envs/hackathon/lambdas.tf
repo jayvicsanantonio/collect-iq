@@ -318,6 +318,7 @@ module "lambda_cards_create" {
   environment_variables = {
     REGION                = var.aws_region
     DDB_TABLE             = module.dynamodb_collectiq.table_name
+    S3_BUCKET             = module.s3_uploads.bucket_name
     COGNITO_USER_POOL_ID  = "" # Will be added when Cognito is deployed
     XRAY_ENABLED          = "false"
     AUTO_TRIGGER_REVALUE  = "true"  # Enable auto-trigger via EventBridge

@@ -54,6 +54,7 @@ async function emitCardCreatedEvent(card: Card, userId: string, requestId: strin
       userId: card.userId,
       frontS3Key: card.frontS3Key,
       backS3Key: card.backS3Key,
+      s3Bucket: process.env.S3_BUCKET || '',
       name: card.name,
       set: card.set,
       number: card.number,

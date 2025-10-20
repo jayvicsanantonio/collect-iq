@@ -270,6 +270,7 @@ module "eventbridge_bus" {
           userId            = "$.detail.userId"
           frontS3Key        = "$.detail.frontS3Key"
           backS3Key         = "$.detail.backS3Key"
+          s3Bucket          = "$.detail.s3Bucket"
           name              = "$.detail.name"
           set               = "$.detail.set"
           number            = "$.detail.number"
@@ -280,18 +281,15 @@ module "eventbridge_bus" {
           {
             "userId": "<userId>",
             "cardId": "<cardId>",
-            "s3Keys": {
-              "front": "<frontS3Key>"
-            },
-            "cardMeta": {
+            "s3Key": "<frontS3Key>",
+            "s3Bucket": "<s3Bucket>",
+            "cardMetadata": {
               "name": "<name>",
               "set": "<set>",
               "number": "<number>",
               "rarity": "<rarity>",
-              "conditionEstimate": "<conditionEstimate>",
-              "frontS3Key": "<frontS3Key>"
-            },
-            "forceRefresh": false
+              "conditionEstimate": "<conditionEstimate>"
+            }
           }
         EOT
       }
