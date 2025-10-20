@@ -243,8 +243,8 @@
   - Test error states and retry
   - _Requirements: 15.1_
 
-- [ ] 7. Authenticity analysis interface
-- [ ] 7.1 Create AuthenticityBadge component
+- [x] 7. Authenticity analysis interface
+- [x] 7.1 Create AuthenticityBadge component
 
   - Design rounded pill badge with authenticityScore display (0-1 scale)
   - Implement color coding based on score (green > 0.8, yellow 0.5-0.8, red < 0.5)
@@ -254,7 +254,7 @@
   - Ensure accessibility (not relying solely on color)
   - _Requirements: 4.2, 4.3, 4.5, 4.7_
 
-- [ ] 7.2 Create authenticity analysis section in card detail
+- [x] 7.2 Create authenticity analysis section in card detail
 
   - Display card image from frontS3Key with zoom capability
   - Integrate AuthenticityBadge component with card.authenticityScore
@@ -264,7 +264,7 @@
   - Display holographic pattern confidence with visual indicator
   - _Requirements: 4.1, 4.4_
 
-- [ ] 7.3 Implement feedback reporting (future enhancement)
+- [x] 7.3 Implement feedback reporting (future enhancement)
 
   - Create "Report Incorrect Result" button
   - Design feedback modal with reason selection
@@ -280,8 +280,8 @@
   - Test accessibility compliance
   - _Requirements: 15.1, 15.8_
 
-- [ ] 8. Valuation interface
-- [ ] 8.1 Create ValuationPanel component
+- [x] 8. Valuation interface
+- [x] 8.1 Create ValuationPanel component
 
   - Design panel layout with price range display from card.valueLow, card.valueMedian, card.valueHigh
   - Implement low/median/high price visualization
@@ -292,7 +292,7 @@
   - Add last updated timestamp from card.updatedAt
   - _Requirements: 5.2, 5.3, 5.4, 5.5_
 
-- [ ] 8.2 Implement valuation refresh functionality
+- [x] 8.2 Implement valuation refresh functionality
 
   - Add refresh button that calls POST /cards/{id}/revalue with forceRefresh=true
   - Generate Idempotency-Key for revalue request
@@ -303,7 +303,7 @@
   - Show toast notification when new valuation data is available
   - _Requirements: 5.8_
 
-- [ ] 8.3 Handle unavailable valuation data
+- [x] 8.3 Handle unavailable valuation data
 
   - Display message when valueLow, valueMedian, or valueHigh are undefined
   - Show "Analysis in progress" if card was recently created
@@ -311,7 +311,7 @@
   - Provide explanation and retry option
   - _Requirements: 5.6_
 
-- [ ] 8.4 Integrate valuation in card detail page
+- [x] 8.4 Integrate valuation in card detail page
 
   - Display ValuationPanel in card detail view
   - Show authenticity and valuation sections together
@@ -328,8 +328,8 @@
   - Test unavailable data states
   - _Requirements: 15.1_
 
-- [ ] 9. Vault and portfolio management
-- [ ] 9.1 Create VaultGrid component
+- [x] 9. Vault and portfolio management
+- [x] 9.1 Create VaultGrid component
 
   - Implement responsive grid layout (1-4 columns based on screen size)
   - Create card thumbnail component with image and value
@@ -339,7 +339,7 @@
   - Implement virtualization for collections > 200 items
   - _Requirements: 6.1, 6.6, 6.7, 6.8, 6.9_
 
-- [ ] 9.2 Create PortfolioSummary component
+- [x] 9.2 Create PortfolioSummary component
 
   - Design summary card layout
   - Display total collection value
@@ -349,7 +349,7 @@
   - Add loading state
   - _Requirements: 6.2_
 
-- [ ] 9.3 Create VaultFilters component
+- [x] 9.3 Create VaultFilters component
 
   - Implement filter UI for set, type, rarity, authenticity
   - Create sort dropdown (value, date added, rarity)
@@ -358,7 +358,7 @@
   - Persist filter state in URL query parameters
   - _Requirements: 6.4, 6.5_
 
-- [ ] 9.4 Implement vault page
+- [x] 9.4 Implement vault page
 
   - Create /vault route
   - Integrate PortfolioSummary at top
@@ -369,7 +369,7 @@
   - Create empty vault state with upload CTA
   - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 6.6_
 
-- [ ] 9.5 Implement card deletion
+- [x] 9.5 Implement card deletion
 
   - Add delete confirmation dialog
   - Implement optimistic UI update (remove card from list immediately)
@@ -390,8 +390,8 @@
   - Test virtualization performance
   - _Requirements: 15.1, 15.2, 15.6_
 
-- [ ] 10. Card detail view
-- [ ] 10.1 Create CardDetail component
+- [x] 10. Card detail view
+- [x] 10.1 Create CardDetail component
 
   - Design detail page layout
   - Implement large card image with zoom functionality
@@ -400,7 +400,7 @@
   - Add action buttons (Re-evaluate, Delete, Share)
   - _Requirements: 7.1, 7.2, 7.3, 7.6_
 
-- [ ] 10.2 Create valuation history chart
+- [x] 10.2 Create valuation history chart
 
   - Lazy-load Recharts library
   - Create line chart component for valuation history
@@ -411,7 +411,7 @@
   - Include aria-descriptions for accessibility
   - _Requirements: 7.4, 10.5, 10.6, 10.7, 10.8, 10.9_
 
-- [ ] 10.3 Create market data sources table
+- [x] 10.3 Create market data sources table
 
   - Display recent comparable sales
   - Show source, date, price, condition for each comp
@@ -419,7 +419,7 @@
   - Implement responsive table (cards on mobile)
   - _Requirements: 7.5_
 
-- [ ] 10.4 Implement card detail page
+- [x] 10.4 Implement card detail page
 
   - Create /cards/[id] route
   - Fetch card data with SWR
@@ -431,7 +431,7 @@
   - Handle 403 (not owner) error
   - _Requirements: 7.1, 7.8, 7.9_
 
-- [ ] 10.5 Implement card actions
+- [x] 10.5 Implement card actions
 
   - Implement re-evaluate action via POST /cards/{id}/revalue with Idempotency-Key
   - Display 202 Accepted response and poll for updates
