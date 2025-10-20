@@ -245,7 +245,7 @@ resource "aws_iam_role_policy" "eventbridge_sfn_policy" {
 }
 
 ## ============================================================================
-## Lambda Sharp Layer
+## Lambda Sharp Layer (Self-Managed)
 ## ============================================================================
 module "lambda_sharp_layer" {
   source = "../../modules/lambda_sharp_layer"

@@ -13,28 +13,42 @@ resource "null_resource" "sharp_layer" {
   provisioner "local-exec" {
     command = <<-EOT
       set -e
-      echo "Building sharp layer for Lambda..."
+      echo "Building optimized sharp layer for Lambda..."
       
       # Create output directory if it doesn't exist
       mkdir -p $(dirname "${var.output_path}")
       
       # Create temporary directory
       LAYER_DIR=$(mktemp -d)
-      mkdir -p $LAYER_DIR/nodejs/node_modules
+      mkdir -p $LAYER_DIR/nodejs
       
-      # Install sharp for Lambda (Amazon Linux 2)
+      # Install sharp for Lambda (Amazon Linux 2) with production-only dependencies
       cd $LAYER_DIR/nodejs
       npm init -y
-      npm install --arch=x64 --platform=linux sharp@${var.sharp_version}
+      npm install --arch=x64 --platform=linux --production sharp@${var.sharp_version}
       
-      # Create zip
+      # Remove unnecessary files to reduce size
+      find . -name "*.md" -type f -delete
+      find . -name "*.ts" -type f -delete
+      find . -name "*.map" -type f -delete
+      find . -name "test" -type d -exec rm -rf {} + 2>/dev/null || true
+      find . -name "tests" -type d -exec rm -rf {} + 2>/dev/null || true
+      find . -name "*.test.js" -type f -delete
+      find . -name "*.spec.js" -type f -delete
+      find . -name "example" -type d -exec rm -rf {} + 2>/dev/null || true
+      find . -name "examples" -type d -exec rm -rf {} + 2>/dev/null || true
+      find . -name "docs" -type d -exec rm -rf {} + 2>/dev/null || true
+      
+      # Create optimized zip (exclude .git, .github, etc.)
       cd $LAYER_DIR
-      zip -r ${abspath(var.output_path)} nodejs/
+      zip -r -q ${abspath(var.output_path)} nodejs/ -x "*.git*" "*.DS_Store"
+      
+      # Show size
+      SIZE=$(du -h ${abspath(var.output_path)} | cut -f1)
+      echo "Sharp layer built successfully: $SIZE at ${var.output_path}"
       
       # Cleanup
       rm -rf $LAYER_DIR
-      
-      echo "Sharp layer built successfully at ${var.output_path}"
     EOT
   }
 }
