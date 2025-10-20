@@ -4,9 +4,7 @@
 
 import { PriceQuery, RawComp, PricingResult } from '@collectiq/shared';
 import { PricingService } from './pricing-service.js';
-import { EbayAdapter } from './ebay-adapter.js';
-import { TCGPlayerAdapter } from './tcgplayer-adapter.js';
-import { PriceChartingAdapter } from './pricecharting-adapter.js';
+import { PokemonTCGAdapter } from './pokemontcg-adapter.js';
 import { PriceSource } from './base-price-adapter.js';
 import { savePricingSnapshot, getPricingSnapshot } from '../store/pricing-cache.js';
 import { logger, metrics } from '../utils/index.js';
@@ -17,7 +15,9 @@ export class PricingOrchestrator {
 
   constructor() {
     this.pricingService = new PricingService();
-    this.sources = [new EbayAdapter(), new TCGPlayerAdapter(), new PriceChartingAdapter()];
+    // Use Pokémon TCG API as primary source (free, no approval needed)
+    // Add eBay, TCGPlayer, PriceCharting when API keys become available
+    this.sources = [new PokemonTCGAdapter()];
   }
 
   /**
@@ -27,7 +27,7 @@ export class PricingOrchestrator {
     query: PriceQuery,
     userId?: string,
     cardId?: string,
-    forceRefresh = false,
+    forceRefresh = false
   ): Promise<PricingResult> {
     // Check cache first (if userId and cardId provided)
     if (!forceRefresh && userId && cardId) {
@@ -74,7 +74,7 @@ export class PricingOrchestrator {
       this.sources.map(async (source) => ({
         source,
         available: await source.isAvailable(),
-      })),
+      }))
     );
 
     const availableSources = availabilityChecks
@@ -92,7 +92,7 @@ export class PricingOrchestrator {
 
     // Fetch from all available sources in parallel
     const results = await Promise.allSettled(
-      availableSources.map((source) => source.fetchComps(query)),
+      availableSources.map((source) => source.fetchComps(query))
     );
 
     // Aggregate all successful results
@@ -166,7 +166,7 @@ export class PricingOrchestrator {
       this.sources.map(async (source) => ({
         name: source.name,
         available: await source.isAvailable(),
-      })),
+      }))
     );
 
     return statuses;
