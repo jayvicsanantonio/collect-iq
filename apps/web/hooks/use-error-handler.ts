@@ -48,9 +48,14 @@ export function useErrorHandler(options: UseErrorHandlerOptions = {}) {
           });
         }
 
-        // Redirect to sign in
-        setTimeout(() => {
-          window.location.href = '/api/auth/signin';
+        // Redirect to sign in using Amplify
+        setTimeout(async () => {
+          try {
+            const { signIn } = await import('@/lib/auth');
+            await signIn();
+          } catch (error) {
+            console.error('Failed to redirect to sign in:', error);
+          }
         }, 1500);
         return;
       }

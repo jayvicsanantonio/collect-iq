@@ -84,42 +84,45 @@ export function Sidebar() {
       </nav>
 
       {/* User Section */}
-      <div className="p-4 border-t border-[var(--border)]">
-        {isCheckingAuth ? (
+      <div className="p-4 border-t border-[var(--border)] space-y-2">
+        {/* User Info - Show if session available */}
+        {!isCheckingAuth && session && (
+          <div className="flex items-center gap-3 px-3 py-2">
+            <div className="w-8 h-8 rounded-full flex items-center justify-center bg-gradient-to-br from-[var(--color-vault-blue)] to-[var(--color-holo-cyan)]">
+              <User className="w-4 h-4 text-white" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium truncate text-[var(--foreground)]">
+                {session.email}
+              </p>
+              <p className="text-xs text-[var(--muted-foreground)]">
+                Authenticated
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Sign Out Button - Always show when not checking auth */}
+        {!isCheckingAuth && (
+          <button
+            onClick={handleSignOut}
+            disabled={isSigningOut}
+            className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 text-[var(--muted-foreground)] hover:bg-[var(--accent)] hover:text-[var(--accent-foreground)]"
+          >
+            <LogOut className="w-5 h-5" />
+            <span>{isSigningOut ? 'Signing out...' : 'Sign Out'}</span>
+          </button>
+        )}
+
+        {/* Loading State */}
+        {isCheckingAuth && (
           <div className="flex items-center gap-3 px-3 py-2">
             <div className="w-5 h-5 animate-spin rounded-full border-2 border-[var(--muted)] border-t-[var(--foreground)]" />
             <span className="text-sm text-[var(--muted-foreground)]">
               Loading...
             </span>
           </div>
-        ) : session ? (
-          <>
-            {/* User Info */}
-            <div className="flex items-center gap-3 px-3 py-2 mb-2">
-              <div className="w-8 h-8 rounded-full flex items-center justify-center bg-gradient-to-br from-[var(--color-vault-blue)] to-[var(--color-holo-cyan)]">
-                <User className="w-4 h-4 text-white" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate text-[var(--foreground)]">
-                  {session.email}
-                </p>
-                <p className="text-xs text-[var(--muted-foreground)]">
-                  Authenticated
-                </p>
-              </div>
-            </div>
-
-            {/* Sign Out */}
-            <button
-              onClick={handleSignOut}
-              disabled={isSigningOut}
-              className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
-            >
-              <LogOut className="w-5 h-5" />
-              <span>{isSigningOut ? 'Signing out...' : 'Sign Out'}</span>
-            </button>
-          </>
-        ) : null}
+        )}
       </div>
     </aside>
   );

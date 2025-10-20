@@ -451,8 +451,8 @@
   - Test chart lazy loading
   - _Requirements: 15.1, 15.6_
 
-- [ ] 11. Error handling and user feedback
-- [ ] 11.1 Create ProblemDetails error handler
+- [x] 11. Error handling and user feedback
+- [x] 11.1 Create ProblemDetails error handler
 
   - Create error handler in apps/web/lib/errors.ts
   - Use ProblemDetails type and schema from @collectiq/shared
@@ -462,7 +462,7 @@
   - Add requestId tracking
   - _Requirements: 11.1, 11.2, 11.9_
 
-- [ ] 11.2 Create ErrorAlert component
+- [x] 11.2 Create ErrorAlert component
 
   - Design alert component with icon and message
   - Add retry button when applicable
@@ -470,7 +470,7 @@
   - Implement different severity levels (error, warning, info)
   - _Requirements: 11.2, 11.9_
 
-- [ ] 11.3 Implement error states for all flows
+- [x] 11.3 Implement error states for all flows
 
   - Add 401 redirect to Cognito Hosted UI
   - Add 403 forbidden message
@@ -481,7 +481,7 @@
   - Add 5xx server error with retry
   - _Requirements: 11.3, 11.4, 11.5, 11.6, 11.7, 11.8_
 
-- [ ] 11.4 Implement toast notifications
+- [x] 11.4 Implement toast notifications
 
   - Create toast system using shadcn/ui Toast
   - Add success toasts for actions (card saved, deleted, etc.)
