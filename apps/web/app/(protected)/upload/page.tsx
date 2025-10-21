@@ -321,9 +321,9 @@ export default function UploadPage() {
             </p>
           </div>
 
-          {/* Upload Progress */}
+          {/* Upload Progress - Centered and Prominent */}
           {hasUpload && (
-            <div className="mb-8 max-w-2xl mx-auto">
+            <div className="flex items-center justify-center min-h-[400px] w-full">
               <UploadProgress
                 file={uploadState.file!}
                 progress={uploadState.progress}
@@ -333,65 +333,74 @@ export default function UploadPage() {
                 onRetry={
                   uploadState.status === 'error' ? handleRetryUpload : undefined
                 }
+                className="shadow-2xl"
               />
             </div>
           )}
 
           {/* Upload Options - Card Layout */}
           {!hasUpload && (
-            <div className="flex justify-center items-center gap-8">
-              {/* Camera Capture Card */}
-              <button
-                onClick={() => setShowCamera(true)}
-                disabled={isUploading}
-                className="group relative p-10 rounded-2xl transition-all duration-300 flex flex-col items-center justify-center border-2 border-gray-200 dark:border-white/10 shadow-lg dark:shadow-[0_8px_32px_rgba(0,0,0,0.12)] hover:border-[var(--color-holo-cyan)] hover:shadow-xl hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-                style={{
-                  backgroundColor: 'var(--background)',
-                  width: '340px',
-                  height: '476px',
-                }}
-              >
-                <div className="flex flex-col items-center justify-center text-center space-y-6">
-                  <div className="rounded-full p-6 bg-[var(--color-holo-cyan)]/10 group-hover:bg-[var(--color-holo-cyan)]/20 transition-colors">
-                    <Camera
-                      className="w-14 h-14 text-[var(--color-holo-cyan)]"
-                      strokeWidth={1.5}
-                    />
-                  </div>
-                  <div className="space-y-3">
-                    <h3 className="text-2xl font-bold font-display">
-                      Capture Photo
-                    </h3>
-                    <p className="text-base text-[var(--muted-foreground)] leading-relaxed px-4">
-                      Use your camera to snap a photo of your card
-                    </p>
-                  </div>
-                  <div className="pt-4">
-                    <div className="inline-flex items-center gap-2 text-sm font-medium text-[var(--color-holo-cyan)] group-hover:gap-3 transition-all">
-                      Open Camera
-                      <span className="text-base">→</span>
+            <>
+              <style jsx>{`
+                @media (min-width: 640px) {
+                  .upload-card {
+                    width: 340px !important;
+                    height: 476px !important;
+                  }
+                }
+              `}</style>
+              <div className="flex flex-col sm:flex-row justify-center items-center gap-4 sm:gap-8">
+                {/* Camera Capture Card */}
+                <button
+                  onClick={() => setShowCamera(true)}
+                  disabled={isUploading}
+                  className="upload-card group relative p-6 sm:p-10 rounded-xl sm:rounded-2xl transition-all duration-300 flex flex-col items-center justify-center border-2 border-gray-200 dark:border-white/10 shadow-lg dark:shadow-[0_8px_32px_rgba(0,0,0,0.12)] hover:border-[var(--color-holo-cyan)] hover:shadow-xl hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 w-full touch-manipulation"
+                  style={{
+                    backgroundColor: 'var(--background)',
+                    minHeight: '280px',
+                  }}
+                >
+                  <div className="flex flex-col items-center justify-center text-center space-y-4 sm:space-y-6">
+                    <div className="rounded-full p-4 sm:p-6 bg-[var(--color-holo-cyan)]/10 group-hover:bg-[var(--color-holo-cyan)]/20 transition-colors">
+                      <Camera
+                        className="w-10 h-10 sm:w-14 sm:h-14 text-[var(--color-holo-cyan)]"
+                        strokeWidth={1.5}
+                      />
+                    </div>
+                    <div className="space-y-2 sm:space-y-3">
+                      <h3 className="text-xl sm:text-2xl font-bold font-display">
+                        Capture Photo
+                      </h3>
+                      <p className="text-sm sm:text-base text-[var(--muted-foreground)] leading-relaxed px-2 sm:px-4">
+                        Use your camera to snap a photo of your card
+                      </p>
+                    </div>
+                    <div className="pt-2 sm:pt-4">
+                      <div className="inline-flex items-center gap-2 text-sm font-medium text-[var(--color-holo-cyan)] group-hover:gap-3 transition-all">
+                        Open Camera
+                        <span className="text-base">→</span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </button>
+                </button>
 
-              {/* File Upload Card */}
-              <div
-                className="group relative rounded-2xl transition-all duration-300 border-2 border-gray-200 dark:border-white/10 shadow-lg dark:shadow-[0_8px_32px_rgba(0,0,0,0.12)] hover:border-[var(--color-emerald-glow)] hover:shadow-xl hover:scale-[1.02] overflow-hidden"
-                style={{
-                  backgroundColor: 'var(--background)',
-                  width: '340px',
-                  height: '476px',
-                }}
-              >
-                <UploadDropzone
-                  onSelected={handleFileSelected}
-                  onError={handleUploadError}
-                  disabled={isUploading}
-                  className="h-full w-full border-0 rounded-none p-10 min-h-0 hover:border-0 hover:bg-transparent"
-                />
+                {/* File Upload Card */}
+                <div
+                  className="upload-card group relative rounded-xl sm:rounded-2xl transition-all duration-300 border-2 border-gray-200 dark:border-white/10 shadow-lg dark:shadow-[0_8px_32px_rgba(0,0,0,0.12)] hover:border-[var(--color-emerald-glow)] hover:shadow-xl hover:scale-[1.02] overflow-hidden w-full"
+                  style={{
+                    backgroundColor: 'var(--background)',
+                    minHeight: '280px',
+                  }}
+                >
+                  <UploadDropzone
+                    onSelected={handleFileSelected}
+                    onError={handleUploadError}
+                    disabled={isUploading}
+                    className="h-full w-full border-0 rounded-none p-6 sm:p-10 min-h-0 hover:border-0 hover:bg-transparent"
+                  />
+                </div>
               </div>
-            </div>
+            </>
           )}
         </div>
       </main>

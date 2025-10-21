@@ -15,7 +15,8 @@ export default function ProtectedLayout({
     <AuthGuard>
       <div className="flex min-h-screen">
         <Sidebar />
-        <main className="flex-1 ml-64">{children}</main>
+        {/* Responsive main content: no left margin on mobile, ml-64 on desktop */}
+        <main className="flex-1 w-full md:ml-64">{children}</main>
       </div>
     </AuthGuard>
   );

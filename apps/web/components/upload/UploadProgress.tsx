@@ -5,10 +5,6 @@ import { X, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
-// ============================================================================
-// Types
-// ============================================================================
-
 export interface UploadProgressProps {
   file: File;
   progress: number;
@@ -19,10 +15,6 @@ export interface UploadProgressProps {
   className?: string;
 }
 
-// ============================================================================
-// Component
-// ============================================================================
-
 export function UploadProgress({
   file,
   progress,
@@ -32,179 +24,140 @@ export function UploadProgress({
   onRetry,
   className,
 }: UploadProgressProps) {
-  const [thumbnailUrl, setThumbnailUrl] = React.useState<
-    string | null
-  >(null);
-
-  // ============================================================================
-  // Thumbnail Generation
-  // ============================================================================
+  const [thumbnailUrl, setThumbnailUrl] = React.useState<string | null>(null);
 
   React.useEffect(() => {
-    // Create object URL for thumbnail preview
     const url = URL.createObjectURL(file);
     setThumbnailUrl(url);
-
-    // Cleanup on unmount
     return () => {
       URL.revokeObjectURL(url);
     };
   }, [file]);
 
-  // ============================================================================
-  // Progress Calculation
-  // ============================================================================
-
   const progressPercent = Math.min(Math.max(progress, 0), 100);
   const isComplete = status === 'success';
   const hasError = status === 'error';
 
-  // ============================================================================
-  // Render
-  // ============================================================================
-
   return (
-    <div
-      className={cn(
-        'relative flex items-center gap-4 rounded-xl border p-4 transition-all',
-        hasError
-          ? 'border-[var(--destructive)] bg-[var(--destructive)]/5'
-          : 'border-[var(--border)] bg-[var(--card)]',
-        className
-      )}
-    >
-      {/* Thumbnail */}
-      <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg bg-[var(--muted)]">
-        {thumbnailUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={thumbnailUrl}
-            alt={file.name}
-            className="h-full w-full object-cover"
-          />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center">
-            <div className="h-8 w-8 animate-pulse rounded bg-[var(--muted-foreground)]/20" />
-          </div>
+    <div className={cn('w-full max-w-4xl mx-auto', className)}>
+      <div
+        className={cn(
+          'relative flex flex-row items-center gap-8 rounded-2xl border-[3px] p-10 transition-all w-full min-h-[200px]',
+          hasError
+            ? 'border-red-400 bg-red-50 dark:bg-red-900/30'
+            : 'border-emerald-400/70 bg-emerald-50/50 dark:bg-emerald-950/30'
         )}
-
-        {/* Status overlay */}
-        {isComplete && (
-          <div className="absolute inset-0 flex items-center justify-center bg-green-500/80">
-            <CheckCircle2
-              className="h-6 w-6 text-white"
-              aria-hidden="true"
+        style={{
+          boxShadow: hasError
+            ? '0 8px 30px rgba(239, 68, 68, 0.4)'
+            : '0 8px 30px rgba(16, 185, 129, 0.5)',
+        }}
+      >
+        <div className="relative h-48 w-48 flex-shrink-0 overflow-hidden rounded-xl bg-white dark:bg-gray-700 border-2 border-emerald-300/50 shadow-lg">
+          {thumbnailUrl ? (
+            <img
+              src={thumbnailUrl}
+              alt={file.name}
+              className="h-full w-full object-cover"
             />
-          </div>
-        )}
-        {hasError && (
-          <div className="absolute inset-0 flex items-center justify-center bg-[var(--destructive)]/80">
-            <AlertCircle
-              className="h-6 w-6 text-white"
-              aria-hidden="true"
-            />
-          </div>
-        )}
-      </div>
-
-      {/* Content */}
-      <div className="flex-1 min-w-0">
-        {/* File name */}
-        <p className="truncate text-sm font-medium text-[var(--foreground)]">
-          {file.name}
-        </p>
-
-        {/* File size */}
-        <p className="text-xs text-[var(--muted-foreground)] mt-0.5">
-          {formatFileSize(file.size)}
-        </p>
-
-        {/* Progress bar or status */}
-        {(status === 'idle' || status === 'uploading') && (
-          <div className="mt-2">
-            <div className="flex items-center justify-between text-xs mb-1">
-              <span className="text-[var(--muted-foreground)]">
-                {status === 'idle' ? 'Preparing...' : 'Uploading...'}
-              </span>
-              <span className="font-medium text-[var(--foreground)]">
-                {progressPercent}%
-              </span>
+          ) : (
+            <div className="flex h-full w-full items-center justify-center">
+              <div className="h-12 w-12 animate-pulse rounded bg-gray-300 dark:bg-gray-700" />
             </div>
-            <div className="h-1.5 w-full overflow-hidden rounded-full bg-[var(--muted)]">
-              <div
-                className="h-full bg-gradient-to-r from-[var(--holo-cyan)] to-[var(--holo-purple)] transition-all duration-300 ease-out"
-                style={{ width: `${progressPercent}%` }}
-                role="progressbar"
-                aria-valuenow={progressPercent}
-                aria-valuemin={0}
-                aria-valuemax={100}
-              />
+          )}
+
+          {isComplete && (
+            <div className="absolute inset-0 flex items-center justify-center bg-green-500/90">
+              <CheckCircle2 className="h-10 w-10 text-white" />
             </div>
-          </div>
-        )}
+          )}
+          {hasError && (
+            <div className="absolute inset-0 flex items-center justify-center bg-red-500/90">
+              <AlertCircle className="h-10 w-10 text-white" />
+            </div>
+          )}
+        </div>
 
-        {status === 'success' && (
-          <div className="mt-2 flex items-center gap-1.5 text-xs text-green-600 dark:text-green-500">
-            <CheckCircle2
-              className="h-3.5 w-3.5"
-              aria-hidden="true"
-            />
-            <span>Upload complete</span>
-          </div>
-        )}
+        <div className="flex-1 min-w-0">
+          <h3 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-3 break-words">
+            {file.name}
+          </h3>
 
-        {status === 'error' && error && (
-          <div className="mt-2 flex items-center gap-1.5 text-xs text-[var(--destructive)]">
-            <AlertCircle
-              className="h-3.5 w-3.5 flex-shrink-0"
-              aria-hidden="true"
-            />
-            <span className="line-clamp-2">{error}</span>
-          </div>
-        )}
-      </div>
+          <p className="text-lg text-gray-600 dark:text-gray-300 mb-6">
+            {formatFileSize(file.size)}
+          </p>
 
-      {/* Actions */}
-      <div className="flex items-center gap-2">
-        {status === 'uploading' && onCancel && (
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onCancel}
-            aria-label="Cancel upload"
-            className="h-8 w-8"
-          >
-            <X className="h-4 w-4" />
-          </Button>
-        )}
+          {(status === 'idle' || status === 'uploading') && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between text-lg">
+                <span className="text-gray-700 dark:text-gray-200 font-semibold">
+                  {status === 'idle' ? 'Preparing...' : 'Uploading...'}
+                </span>
+                <span className="font-bold text-emerald-600 dark:text-emerald-400 text-2xl">
+                  {Math.round(progressPercent)}%
+                </span>
+              </div>
+              <div className="h-5 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-600 shadow-inner">
+                <div
+                  className="h-full bg-gradient-to-r from-cyan-400 via-emerald-400 to-emerald-500 transition-all duration-300 ease-out shadow-lg"
+                  style={{ width: `${progressPercent}%` }}
+                  role="progressbar"
+                  aria-valuenow={progressPercent}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                />
+              </div>
+            </div>
+          )}
 
-        {status === 'error' && onRetry && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onRetry}
-            className="text-xs"
-          >
-            Retry
-          </Button>
-        )}
+          {status === 'success' && (
+            <div className="flex items-center gap-3 text-lg font-bold text-green-600 dark:text-green-400">
+              <CheckCircle2 className="h-8 w-8" />
+              <span>Upload complete</span>
+            </div>
+          )}
+
+          {status === 'error' && error && (
+            <div className="flex items-start gap-3 text-lg text-red-600 dark:text-red-400">
+              <AlertCircle className="h-8 w-8 flex-shrink-0 mt-0.5" />
+              <span className="break-words font-semibold">{error}</span>
+            </div>
+          )}
+        </div>
+
+        <div className="flex items-center gap-4 flex-shrink-0">
+          {status === 'uploading' && onCancel && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onCancel}
+              aria-label="Cancel upload"
+              className="h-14 w-14"
+            >
+              <X className="h-7 w-7" />
+            </Button>
+          )}
+
+          {status === 'error' && onRetry && (
+            <Button
+              variant="outline"
+              size="lg"
+              onClick={onRetry}
+              className="text-lg px-8 py-6"
+            >
+              Retry Upload
+            </Button>
+          )}
+        </div>
       </div>
     </div>
   );
 }
 
-// ============================================================================
-// Utilities
-// ============================================================================
-
 function formatFileSize(bytes: number): string {
   if (bytes === 0) return '0 Bytes';
-
   const k = 1024;
   const sizes = ['Bytes', 'KB', 'MB', 'GB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-
-  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${
-    sizes[i]
-  }`;
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
 }
