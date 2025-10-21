@@ -4,6 +4,7 @@ import * as React from 'react';
 import { X, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import heic2any from 'heic2any';
 
 export interface UploadProgressProps {
   file: File;
@@ -25,12 +26,48 @@ export function UploadProgress({
   className,
 }: UploadProgressProps) {
   const [thumbnailUrl, setThumbnailUrl] = React.useState<string | null>(null);
+  const [isConverting, setIsConverting] = React.useState(false);
 
   React.useEffect(() => {
-    const url = URL.createObjectURL(file);
-    setThumbnailUrl(url);
+    let objectUrl: string | null = null;
+
+    const loadThumbnail = async () => {
+      try {
+        const fileName = file.name.toLowerCase();
+        const isHeicFile = fileName.endsWith('.heic') || fileName.endsWith('.heif');
+
+        if (isHeicFile) {
+          // Convert HEIC to JPEG for preview
+          setIsConverting(true);
+          const convertedBlob = await heic2any({
+            blob: file,
+            toType: 'image/jpeg',
+            quality: 0.8, // Good quality for preview
+          });
+
+          // heic2any can return Blob or Blob[], handle both cases
+          const blob = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
+          objectUrl = URL.createObjectURL(blob);
+          setThumbnailUrl(objectUrl);
+          setIsConverting(false);
+        } else {
+          // For JPEG/PNG, create object URL directly
+          objectUrl = URL.createObjectURL(file);
+          setThumbnailUrl(objectUrl);
+        }
+      } catch (err) {
+        console.error('Failed to load thumbnail:', err);
+        setIsConverting(false);
+        // Keep thumbnailUrl as null to show loading state
+      }
+    };
+
+    loadThumbnail();
+
     return () => {
-      URL.revokeObjectURL(url);
+      if (objectUrl) {
+        URL.revokeObjectURL(objectUrl);
+      }
     };
   }, [file]);
 
@@ -55,14 +92,15 @@ export function UploadProgress({
       >
         <div className="relative h-48 w-48 flex-shrink-0 overflow-hidden rounded-xl bg-white dark:bg-gray-700 border-2 border-emerald-300/50 shadow-lg">
           {thumbnailUrl ? (
-            <img
-              src={thumbnailUrl}
-              alt={file.name}
-              className="h-full w-full object-cover"
-            />
+            <img src={thumbnailUrl} alt={file.name} className="h-full w-full object-cover" />
           ) : (
-            <div className="flex h-full w-full items-center justify-center">
-              <div className="h-12 w-12 animate-pulse rounded bg-gray-300 dark:bg-gray-700" />
+            <div className="flex h-full w-full flex-col items-center justify-center gap-3">
+              <div className="h-12 w-12 animate-spin rounded-full border-4 border-gray-300 dark:border-gray-600 border-t-emerald-500" />
+              {isConverting && (
+                <span className="text-xs font-medium text-gray-600 dark:text-gray-300">
+                  Converting...
+                </span>
+              )}
             </div>
           )}
 
@@ -139,12 +177,7 @@ export function UploadProgress({
           )}
 
           {status === 'error' && onRetry && (
-            <Button
-              variant="outline"
-              size="lg"
-              onClick={onRetry}
-              className="text-lg px-8 py-6"
-            >
+            <Button variant="outline" size="lg" onClick={onRetry} className="text-lg px-8 py-6">
               Retry Upload
             </Button>
           )}
