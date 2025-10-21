@@ -110,6 +110,7 @@ export const CardSchema = z.object({
   valueHigh: z.number().optional(),
   compsCount: z.number().optional(),
   sources: z.array(z.string()).optional(),
+  pricingMessage: z.string().optional(), // Message when pricing data is unavailable
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
 });
@@ -154,10 +155,11 @@ export const PricingResultSchema = z.object({
   valueMedian: z.number(),
   valueHigh: z.number(),
   compsCount: z.number(),
-  windowDays: z.number(),
+  windowDays: z.number().optional(),
   sources: z.array(z.string()),
   confidence: z.number().min(0).max(1),
-  volatility: z.number(),
+  volatility: z.number().optional(),
+  message: z.string().optional(), // Optional message for when no pricing data is available
 });
 
 export type PricingResult = z.infer<typeof PricingResultSchema>;
