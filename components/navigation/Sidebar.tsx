@@ -3,19 +3,22 @@
 import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { Upload, Vault, LogOut, User, Sparkles } from 'lucide-react';
+import { Upload, Vault, LogOut, User, Sparkles, Menu, X } from 'lucide-react';
 import { getSession, signOut } from '@/lib/auth';
 import type { UserSession } from '@/lib/auth';
+import { Button } from '@/components/ui/button';
 
 /**
  * Left sidebar navigation component
  * Shows different navigation items based on authentication status
+ * Responsive: Hidden on mobile with hamburger menu, always visible on desktop
  */
 export function Sidebar() {
   const pathname = usePathname();
   const [session, setSession] = useState<UserSession | null>(null);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [isSigningOut, setIsSigningOut] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     checkAuth();
@@ -39,8 +42,43 @@ export function Sidebar() {
 
   const isActive = (path: string) => pathname === path;
 
+  // Close mobile menu when route changes
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [pathname]);
+
   return (
-    <aside className="fixed left-0 top-0 h-screen w-64 flex flex-col z-50 bg-[var(--card)] border-r border-[var(--border)]">
+    <>
+      {/* Mobile Menu Button - Fixed at top left */}
+      <Button
+        variant="ghost"
+        size="icon"
+        className="fixed top-4 left-4 z-50 md:hidden bg-[var(--card)] border border-[var(--border)] shadow-lg"
+        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+        aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
+      >
+        {isMobileMenuOpen ? (
+          <X className="h-5 w-5" />
+        ) : (
+          <Menu className="h-5 w-5" />
+        )}
+      </Button>
+
+      {/* Mobile Overlay */}
+      {isMobileMenuOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 md:hidden"
+          onClick={() => setIsMobileMenuOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* Sidebar - Slide in on mobile, always visible on desktop */}
+      <aside
+        className={`fixed left-0 top-0 h-screen w-64 flex flex-col z-50 bg-[var(--card)] border-r border-[var(--border)] transition-transform duration-300 ease-in-out ${
+          isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
+        } md:translate-x-0`}
+      >
       {/* Logo */}
       <div className="p-6 border-b border-[var(--border)]">
         <Link href="/upload" className="flex items-center gap-2">
@@ -125,5 +163,6 @@ export function Sidebar() {
         )}
       </div>
     </aside>
+    </>
   );
 }

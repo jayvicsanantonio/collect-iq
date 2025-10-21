@@ -35,7 +35,7 @@ export function EmptyVault() {
         </h1>
 
         {/* Description */}
-        <p className="mb-8 text-lg text-[var(--muted-foreground)] max-w-2xl mx-auto">
+        <p className="mb-8 text-lg text-[var(--muted-foreground)] max-w-4xl mx-auto">
           Start building your collection with AI-powered valuation and
           authenticity verification
         </p>

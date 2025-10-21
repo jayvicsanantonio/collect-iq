@@ -18,10 +18,10 @@ import { cn } from '@/lib/utils';
 
 export interface CameraError {
   type:
-    | 'permission-denied'
-    | 'not-supported'
-    | 'no-camera'
-    | 'unknown';
+  | 'permission-denied'
+  | 'not-supported'
+  | 'no-camera'
+  | 'unknown';
   message: string;
   originalError?: Error;
 }
@@ -257,7 +257,7 @@ export function CameraCapture({
         open={isOpen && !showPermissionDialog}
         onOpenChange={onClose}
       >
-        <DialogContent className="max-w-4xl p-0">
+        <DialogContent className="!max-w-6xl p-0">
           <div className="relative flex flex-col">
             {/* Header */}
             <div className="flex items-center justify-between border-b border-[var(--border)] p-4">
@@ -337,19 +337,19 @@ export function CameraCapture({
         open={showPermissionDialog}
         onOpenChange={setShowPermissionDialog}
       >
-        <DialogContent>
+        <DialogContent className="!max-w-3xl">
           <DialogHeader>
-            <DialogTitle>Camera Permission Required</DialogTitle>
-            <DialogDescription className="space-y-4 pt-4">
-              <p>
+            <DialogTitle className="text-xl">Camera Permission Required</DialogTitle>
+            <DialogDescription className="space-y-6 pt-6">
+              <p className="text-base">
                 CollectIQ needs access to your camera to scan trading
                 cards.
               </p>
-              <div className="rounded-lg bg-[var(--muted)] p-4 text-sm">
-                <p className="font-medium mb-2">
+              <div className="rounded-lg bg-[var(--muted)] p-6 text-base">
+                <p className="font-semibold mb-3 text-base">
                   To enable camera access:
                 </p>
-                <ol className="list-decimal list-inside space-y-1 text-[var(--muted-foreground)]">
+                <ol className="list-decimal list-inside space-y-2 text-[var(--muted-foreground)]">
                   <li>
                     Click the camera icon in your browser&apos;s
                     address bar
@@ -362,9 +362,10 @@ export function CameraCapture({
               </div>
             </DialogDescription>
           </DialogHeader>
-          <div className="flex justify-end gap-2 mt-4">
+          <div className="flex justify-end gap-3 mt-6">
             <Button
               variant="outline"
+              size="lg"
               onClick={() => {
                 setShowPermissionDialog(false);
                 onClose();
@@ -374,6 +375,7 @@ export function CameraCapture({
             </Button>
             <Button
               variant="primary"
+              size="lg"
               onClick={() => {
                 setShowPermissionDialog(false);
                 startCamera();

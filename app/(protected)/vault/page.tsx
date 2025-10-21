@@ -384,7 +384,7 @@ export default function VaultPage() {
     try {
       // Call real API to refresh valuation
       await api.revalueCard(cardId, { forceRefresh: true });
-      
+
       toast({
         title: 'Valuation refresh started',
         description: 'Your card valuation is being updated.',
@@ -599,17 +599,18 @@ export default function VaultPage() {
         open={deleteCardId !== null}
         onOpenChange={(open) => !open && cancelDelete()}
       >
-        <DialogContent>
+        <DialogContent className="!max-w-3xl">
           <DialogHeader>
-            <DialogTitle>Delete Card</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-xl">Delete Card</DialogTitle>
+            <DialogDescription className="text-base pt-2">
               Are you sure you want to delete this card from your vault? This
               action cannot be undone.
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter>
+          <div className="flex justify-end gap-3 mt-6">
             <Button
               variant="outline"
+              size="lg"
               onClick={cancelDelete}
               disabled={isDeleting}
             >
@@ -617,12 +618,13 @@ export default function VaultPage() {
             </Button>
             <Button
               variant="destructive"
+              size="lg"
               onClick={confirmDelete}
               disabled={isDeleting}
             >
               {isDeleting ? 'Deleting...' : 'Delete'}
             </Button>
-          </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
