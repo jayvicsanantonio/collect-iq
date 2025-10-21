@@ -44,7 +44,25 @@ export class PricingOrchestrator {
     const rawComps = await this.fetchFromAllSources(query);
 
     if (rawComps.length === 0) {
-      throw new Error('No pricing data available from any source');
+      // Return fallback result with zeros instead of throwing error
+      logger.warn('No pricing data available from any source, returning fallback', { query });
+
+      const fallbackResult: PricingResult = {
+        valueLow: 0,
+        valueMedian: 0,
+        valueHigh: 0,
+        compsCount: 0,
+        sources: [],
+        confidence: 0,
+        message: 'No pricing data available from any source',
+      };
+
+      // Cache the fallback result to avoid repeated lookups
+      if (userId && cardId) {
+        await this.cacheResult(userId, cardId, fallbackResult);
+      }
+
+      return fallbackResult;
     }
 
     // Normalize and fuse the data

@@ -25,7 +25,6 @@ import {
   InternalServerError,
   ForbiddenError,
 } from '../utils/errors.js';
-import { enforceCardOwnership } from '../auth/ownership.js';
 import { logger } from '../utils/logger.js';
 import { tracing } from '../utils/tracing.js';
 
@@ -53,6 +52,7 @@ interface CardItem {
   valueHigh?: number;
   compsCount?: number;
   sources?: string[];
+  pricingMessage?: string;
   createdAt: string; // Also serves as GSI1 range key
   updatedAt: string;
   deletedAt?: string;
@@ -82,7 +82,11 @@ interface ListCardsResult {
  * should not be relied on at production scale.
  *
  * Implements retry logic with exponential backoff to handle GSI eventual consistency.
+ *
+ * NOTE: Currently unused as getCard() uses direct PK+SK query for better performance.
+ * Kept for potential future use cases where userId is not available.
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function fetchCardItemById(cardId: string, requestId?: string): Promise<CardItem | null> {
   const client = getDynamoDBClient();
   const tableName = getTableName();
@@ -227,6 +231,7 @@ function itemToCard(item: CardItem): Card {
   if (item.valueHigh !== undefined) card.valueHigh = item.valueHigh;
   if (item.compsCount !== undefined) card.compsCount = item.compsCount;
   if (item.sources) card.sources = item.sources;
+  if (item.pricingMessage) card.pricingMessage = item.pricingMessage;
 
   return CardSchema.parse(card);
 }
@@ -264,6 +269,7 @@ function cardToItem(card: Partial<Card>, userId: string, cardId: string): CardIt
   if (card.valueHigh !== undefined) item.valueHigh = card.valueHigh;
   if (card.compsCount !== undefined) item.compsCount = card.compsCount;
   if (card.sources) item.sources = card.sources;
+  if (card.pricingMessage) item.pricingMessage = card.pricingMessage;
 
   return item;
 }
@@ -540,6 +546,7 @@ export async function updateCard(
       'valueHigh',
       'compsCount',
       'sources',
+      'pricingMessage',
     ];
 
     for (const field of updateableFields) {
