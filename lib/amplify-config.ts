@@ -6,6 +6,11 @@ import { env } from './env';
  * This should be called once at application startup.
  */
 export function configureAmplify() {
+  // Only configure on client side to avoid SSR issues
+  if (typeof window === 'undefined') {
+    return;
+  }
+
   const redirectSignInValues = buildRedirectVariants(
     env.NEXT_PUBLIC_OAUTH_REDIRECT_URI
   );

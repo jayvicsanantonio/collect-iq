@@ -1,4 +1,8 @@
-import { signInWithRedirect, signOut as amplifySignOut, fetchAuthSession, fetchUserAttributes } from 'aws-amplify/auth';
+import {
+  signInWithRedirect,
+  signOut as amplifySignOut,
+  fetchAuthSession,
+} from 'aws-amplify/auth';
 
 /**
  * User session interface representing authenticated user data
@@ -46,7 +50,8 @@ export async function getAccessToken(): Promise<string | null> {
     const session = await fetchAuthSession();
     const accessToken = session.tokens?.accessToken?.toString();
     return accessToken || null;
-  } catch {
+  } catch (error) {
+    console.error('Failed to get access token:', error);
     return null;
   }
 }
@@ -59,7 +64,8 @@ export async function isAuthenticated(): Promise<boolean> {
   try {
     const session = await fetchAuthSession();
     return !!session.tokens?.accessToken;
-  } catch {
+  } catch (error) {
+    console.error('Failed to check authentication:', error);
     return false;
   }
 }
@@ -70,13 +76,21 @@ export async function isAuthenticated(): Promise<boolean> {
  */
 export async function getCurrentUserInfo(): Promise<UserInfo | null> {
   try {
-    const attributes = await fetchUserAttributes();
+    const session = await fetchAuthSession();
+    const idToken = session.tokens?.idToken;
+    if (!idToken) return null;
+
+    // Get user info from ID token payload instead of fetchUserAttributes
+    // This avoids the "Access Token does not have required scopes" error
+    const payload = idToken.payload;
+
     return {
-      sub: attributes.sub || '',
-      email: attributes.email,
-      emailVerified: attributes.email_verified === 'true',
+      sub: (payload.sub as string) || '',
+      email: payload.email as string | undefined,
+      emailVerified: payload.email_verified === true,
     };
-  } catch {
+  } catch (error) {
+    console.error('Failed to get user info:', error);
     return null;
   }
 }
@@ -87,22 +101,25 @@ export async function getCurrentUserInfo(): Promise<UserInfo | null> {
  */
 export async function getSession(): Promise<UserSession | null> {
   try {
-    const [session, attributes] = await Promise.all([
-      fetchAuthSession(),
-      fetchUserAttributes(),
-    ]);
+    const session = await fetchAuthSession();
 
     const accessToken = session.tokens?.accessToken;
-    if (!accessToken) return null;
+    const idToken = session.tokens?.idToken;
+    if (!accessToken || !idToken) return null;
+
+    // Get user info from ID token payload instead of fetchUserAttributes
+    // This avoids the "Access Token does not have required scopes" error
+    const payload = idToken.payload;
 
     return {
-      sub: attributes.sub || '',
-      email: attributes.email || '',
-      emailVerified: attributes.email_verified === 'true',
+      sub: (payload.sub as string) || '',
+      email: (payload.email as string) || '',
+      emailVerified: payload.email_verified === true,
       accessToken: accessToken.toString(),
       expiresAt: (accessToken.payload.exp as number) * 1000,
     };
-  } catch {
+  } catch (error) {
+    console.error('Failed to get session:', error);
     return null;
   }
 }
