@@ -92,7 +92,7 @@ export default function VaultPage() {
       // Update URL without page reload
       const queryString = params.toString();
       const url = queryString ? `/vault?${queryString}` : '/vault';
-      router.push(url, { scroll: false });
+      router.push(url as any, { scroll: false });
     },
     [router]
   );
