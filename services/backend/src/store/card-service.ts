@@ -80,11 +80,15 @@ interface ListCardsResult {
  * Prefers a GSI (default name CardIdIndex) but falls back to a scan when the
  * index is unavailable. The scan path is primarily for local development and
  * should not be relied on at production scale.
+ *
+ * Implements retry logic with exponential backoff to handle GSI eventual consistency.
  */
 async function fetchCardItemById(cardId: string, requestId?: string): Promise<CardItem | null> {
   const client = getDynamoDBClient();
   const tableName = getTableName();
   const indexName = process.env.CARD_ID_INDEX_NAME || 'CardIdIndex';
+  const maxRetries = 3;
+  const baseDelay = 100; // ms
 
   logger.debug('Fetching card by ID', {
     operation: 'fetchCardItemById',
@@ -93,40 +97,66 @@ async function fetchCardItemById(cardId: string, requestId?: string): Promise<Ca
     requestId,
   });
 
-  try {
-    const result = await client.send(
-      new QueryCommand({
-        TableName: tableName,
-        IndexName: indexName,
-        KeyConditionExpression: 'cardId = :cardId',
-        ExpressionAttributeValues: {
-          ':cardId': cardId,
-        },
-        Limit: 1,
-      })
-    );
+  // Try GSI query with retries for eventual consistency
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const result = await client.send(
+        new QueryCommand({
+          TableName: tableName,
+          IndexName: indexName,
+          KeyConditionExpression: 'cardId = :cardId',
+          ExpressionAttributeValues: {
+            ':cardId': cardId,
+          },
+          Limit: 1,
+        })
+      );
 
-    const item = result.Items?.[0] as CardItem | undefined;
-    if (item && item.entityType === 'CARD') {
-      return item;
-    }
-  } catch (error) {
-    if (isValidationException(error)) {
-      logger.warn('CardIdIndex not available; falling back to scan lookup', {
-        operation: 'fetchCardItemById',
-        cardId,
-        indexName,
-        requestId,
-        validationError:
-          error instanceof Error
-            ? { name: error.name, message: error.message }
-            : { message: String(error) },
-      });
-    } else {
-      throw error;
+      const item = result.Items?.[0] as CardItem | undefined;
+      if (item && item.entityType === 'CARD') {
+        if (attempt > 0) {
+          logger.info('Card found after retry', {
+            operation: 'fetchCardItemById',
+            cardId,
+            attempt,
+            requestId,
+          });
+        }
+        return item;
+      }
+
+      // Item not found, retry with exponential backoff
+      if (attempt < maxRetries) {
+        const delay = baseDelay * Math.pow(2, attempt);
+        logger.debug('Card not found in GSI, retrying', {
+          operation: 'fetchCardItemById',
+          cardId,
+          attempt,
+          delay,
+          requestId,
+        });
+        await new Promise((resolve) => setTimeout(resolve, delay));
+      }
+    } catch (error) {
+      if (isValidationException(error)) {
+        logger.warn('CardIdIndex not available; falling back to scan lookup', {
+          operation: 'fetchCardItemById',
+          cardId,
+          indexName,
+          requestId,
+          validationError:
+            error instanceof Error
+              ? { name: error.name, message: error.message }
+              : { message: String(error) },
+        });
+        break; // Exit retry loop and fall back to scan
+      } else {
+        throw error;
+      }
     }
   }
 
+  // Fallback to scan if GSI query failed or index unavailable
   logger.info('Using scan fallback to fetch card', {
     operation: 'fetchCardItemById',
     cardId,
@@ -405,9 +435,25 @@ export async function getCard(userId: string, cardId: string, requestId?: string
   });
 
   try {
-    const item = await fetchCardItemById(cardId, requestId);
+    const client = getDynamoDBClient();
+    const tableName = getTableName();
 
-    if (!item) {
+    // Direct query by PK+SK (most efficient, no GSI needed)
+    const result = await client.send(
+      new QueryCommand({
+        TableName: tableName,
+        KeyConditionExpression: 'PK = :pk AND SK = :sk',
+        ExpressionAttributeValues: {
+          ':pk': generateUserPK(userId),
+          ':sk': generateCardSK(cardId),
+        },
+        Limit: 1,
+      })
+    );
+
+    const item = result.Items?.[0] as CardItem | undefined;
+
+    if (!item || item.entityType !== 'CARD') {
       throw new NotFoundError(`Card ${cardId} not found`, requestId || '');
     }
 
@@ -416,9 +462,7 @@ export async function getCard(userId: string, cardId: string, requestId?: string
       throw new NotFoundError(`Card ${cardId} not found`, requestId || '');
     }
 
-    // Verify ownership
-    enforceCardOwnership(userId, item.userId, cardId, requestId);
-
+    // Ownership is already verified by the PK (USER#{userId})
     return itemToCard(item);
   } catch (error) {
     if (error instanceof NotFoundError || error instanceof ForbiddenError) {

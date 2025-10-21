@@ -191,7 +191,7 @@ export default function UploadPage() {
         setTimeout(() => {
           const cardUrl = `/cards/${card.cardId}` as Route;
           router.push(cardUrl);
-        }, 500);
+        }, 2000); // Increased delay to allow GSI propagation
       } catch (error) {
         console.error('Upload error:', error);
 
