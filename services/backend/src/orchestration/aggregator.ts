@@ -29,7 +29,7 @@ async function upsertCardResults(
   userId: string,
   cardId: string,
   data: Partial<Card>,
-  requestId?: string
+  _requestId?: string
 ): Promise<Card> {
   const client = getDynamoDBClient();
   const tableName = process.env.DDB_TABLE || '';
@@ -62,6 +62,7 @@ async function upsertCardResults(
     'valueHigh',
     'compsCount',
     'sources',
+    'pricingMessage',
   ];
 
   for (const field of updateableFields) {
@@ -181,6 +182,11 @@ export const handler: Handler<AggregatorInput, AggregatorOutput> = async (event)
         fontValidation: authenticityResult.signals.fontValidation,
       },
     };
+
+    // Add pricing message if available (e.g., "No pricing data available")
+    if (pricingResult.message) {
+      cardUpdate.pricingMessage = pricingResult.message;
+    }
 
     logger.info('Card update prepared', {
       userId,

@@ -203,7 +203,7 @@ export class RekognitionAdapter {
    */
   private async detectCardBoundaries(
     imageBuffer: Buffer,
-    metadata: { width: number; height: number }
+    _metadata: { width: number; height: number }
   ): Promise<CardBoundingBox | null> {
     logger.debug('Detecting card boundaries');
 
