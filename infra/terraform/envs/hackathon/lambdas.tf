@@ -241,7 +241,8 @@ data "aws_iam_policy_document" "aggregator_dynamodb" {
     actions = [
       "dynamodb:UpdateItem",
       "dynamodb:GetItem",
-      "dynamodb:Query"
+      "dynamodb:Query",
+      "dynamodb:Scan"
     ]
     resources = [
       module.dynamodb_collectiq.table_arn,
