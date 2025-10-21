@@ -240,10 +240,12 @@ data "aws_iam_policy_document" "aggregator_dynamodb" {
     effect = "Allow"
     actions = [
       "dynamodb:UpdateItem",
-      "dynamodb:GetItem"
+      "dynamodb:GetItem",
+      "dynamodb:Query"
     ]
     resources = [
-      module.dynamodb_collectiq.table_arn
+      module.dynamodb_collectiq.table_arn,
+      "${module.dynamodb_collectiq.table_arn}/index/*"
     ]
   }
 }

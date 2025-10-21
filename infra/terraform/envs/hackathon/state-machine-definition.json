@@ -116,8 +116,7 @@
                     "name.$": "$.cardMeta.name",
                     "set.$": "$.cardMeta.set",
                     "rarity.$": "$.cardMeta.rarity",
-                    "frontS3Key.$": "$.s3Keys.front",
-                    "backS3Key.$": "$.s3Keys.back"
+                    "frontS3Key.$": "$.s3Keys.front"
                   },
                   "requestId.$": "$.requestId"
                 }
