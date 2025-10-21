@@ -26,7 +26,7 @@ export type AuthContext = z.infer<typeof AuthContextSchema>;
 
 export const PresignRequestSchema = z.object({
   filename: z.string().min(1).max(255),
-  contentType: z.string().regex(/^image\/(jpeg|png|heic)$/),
+  contentType: z.string().regex(/^image\/(jpeg|png|heic|heif)$/),
   sizeBytes: z
     .number()
     .positive()
@@ -180,7 +180,7 @@ export const ValuationDataSchema = z.object({
     z.object({
       name: z.string(),
       logo: z.string(),
-    }),
+    })
   ),
   lastUpdated: z.string(),
 });

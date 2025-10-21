@@ -196,7 +196,7 @@ aws_region  = "us-east-1"
 
 # Upload constraints
 max_upload_mb         = 12
-allowed_upload_mimes  = ["image/jpeg", "image/png", "image/heic"]
+allowed_upload_mimes  = ["image/jpeg", "image/png", "image/heic", "image/heif"]
 presign_ttl_seconds   = 300
 
 # DynamoDB
@@ -247,7 +247,7 @@ export async function handler() {
         allowedMimeTypes: (
           process.env.ALLOWED_UPLOAD_MIME || 'image/jpeg,image/png,image/heic'
         ).split(','),
-        allowedExtensions: ['.jpg', '.jpeg', '.png', '.heic'],
+        allowedExtensions: ['.jpg', '.jpeg', '.png', '.heic', '.heif'],
         presignTTL: parseInt(process.env.PRESIGN_TTL_SECONDS || '300'),
       },
       features: {
@@ -377,7 +377,7 @@ export const ConfigSchema = z.object({
       .positive()
       .max(50 * 1024 * 1024),
     maxSizeMB: z.number().int().positive().max(50),
-    allowedMimeTypes: z.array(z.enum(['image/jpeg', 'image/png', 'image/heic'])),
+    allowedMimeTypes: z.array(z.enum(['image/jpeg', 'image/png', 'image/heic', 'image/heif'])),
     allowedExtensions: z.array(z.string().regex(/^\.[a-z]+$/)),
     presignTTL: z.number().int().min(60).max(3600),
   }),

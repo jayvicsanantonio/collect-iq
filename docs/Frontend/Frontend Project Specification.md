@@ -157,7 +157,7 @@ DELETE /api/cards/:id → { ok: true }
 
 # 10. Image Handling
 
-• Validate MIME (jpeg/png/heic), size, and pixel dimensions before presign. • Use \<Image\> with placeholder blur; constrain aspect ratios; prevent layout shift. • Generate object URLs for previews; revoke on unmount; compress client‑side selectively (mobile) if needed.
+• Validate MIME (jpeg/png/heic/heif), size, and pixel dimensions before presign. • Use \<Image\> with placeholder blur; constrain aspect ratios; prevent layout shift. • Generate object URLs for previews; revoke on unmount; compress client‑side selectively (mobile) if needed.
 
 # 11. Accessibility (A11y)
 

@@ -54,9 +54,7 @@ function UploadPage() {
     toast.error(error);
   };
 
-  return (
-    <UploadDropzone onFileSelected={handleFileSelected} onError={handleError} />
-  );
+  return <UploadDropzone onFileSelected={handleFileSelected} onError={handleError} />;
 }
 ```
 
@@ -125,13 +123,7 @@ import { UploadProgress } from '@/components/upload/UploadProgress';
 function UploadPage() {
   const [progress, setProgress] = useState(0);
 
-  return (
-    <UploadProgress
-      progress={progress}
-      fileName="card.jpg"
-      onCancel={handleCancel}
-    />
-  );
+  return <UploadProgress progress={progress} fileName="card.jpg" onCancel={handleCancel} />;
 }
 ```
 
@@ -339,10 +331,9 @@ NEXT_PUBLIC_OPTIMAL_DIMENSION_PX=2000-4000
 // lib/upload-config.ts
 export const UPLOAD_CONFIG = {
   maxSizeMB: Number(process.env.NEXT_PUBLIC_MAX_UPLOAD_MB) || 12,
-  maxSizeBytes:
-    (Number(process.env.NEXT_PUBLIC_MAX_UPLOAD_MB) || 12) * 1024 * 1024,
-  supportedFormats: ['image/jpeg', 'image/png', 'image/heic'],
-  supportedExtensions: ['.jpg', '.jpeg', '.png', '.heic'],
+  maxSizeBytes: (Number(process.env.NEXT_PUBLIC_MAX_UPLOAD_MB) || 12) * 1024 * 1024,
+  supportedFormats: ['image/jpeg', 'image/png', 'image/heic', 'image/heif'],
+  supportedExtensions: ['.jpg', '.jpeg', '.png', '.heic', '.heif'],
   minDimensionPx: 1200,
   optimalDimensionRange: [2000, 4000],
 } as const;
