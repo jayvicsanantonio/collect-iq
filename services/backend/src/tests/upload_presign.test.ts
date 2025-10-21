@@ -44,7 +44,7 @@ describe('Upload Presign Handler', () => {
     process.env = {
       ...originalEnv,
       BUCKET_UPLOADS: 'test-bucket',
-      ALLOWED_UPLOAD_MIME: 'image/jpeg,image/png,image/heic,image/heif',
+      ALLOWED_UPLOAD_MIME: 'image/jpeg,image/png',
       MAX_UPLOAD_MB: '12',
       XRAY_ENABLED: 'false',
       KMS_KEY_ID: 'test-kms-key',

@@ -45,12 +45,7 @@ const s3Client = new S3Client({
 function getConfig() {
   return {
     BUCKET_UPLOADS: getEnvVar('BUCKET_UPLOADS'),
-    ALLOWED_UPLOAD_MIME: getEnvArray('ALLOWED_UPLOAD_MIME', [
-      'image/jpeg',
-      'image/png',
-      'image/heic',
-      'image/heif',
-    ]),
+    ALLOWED_UPLOAD_MIME: getEnvArray('ALLOWED_UPLOAD_MIME', ['image/jpeg', 'image/png']),
     MAX_UPLOAD_MB: getEnvNumber('MAX_UPLOAD_MB', 12),
     KMS_KEY_ID: process.env.KMS_KEY_ID || '', // Optional, defaults to empty string
   };

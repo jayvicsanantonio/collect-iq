@@ -2,65 +2,188 @@
 
 ## Overview
 
-CollectIQ now fully supports HEIC/HEIF image uploads from iPhone cameras. HEIC (High Efficiency Image Container) is the default photo format on iOS devices since iOS 11.
+CollectIQ fully supports HEIC/HEIF image uploads from iPhone cameras by converting them to JPEG **client-side** before upload. This provides the best user experience with minimal backend complexity.
 
-## Implementation
+## Implementation Strategy
+
+### Client-Side Conversion (Recommended Approach)
+
+HEIC/HEIF files are converted to JPEG in the browser before uploading to S3. This approach:
+
+- ✅ Simplifies backend (no HEIC handling needed)
+- ✅ Provides instant vault display (no conversion wait)
+- ✅ Reduces costs (no Lambda CPU for conversion, no duplicate storage)
+- ✅ Better performance (conversion on user's device)
+- ✅ Immediate compatibility everywhere
 
 ### Frontend Changes
 
-1. **Upload Configuration** (`apps/web/lib/upload-config.ts`)
-   - Added `image/heif` to supported MIME types
-   - Added `.heif` to supported file extensions
+1. **Upload Handler** (`apps/web/app/(protected)/upload/page.tsx`)
+   - Detects HEIC/HEIF files by extension
+   - Converts to JPEG using `heic2any` library (90% quality)
+   - Renames file from `.heic` to `.jpg`
+   - Uploads converted JPEG to S3
 
-2. **Upload Component** (`apps/web/components/upload/UploadDropzone.tsx`)
-   - Updated HTML `accept` attribute to include both MIME types and file extensions
-   - Format: `accept="image/jpeg,image/png,image/heic,.heic,.heif"`
-   - This ensures browser file pickers show HEIC files on all platforms
+2. **Upload Preview** (`apps/web/components/upload/UploadProgress.tsx`)
+   - Shows conversion progress with spinner
+   - Displays preview after conversion (70% quality for speed)
+   - Same UX for all image formats
+
+3. **Upload Configuration** (`apps/web/lib/upload-config.ts`)
+   - Accepts HEIC/HEIF in file picker
+   - Converts before validation/upload
 
 ### Backend Changes
 
-1. **Lambda Environment Variables** (`infra/terraform/envs/hackathon/lambdas.tf`)
-   - Updated `ALLOWED_UPLOAD_MIME` to include `image/heif`
-   - Format: `"image/jpeg,image/png,image/heic,image/heif"`
+1. **Validation** (`packages/shared/src/schemas.ts`)
+   - Only accepts `image/jpeg` and `image/png`
+   - HEIC files are converted before reaching backend
 
 2. **Upload Presign Handler** (`services/backend/src/handlers/upload_presign.ts`)
-   - Updated default allowed MIME types to include `image/heif`
+   - Removed HEIC from allowed MIME types
+   - Simplified validation
 
 3. **Rekognition Adapter** (`services/backend/src/adapters/rekognition-adapter.ts`)
-   - Added HEIC detection: `isHeicFormat()` function
-   - Added HEIC to JPEG conversion: `convertHeicToJpeg()` function
-   - Updated `detectText()` to convert HEIC images before Rekognition processing
-   - Updated `detectLabels()` to convert HEIC images before Rekognition processing
+   - Removed HEIC conversion logic
+   - Uses S3Object references directly (no Bytes conversion)
+
+4. **Image Presign Handler** (`services/backend/src/handlers/image_presign.ts`)
+   - Removed HEIC detection and conversion
+   - Simplified to just generate presigned URLs
+
+### Infrastructure Changes
+
+1. **Lambda Configuration** (`infra/terraform/envs/hackathon/lambdas.tf`)
+   - Removed Sharp layer from `image_presign` Lambda
+   - Reduced memory from 1024MB to 512MB
+   - Reduced timeout from 60s to 30s
+   - Removed S3 PutObject permission (only GetObject needed)
+   - Updated environment variables to remove HEIC/HEIF
 
 ## Technical Details
 
-### Why Conversion is Needed
+### Conversion Flow
 
-AWS Rekognition only supports JPEG and PNG formats. HEIC/HEIF files must be converted before analysis.
+```
+User selects HEIC file
+    ↓
+Browser detects .heic/.heif extension
+    ↓
+heic2any converts to JPEG (90% quality)
+    ↓
+File renamed to .jpg
+    ↓
+Preview shown (70% quality conversion)
+    ↓
+JPEG uploaded to S3
+    ↓
+Backend processes as regular JPEG
+    ↓
+Rekognition analyzes JPEG
+    ↓
+Vault displays JPEG instantly
+```
 
-### Conversion Strategy
+### Quality Considerations
 
-1. **Detection**: Check file extension (`.heic` or `.heif`)
-2. **Download**: Fetch image from S3 as buffer
-3. **Conversion**: Use Sharp library to convert to JPEG (95% quality, mozjpeg)
-4. **Processing**: Pass converted buffer to Rekognition as `Bytes` instead of `S3Object`
+- **Upload Quality**: 90% JPEG (high quality, minimal loss)
+- **Preview Quality**: 70% JPEG (faster conversion, good enough for preview)
+- **Visual Difference**: Negligible for trading cards
+- **AI Analysis**: Works perfectly with JPEG
 
-### Performance Considerations
+### Performance
 
-- HEIC files are typically smaller than JPEG (better compression)
-- Conversion adds ~200-500ms latency for Rekognition calls
-- Sharp library handles HEIC natively via libheif
-- Converted images are not stored (conversion happens in-memory)
+- **Conversion Time**: 1-3 seconds on modern devices
+- **Upload Size**: JPEG typically 20-40% larger than HEIC
+- **Vault Display**: Instant (no conversion needed)
+- **Backend Processing**: Faster (no conversion overhead)
 
 ## User Experience
 
-Users can now:
+### Upload Flow
 
-- Upload photos directly from iPhone camera (HEIC format)
-- Upload HEIC files from file picker
-- Upload HEIF files (alternative extension)
+**JPEG/PNG Upload:**
 
-The system automatically handles conversion without user intervention.
+- ✅ Instant preview thumbnail
+- ✅ Upload progress
+- ✅ Displays in vault
+
+**HEIC/HEIF Upload:**
+
+- ✅ Shows "Converting..." spinner (1-3 seconds)
+- ✅ Preview thumbnail after conversion
+- ✅ Upload progress
+- ✅ Displays in vault instantly (no conversion wait)
+
+### Benefits
+
+1. **Consistent Experience**: All images show previews
+2. **Fast Vault Display**: No "first view" conversion penalty
+3. **Predictable Performance**: No Lambda cold starts affecting display
+4. **Lower Costs**: No duplicate storage or conversion Lambda costs
+
+## Dependencies
+
+### Frontend
+
+- **heic2any**: Latest version (~50KB gzipped)
+- Handles HEIC to JPEG conversion in browser
+- Works in all modern browsers
+
+### Backend
+
+- **Sharp**: Still used for image processing (card detection, quality analysis)
+- **No HEIC support needed**: All images are JPEG/PNG by the time they reach backend
+
+## Browser Compatibility
+
+### Upload
+
+- **Safari**: Native HEIC support for file picker
+- **Chrome/Firefox**: File picker works with explicit extensions
+- **All browsers**: `heic2any` handles conversion
+
+### Display
+
+- **All browsers**: JPEG images display natively
+- **No conversion needed**: Images are already JPEG
+
+## Deployment
+
+After deploying these changes:
+
+1. Run `terraform apply` to update Lambda configurations:
+   - Remove Sharp layer from `image_presign`
+   - Reduce memory and timeout
+   - Update environment variables
+2. Deploy backend Lambda functions with simplified code
+3. Deploy frontend with conversion logic
+
+No database migrations required.
+
+## Storage Considerations
+
+- **Only JPEG stored**: No duplicate HEIC files
+- **Smaller codebase**: Less conversion logic to maintain
+- **Lower costs**: Single copy of each image
+
+## Edge Cases
+
+### Large HEIC Files
+
+- Conversion might take 3-5 seconds on older devices
+- Solution: Show progress indicator (already implemented)
+
+### Conversion Failure
+
+- Browser might not support `heic2any` (rare)
+- Solution: Show error message, suggest using JPEG/PNG
+
+### File Naming
+
+- `.heic` → `.jpg` automatically
+- `.heif` → `.jpg` automatically
+- Original filename preserved in metadata
 
 ## Testing
 
@@ -68,25 +191,23 @@ To test HEIC support:
 
 1. Take a photo with an iPhone (iOS 11+)
 2. Upload via CollectIQ web interface
-3. Verify successful upload and AI analysis
+3. Verify:
+   - Conversion progress shown
+   - Preview displays after conversion
+   - Upload completes successfully
+   - Image displays in vault immediately
 
-## Browser Compatibility
+## Comparison with Server-Side Conversion
 
-- **Safari**: Native HEIC support
-- **Chrome/Firefox**: Limited HEIC support, but file picker works with explicit extensions
-- **All browsers**: Backend handles conversion, so analysis works regardless of browser
+| Aspect            | Client-Side (Current) | Server-Side (Alternative) |
+| ----------------- | --------------------- | ------------------------- |
+| **Complexity**    | Simple                | Complex                   |
+| **Vault Display** | Instant               | 1-2s first view           |
+| **Storage**       | Single JPEG           | HEIC + JPEG               |
+| **Lambda CPU**    | None                  | High                      |
+| **Costs**         | Lower                 | Higher                    |
+| **Quality**       | 90% JPEG              | 90-95% JPEG               |
+| **User Device**   | Does conversion       | No conversion             |
+| **Maintenance**   | Less code             | More code                 |
 
-## Dependencies
-
-- **Sharp**: v0.34.4+ (already installed)
-- **libheif**: Included with Sharp (no additional installation needed)
-
-## Deployment
-
-After deploying these changes:
-
-1. Run `terraform apply` to update Lambda environment variables
-2. Deploy backend Lambda functions with updated code
-3. Deploy frontend with updated upload configuration
-
-No database migrations or infrastructure changes required.
+**Verdict**: Client-side conversion is better for this use case.

@@ -56,40 +56,6 @@ function parseS3Key(s3Key: string): { bucket: string; key: string } {
 }
 
 /**
- * Check if file is HEIC/HEIF format based on S3 key
- */
-function isHeicFormat(s3Key: string): boolean {
-  const lowerKey = s3Key.toLowerCase();
-  return lowerKey.endsWith('.heic') || lowerKey.endsWith('.heif');
-}
-
-/**
- * Convert HEIC/HEIF image to JPEG for Rekognition compatibility
- * Rekognition only supports JPEG and PNG formats
- */
-async function convertHeicToJpeg(imageBuffer: Buffer): Promise<Buffer> {
-  try {
-    const sharp = await getSharp();
-    logger.info('Converting HEIC/HEIF to JPEG for Rekognition');
-
-    // Convert to JPEG with high quality
-    const jpegBuffer = await sharp(imageBuffer).jpeg({ quality: 95, mozjpeg: true }).toBuffer();
-
-    logger.info('HEIC/HEIF conversion successful', {
-      originalSize: imageBuffer.length,
-      convertedSize: jpegBuffer.length,
-    });
-
-    return jpegBuffer;
-  } catch (error) {
-    logger.error('Failed to convert HEIC/HEIF to JPEG', error as Error);
-    throw new Error(
-      `HEIC conversion failed: ${error instanceof Error ? error.message : 'Unknown error'}`
-    );
-  }
-}
-
-/**
  * Convert Rekognition bounding box to our format
  */
 function convertBoundingBox(bbox: {
@@ -132,44 +98,14 @@ export class RekognitionAdapter {
     logger.info('Detecting text with Rekognition', { s3Key, bucket, key });
 
     try {
-      let command: DetectTextCommand;
-
-      // Check if image is HEIC/HEIF format
-      if (isHeicFormat(s3Key)) {
-        logger.info('HEIC/HEIF detected, converting to JPEG for Rekognition', { s3Key });
-
-        // Download image from S3
-        const getObjectCommand = new GetObjectCommand({ Bucket: bucket, Key: key });
-        const s3Response = await s3Client.send(getObjectCommand);
-
-        // Convert stream to buffer
-        const chunks: Uint8Array[] = [];
-        const stream = s3Response.Body as AsyncIterable<Uint8Array>;
-        for await (const chunk of stream) {
-          chunks.push(chunk);
-        }
-        const imageBuffer = Buffer.concat(chunks);
-
-        // Convert HEIC to JPEG
-        const jpegBuffer = await convertHeicToJpeg(imageBuffer);
-
-        // Use Bytes instead of S3Object
-        command = new DetectTextCommand({
-          Image: {
-            Bytes: jpegBuffer,
+      const command = new DetectTextCommand({
+        Image: {
+          S3Object: {
+            Bucket: bucket,
+            Name: key,
           },
-        });
-      } else {
-        // Use S3Object reference for JPEG/PNG
-        command = new DetectTextCommand({
-          Image: {
-            S3Object: {
-              Bucket: bucket,
-              Name: key,
-            },
-          },
-        });
-      }
+        },
+      });
 
       const response: DetectTextCommandOutput = await tracing.trace(
         'rekognition_detect_text',
@@ -223,48 +159,16 @@ export class RekognitionAdapter {
     logger.info('Detecting labels with Rekognition', { s3Key, bucket, key });
 
     try {
-      let command: DetectLabelsCommand;
-
-      // Check if image is HEIC/HEIF format
-      if (isHeicFormat(s3Key)) {
-        logger.info('HEIC/HEIF detected, converting to JPEG for Rekognition', { s3Key });
-
-        // Download image from S3
-        const getObjectCommand = new GetObjectCommand({ Bucket: bucket, Key: key });
-        const s3Response = await s3Client.send(getObjectCommand);
-
-        // Convert stream to buffer
-        const chunks: Uint8Array[] = [];
-        const stream = s3Response.Body as AsyncIterable<Uint8Array>;
-        for await (const chunk of stream) {
-          chunks.push(chunk);
-        }
-        const imageBuffer = Buffer.concat(chunks);
-
-        // Convert HEIC to JPEG
-        const jpegBuffer = await convertHeicToJpeg(imageBuffer);
-
-        // Use Bytes instead of S3Object
-        command = new DetectLabelsCommand({
-          Image: {
-            Bytes: jpegBuffer,
+      const command = new DetectLabelsCommand({
+        Image: {
+          S3Object: {
+            Bucket: bucket,
+            Name: key,
           },
-          MaxLabels: 50,
-          MinConfidence: 70,
-        });
-      } else {
-        // Use S3Object reference for JPEG/PNG
-        command = new DetectLabelsCommand({
-          Image: {
-            S3Object: {
-              Bucket: bucket,
-              Name: key,
-            },
-          },
-          MaxLabels: 50,
-          MinConfidence: 70,
-        });
-      }
+        },
+        MaxLabels: 50,
+        MinConfidence: 70,
+      });
 
       const response = await tracing.trace(
         'rekognition_detect_labels',

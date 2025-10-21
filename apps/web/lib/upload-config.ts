@@ -5,6 +5,7 @@
 export const UPLOAD_CONFIG = {
   maxSizeMB: Number(process.env.NEXT_PUBLIC_MAX_UPLOAD_MB) || 12,
   maxSizeBytes: (Number(process.env.NEXT_PUBLIC_MAX_UPLOAD_MB) || 12) * 1024 * 1024,
+  // HEIC/HEIF are accepted but converted to JPEG before upload
   supportedFormats: ['image/jpeg', 'image/png', 'image/heic', 'image/heif'] as const,
   supportedExtensions: ['.jpg', '.jpeg', '.png', '.heic', '.heif'] as const,
   minDimensionPx: 1200,
