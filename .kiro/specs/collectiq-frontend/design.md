@@ -246,7 +246,7 @@ interface OAuthCallbackProps {
 
 ```typescript
 interface UploadDropzoneProps {
-  accept: string[]; // ['image/jpeg', 'image/png', 'image/heic']
+  accept: string[]; // ['image/jpeg', 'image/png', 'image/heic', 'image/heif']
   maxSizeMB: number; // 12
   onSelected: (files: File[]) => void;
   onError: (error: UploadError) => void;
@@ -470,7 +470,7 @@ interface ApiClient {
   revalueCard(
     id: string,
     options: { forceRefresh?: boolean },
-    idempotencyKey: string,
+    idempotencyKey: string
   ): Promise<RevalueResponse>; // { executionArn, status: 'RUNNING', message }
 }
 
@@ -584,7 +584,7 @@ export const ValuationDataSchema = z.object({
     z.object({
       name: z.string(),
       logo: z.string(),
-    }),
+    })
   ),
   lastUpdated: z.string(),
 });

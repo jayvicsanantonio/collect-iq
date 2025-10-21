@@ -89,7 +89,7 @@ if (file.size > 12 * 1024 * 1024) {
 }
 
 // Validate MIME type
-if (!['image/jpeg', 'image/png', 'image/heic'].includes(contentType)) {
+if (!['image/jpeg', 'image/png', 'image/heic', 'image/heif'].includes(contentType)) {
   throw new BadRequestError('Invalid file type');
 }
 ```

@@ -33,7 +33,7 @@ module "upload_presign_lambda" {
   environment_variables = {
     BUCKET_UPLOADS     = module.s3_uploads.bucket_name
     MAX_UPLOAD_MB      = "10"
-    ALLOWED_UPLOAD_MIME = "image/jpeg,image/png"
+    ALLOWED_UPLOAD_MIME = "image/jpeg,image/png,image/heic,image/heif"
   }
 
   enable_xray_tracing = true

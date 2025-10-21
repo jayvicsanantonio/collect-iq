@@ -49,6 +49,7 @@ function getConfig() {
       'image/jpeg',
       'image/png',
       'image/heic',
+      'image/heif',
     ]),
     MAX_UPLOAD_MB: getEnvNumber('MAX_UPLOAD_MB', 12),
     KMS_KEY_ID: process.env.KMS_KEY_ID || '', // Optional, defaults to empty string

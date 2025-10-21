@@ -121,8 +121,8 @@ Supporting utilities:
 export const UPLOAD_CONFIG = {
   maxSizeMB: Number(process.env.NEXT_PUBLIC_MAX_UPLOAD_MB) || 12,
   maxSizeBytes: (Number(process.env.NEXT_PUBLIC_MAX_UPLOAD_MB) || 12) * 1024 * 1024,
-  supportedFormats: ['image/jpeg', 'image/png', 'image/heic'],
-  supportedExtensions: ['.jpg', '.jpeg', '.png', '.heic'],
+  supportedFormats: ['image/jpeg', 'image/png', 'image/heic', 'image/heif'],
+  supportedExtensions: ['.jpg', '.jpeg', '.png', '.heic', '.heif'],
   minDimensionPx: 1200,
   optimalDimensionRange: [2000, 4000],
 } as const;
@@ -456,7 +456,7 @@ export function validateUploadFile(file: File): ValidationResult {
 // lib/image-compression.ts
 export async function compressImage(
   file: File,
-  options: { targetSizeMB?: number; preserveExif?: boolean } = {},
+  options: { targetSizeMB?: number; preserveExif?: boolean } = {}
 ): Promise<File> {
   const { targetSizeMB = 8, preserveExif = true } = options;
 
@@ -489,11 +489,11 @@ export async function compressImage(
           new File([blob!], file.name, {
             type: 'image/jpeg',
             lastModified: Date.now(),
-          }),
+          })
         );
       },
       'image/jpeg',
-      0.85,
+      0.85
     );
   });
 }

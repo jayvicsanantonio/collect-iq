@@ -73,8 +73,8 @@ For files exceeding 12 MB on mobile devices:
 ### Validation Strategy
 
 ```typescript
-const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/heic'];
-const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.heic'];
+const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/heic', 'image/heif'];
+const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.heic', '.heif'];
 
 function isValidFormat(file: File): boolean {
   const extension = file.name.toLowerCase().match(/\.[^.]+$/)?.[0];
@@ -288,7 +288,7 @@ announceToScreenReader(`Selected ${file.name}, ${formatBytes(file.size)}. Ready 
 
 // On compression offer
 announceToScreenReader(
-  'File is too large. Compress image to upload faster? Use Tab to navigate options.',
+  'File is too large. Compress image to upload faster? Use Tab to navigate options.'
 );
 ```
 
@@ -320,8 +320,8 @@ NEXT_PUBLIC_OPTIMAL_DIMENSION_PX=2000-4000
 export const UPLOAD_CONFIG = {
   maxSizeMB: Number(process.env.NEXT_PUBLIC_MAX_UPLOAD_MB) || 12,
   maxSizeBytes: (Number(process.env.NEXT_PUBLIC_MAX_UPLOAD_MB) || 12) * 1024 * 1024,
-  supportedFormats: ['image/jpeg', 'image/png', 'image/heic'],
-  supportedExtensions: ['.jpg', '.jpeg', '.png', '.heic'],
+  supportedFormats: ['image/jpeg', 'image/png', 'image/heic', 'image/heif'],
+  supportedExtensions: ['.jpg', '.jpeg', '.png', '.heic', '.heif'],
   minDimensionPx: 1200,
   optimalDimensionRange: [2000, 4000],
 } as const;
@@ -460,11 +460,11 @@ async function compressImage(file: File, targetSizeMB: number = 8): Promise<File
           new File([blob!], file.name, {
             type: 'image/jpeg',
             lastModified: Date.now(),
-          }),
+          })
         );
       },
       'image/jpeg',
-      0.85, // Quality
+      0.85 // Quality
     );
   });
 }
@@ -629,7 +629,7 @@ test('offers compression for 14 MB HEIC on mobile', async ({ page }) => {
 
   // Verify telemetry
   const telemetry = await page.evaluate(() =>
-    window.__telemetry__.find((e) => e.event === 'upload_compressed_client'),
+    window.__telemetry__.find((e) => e.event === 'upload_compressed_client')
   );
   expect(telemetry.metadata.compressionApplied).toBe(true);
 });
