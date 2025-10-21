@@ -9,15 +9,79 @@ import {
   PutEventsCommand,
   type PutEventsCommandInput,
 } from '@aws-sdk/client-eventbridge';
+import { UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import type { Card, PricingResult, ValuationSummary, AuthenticityResult } from '@collectiq/shared';
 import { logger, metrics, tracing } from '../utils/index.js';
 import { updateCard } from '../store/card-service.js';
+import { getDynamoDBClient } from '../store/dynamodb-client.js';
 
 const eventBridgeClient = tracing.captureAWSv3Client(
   new EventBridgeClient({
     region: process.env.AWS_REGION || 'us-east-1',
   })
 );
+
+/**
+ * Upsert card results without fetching first (avoids race condition)
+ * Used for new card creation where GSI might not be ready yet
+ */
+async function upsertCardResults(
+  userId: string,
+  cardId: string,
+  data: Partial<Card>,
+  requestId?: string
+): Promise<Card> {
+  const client = getDynamoDBClient();
+  const tableName = process.env.DDB_TABLE || '';
+
+  const updateExpressions: string[] = [];
+  const expressionAttributeNames: Record<string, string> = {};
+  const expressionAttributeValues: Record<string, unknown> = {};
+
+  // Always update updatedAt
+  updateExpressions.push('#updatedAt = :updatedAt');
+  expressionAttributeNames['#updatedAt'] = 'updatedAt';
+  expressionAttributeValues[':updatedAt'] = new Date().toISOString();
+
+  // Add fields to update
+  const updateableFields = [
+    'authenticityScore',
+    'authenticitySignals',
+    'valueLow',
+    'valueMedian',
+    'valueHigh',
+    'compsCount',
+    'sources',
+  ];
+
+  for (const field of updateableFields) {
+    if (data[field as keyof Card] !== undefined) {
+      updateExpressions.push(`#${field} = :${field}`);
+      expressionAttributeNames[`#${field}`] = field;
+      expressionAttributeValues[`:${field}`] = data[field as keyof Card];
+    }
+  }
+
+  const result = await client.send(
+    new UpdateCommand({
+      TableName: tableName,
+      Key: {
+        PK: `USER#${userId}`,
+        SK: `CARD#${cardId}`,
+      },
+      UpdateExpression: `SET ${updateExpressions.join(', ')}`,
+      ExpressionAttributeNames: expressionAttributeNames,
+      ExpressionAttributeValues: expressionAttributeValues,
+      ReturnValues: 'ALL_NEW',
+    })
+  );
+
+  if (!result.Attributes) {
+    throw new Error(`Failed to upsert card ${cardId}`);
+  }
+
+  return result.Attributes as Card;
+}
 
 /**
  * Input structure for Aggregator task
@@ -119,12 +183,21 @@ export const handler: Handler<AggregatorInput, AggregatorOutput> = async (event)
     logger.info('Updating card in DynamoDB', {
       userId,
       cardId,
+      skipCardFetch,
       requestId,
     });
 
     const updatedCard = await tracing.trace(
       'dynamodb_update_card',
-      () => updateCard(userId, cardId, cardUpdate, requestId),
+      async () => {
+        if (skipCardFetch) {
+          // For new cards, use upsert to avoid race condition with GSI
+          return await upsertCardResults(userId, cardId, cardUpdate, requestId);
+        } else {
+          // For existing cards (revalue), use normal update with ownership check
+          return await updateCard(userId, cardId, cardUpdate, requestId);
+        }
+      },
       { userId, cardId, requestId }
     );
 
