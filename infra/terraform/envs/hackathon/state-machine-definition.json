@@ -113,9 +113,6 @@
                   "cardId.$": "$.cardId",
                   "features.$": "$.featureEnvelope.Payload.features",
                   "cardMeta": {
-                    "name.$": "$.cardMeta.name",
-                    "set.$": "$.cardMeta.set",
-                    "rarity.$": "$.cardMeta.rarity",
                     "frontS3Key.$": "$.s3Keys.front"
                   },
                   "requestId.$": "$.requestId"
