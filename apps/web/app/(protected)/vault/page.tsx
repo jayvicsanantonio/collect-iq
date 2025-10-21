@@ -16,7 +16,6 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
@@ -50,7 +49,9 @@ export default function VaultPage() {
   const [cards, setCards] = React.useState<Card[]>([]);
   const [portfolioStats, setPortfolioStats] =
     React.useState<PortfolioStats | null>(null);
-  const [nextCursor, setNextCursor] = React.useState<string | undefined>();
+  const [nextCursor, setNextCursor] = React.useState<
+    string | undefined
+  >();
   const [isLoadingMore, setIsLoadingMore] = React.useState(false);
   const [hasMore, setHasMore] = React.useState(false);
 
@@ -63,8 +64,10 @@ export default function VaultPage() {
       ? parseFloat(searchParams.get('authenticityMin')!)
       : undefined,
     sortBy:
-      (searchParams.get('sortBy') as 'value' | 'date' | 'rarity') || 'date',
-    sortOrder: (searchParams.get('sortOrder') as 'asc' | 'desc') || 'desc',
+      (searchParams.get('sortBy') as 'value' | 'date' | 'rarity') ||
+      'date',
+    sortOrder:
+      (searchParams.get('sortOrder') as 'asc' | 'desc') || 'desc',
   });
 
   // Update URL when filters change
@@ -78,7 +81,10 @@ export default function VaultPage() {
       if (newFilters.type) params.set('type', newFilters.type);
       if (newFilters.rarity) params.set('rarity', newFilters.rarity);
       if (newFilters.authenticityMin !== undefined) {
-        params.set('authenticityMin', newFilters.authenticityMin.toString());
+        params.set(
+          'authenticityMin',
+          newFilters.authenticityMin.toString()
+        );
       }
       params.set('sortBy', newFilters.sortBy);
       params.set('sortOrder', newFilters.sortOrder);
@@ -86,7 +92,7 @@ export default function VaultPage() {
       // Update URL without page reload
       const queryString = params.toString();
       const url = queryString ? `/vault?${queryString}` : '/vault';
-      router.push(url as any, { scroll: false });
+      router.push(url, { scroll: false });
     },
     [router]
   );
@@ -132,10 +138,14 @@ export default function VaultPage() {
 
       // Apply filters
       if (filters.set) {
-        filtered = filtered.filter((card) => card.set === filters.set);
+        filtered = filtered.filter(
+          (card) => card.set === filters.set
+        );
       }
       if (filters.rarity) {
-        filtered = filtered.filter((card) => card.rarity === filters.rarity);
+        filtered = filtered.filter(
+          (card) => card.rarity === filters.rarity
+        );
       }
       if (filters.authenticityMin !== undefined) {
         filtered = filtered.filter(
@@ -155,7 +165,8 @@ export default function VaultPage() {
             break;
           case 'date':
             comparison =
-              new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+              new Date(a.createdAt).getTime() -
+              new Date(b.createdAt).getTime();
             break;
           case 'rarity': {
             const rarityOrder = [
@@ -172,7 +183,9 @@ export default function VaultPage() {
           }
         }
 
-        return filters.sortOrder === 'desc' ? -comparison : comparison;
+        return filters.sortOrder === 'desc'
+          ? -comparison
+          : comparison;
       });
 
       return filtered;
@@ -405,7 +418,9 @@ export default function VaultPage() {
   };
 
   // State for delete confirmation
-  const [deleteCardId, setDeleteCardId] = React.useState<string | null>(null);
+  const [deleteCardId, setDeleteCardId] = React.useState<
+    string | null
+  >(null);
   const [isDeleting, setIsDeleting] = React.useState(false);
 
   // Handle delete - show confirmation dialog
@@ -513,7 +528,8 @@ export default function VaultPage() {
           <h1
             className="text-5xl sm:text-6xl md:text-7xl font-bold mb-4 font-display tracking-[-0.02em]"
             style={{
-              textShadow: 'var(--text-shadow, 0 2px 8px rgba(0, 0, 0, 0.3))',
+              textShadow:
+                'var(--text-shadow, 0 2px 8px rgba(0, 0, 0, 0.3))',
             }}
           >
             <span
@@ -551,7 +567,10 @@ export default function VaultPage() {
         )}
 
         {/* Filters */}
-        <section className="mb-6" aria-label="Filter and sort options">
+        <section
+          className="mb-6"
+          aria-label="Filter and sort options"
+        >
           <VaultFilters
             filters={filters}
             onFiltersChange={handleFiltersChange}
@@ -587,11 +606,11 @@ export default function VaultPage() {
         {filteredCards.length === 0 && cards.length > 0 && (
           <div className="text-center py-12">
             <p className="text-xl text-[var(--muted-foreground)]">
-              No cards match your filters. Try adjusting your search criteria.
+              No cards match your filters. Try adjusting your search
+              criteria.
             </p>
           </div>
         )}
-
       </main>
 
       {/* Delete Confirmation Dialog */}
@@ -603,8 +622,8 @@ export default function VaultPage() {
           <DialogHeader>
             <DialogTitle className="text-xl">Delete Card</DialogTitle>
             <DialogDescription className="text-base pt-2">
-              Are you sure you want to delete this card from your vault? This
-              action cannot be undone.
+              Are you sure you want to delete this card from your
+              vault? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <div className="flex justify-end gap-3 mt-6">

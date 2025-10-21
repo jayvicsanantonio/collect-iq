@@ -57,35 +57,51 @@ function formatDate(dateString: string): string {
 /**
  * Custom tooltip component for the chart
  */
-function CustomTooltip({ active, payload, label }: any) {
+function CustomTooltip({
+  active,
+  payload,
+  label,
+}: {
+  active?: boolean;
+  payload?: Array<{ value: number }>;
+  label?: string;
+}) {
   if (!active || !payload || !payload.length) {
     return null;
   }
 
   return (
     <div className="bg-[var(--card)] border border-[var(--border)] rounded-lg p-3 shadow-lg">
-      <p className="text-sm font-semibold mb-2">{formatDate(label)}</p>
+      <p className="text-sm font-semibold mb-2">
+        {formatDate(label)}
+      </p>
       <div className="space-y-1 text-xs">
         <div className="flex items-center justify-between gap-4">
           <span className="flex items-center gap-2">
             <span className="w-3 h-3 rounded-full bg-red-500" />
             Low
           </span>
-          <span className="font-medium">{formatCurrency(payload[0].value)}</span>
+          <span className="font-medium">
+            {formatCurrency(payload[0].value)}
+          </span>
         </div>
         <div className="flex items-center justify-between gap-4">
           <span className="flex items-center gap-2">
             <span className="w-3 h-3 rounded-full bg-[var(--vault-blue)]" />
             Median
           </span>
-          <span className="font-medium">{formatCurrency(payload[1].value)}</span>
+          <span className="font-medium">
+            {formatCurrency(payload[1].value)}
+          </span>
         </div>
         <div className="flex items-center justify-between gap-4">
           <span className="flex items-center gap-2">
             <span className="w-3 h-3 rounded-full bg-green-500" />
             High
           </span>
-          <span className="font-medium">{formatCurrency(payload[2].value)}</span>
+          <span className="font-medium">
+            {formatCurrency(payload[2].value)}
+          </span>
         </div>
       </div>
     </div>
@@ -113,7 +129,10 @@ export default function ValuationHistoryChartInner({
           data={data}
           margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
         >
-          <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+          <CartesianGrid
+            strokeDasharray="3 3"
+            stroke="var(--border)"
+          />
           <XAxis
             dataKey="date"
             tickFormatter={formatDate}
@@ -162,9 +181,10 @@ export default function ValuationHistoryChartInner({
 
       {/* Accessibility description */}
       <p className="sr-only">
-        Line chart showing valuation history with three price bands: low,
-        median, and high prices over time. The chart displays data from{' '}
-        {formatDate(data[0].date)} to {formatDate(data[data.length - 1].date)}.
+        Line chart showing valuation history with three price bands:
+        low, median, and high prices over time. The chart displays
+        data from {formatDate(data[0].date)} to{' '}
+        {formatDate(data[data.length - 1].date)}.
       </p>
     </div>
   );

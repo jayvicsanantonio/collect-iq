@@ -1,9 +1,14 @@
 'use client';
 
 import * as React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { TrendingUp, TrendingDown, Minus, RefreshCw, AlertCircle } from 'lucide-react';
+import { RefreshCw, AlertCircle } from 'lucide-react';
 import type { Card as CardType } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
@@ -79,7 +84,10 @@ export function ValuationPanel({
                 className="gap-2"
               >
                 <RefreshCw
-                  className={cn('h-4 w-4', isRefreshing && 'animate-spin')}
+                  className={cn(
+                    'h-4 w-4',
+                    isRefreshing && 'animate-spin'
+                  )}
                 />
                 Refresh
               </Button>
@@ -106,7 +114,10 @@ export function ValuationPanel({
                 className="gap-2"
               >
                 <RefreshCw
-                  className={cn('h-4 w-4', isRefreshing && 'animate-spin')}
+                  className={cn(
+                    'h-4 w-4',
+                    isRefreshing && 'animate-spin'
+                  )}
                 />
                 {isRefreshing ? 'Refreshing...' : 'Refresh Valuation'}
               </Button>
@@ -132,7 +143,10 @@ export function ValuationPanel({
               className="gap-2"
             >
               <RefreshCw
-                className={cn('h-4 w-4', isRefreshing && 'animate-spin')}
+                className={cn(
+                  'h-4 w-4',
+                  isRefreshing && 'animate-spin'
+                )}
               />
               Refresh
             </Button>
@@ -153,13 +167,17 @@ export function ValuationPanel({
         {/* Price Range */}
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <p className="text-sm text-[var(--muted-foreground)] mb-1">Low</p>
+            <p className="text-sm text-[var(--muted-foreground)] mb-1">
+              Low
+            </p>
             <p className="text-xl font-semibold">
               {formatCurrency(card.valueLow!)}
             </p>
           </div>
           <div>
-            <p className="text-sm text-[var(--muted-foreground)] mb-1">High</p>
+            <p className="text-sm text-[var(--muted-foreground)] mb-1">
+              High
+            </p>
             <p className="text-xl font-semibold">
               {formatCurrency(card.valueHigh!)}
             </p>
@@ -188,7 +206,9 @@ export function ValuationPanel({
         {/* Metadata */}
         <div className="space-y-2 text-sm pt-2 border-t">
           <div className="flex justify-between">
-            <span className="text-[var(--muted-foreground)]">Last Updated</span>
+            <span className="text-[var(--muted-foreground)]">
+              Last Updated
+            </span>
             <span className="font-medium">
               {formatRelativeTime(card.updatedAt)}
             </span>
@@ -197,7 +217,9 @@ export function ValuationPanel({
 
         {/* Future Enhancement Note */}
         <div className="text-xs text-[var(--muted-foreground)] italic pt-2 border-t">
-          Note: Trend indicators, confidence scores, comparable sales count, and data sources will be available in a future update.
+          Note: Trend indicators, confidence scores, comparable sales
+          count, and data sources will be available in a future
+          update.
         </div>
       </CardContent>
     </Card>

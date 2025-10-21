@@ -138,6 +138,11 @@ export default function CardPage() {
         setState({ type: 'processing', card });
       } else {
         setState({ type: 'complete', card });
+        // Stop polling when complete
+        if (pollingIntervalRef.current) {
+          clearInterval(pollingIntervalRef.current);
+          pollingIntervalRef.current = null;
+        }
       }
     } catch (error) {
       console.error('Failed to fetch card:', error);
@@ -163,6 +168,11 @@ export default function CardPage() {
       }
 
       setState({ type: 'error', error: errorMessage, canRetry });
+      // Stop polling on error
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
+      }
     }
   }, [cardId]);
 
@@ -170,25 +180,36 @@ export default function CardPage() {
   // Polling Logic
   // ============================================================================
 
+  // Initial fetch on mount
   React.useEffect(() => {
-    // Initial fetch
     fetchCard();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cardId]); // Only run when cardId changes
 
-    // Set up polling if card is processing
+  // Set up polling when card is processing
+  React.useEffect(() => {
+    // Clear any existing interval first
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current);
+      pollingIntervalRef.current = null;
+    }
+
+    // Only start polling if we're in processing state
     if (state.type === 'processing') {
       pollingIntervalRef.current = setInterval(() => {
         fetchCard();
-      }, 3000); // Poll every 3 seconds
+      }, 10000); // Poll every 10 seconds
     }
 
-    // Cleanup polling on unmount or when processing completes
+    // Cleanup on unmount
     return () => {
       if (pollingIntervalRef.current) {
         clearInterval(pollingIntervalRef.current);
         pollingIntervalRef.current = null;
       }
     };
-  }, [fetchCard, state.type]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.type]); // Only depend on state.type, not fetchCard
 
   // ============================================================================
   // Action Handlers
@@ -239,7 +260,9 @@ export default function CardPage() {
         description: 'Requesting updated market data...',
       });
 
-      const response = await api.revalueCard(cardId, { forceRefresh: true });
+      const response = await api.revalueCard(cardId, {
+        forceRefresh: true,
+      });
 
       // Show 202 Accepted response details
       console.log('Revalue response:', response);
@@ -248,13 +271,16 @@ export default function CardPage() {
       const pollInterval = setInterval(async () => {
         try {
           const updatedCard = await api.getCard(cardId);
-          
+
           // Check if valuation has been updated
-          if (state.type === 'complete' && state.card.updatedAt !== updatedCard.updatedAt) {
+          if (
+            state.type === 'complete' &&
+            state.card.updatedAt !== updatedCard.updatedAt
+          ) {
             clearInterval(pollInterval);
             setState({ type: 'complete', card: updatedCard });
             setIsRefreshing(false);
-            
+
             toast({
               title: 'Valuation updated',
               description: 'New market data is now available.',
@@ -274,16 +300,17 @@ export default function CardPage() {
           setIsRefreshing(false);
           toast({
             title: 'Refresh timeout',
-            description: 'Valuation refresh is taking longer than expected. Please try again later.',
+            description:
+              'Valuation refresh is taking longer than expected. Please try again later.',
           });
         }
       }, 60000);
-
     } catch (error) {
       console.error('Failed to refresh valuation:', error);
       setIsRefreshing(false);
 
-      let errorMessage = 'Failed to refresh valuation. Please try again.';
+      let errorMessage =
+        'Failed to refresh valuation. Please try again.';
       if (error instanceof ApiError) {
         errorMessage =
           error.problem?.detail ||

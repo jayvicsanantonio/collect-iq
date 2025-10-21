@@ -9,10 +9,14 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
-import { cn } from '@/lib/utils';
 
 // ============================================================================
 // Types
@@ -90,7 +94,8 @@ function sortComparator(
 
   switch (field) {
     case 'date':
-      comparison = new Date(a.date).getTime() - new Date(b.date).getTime();
+      comparison =
+        new Date(a.date).getTime() - new Date(b.date).getTime();
       break;
     case 'price':
       comparison = a.price - b.price;
@@ -115,7 +120,9 @@ function MobileCard({ sale }: { sale: ComparableSale }) {
     <div className="border border-[var(--border)] rounded-lg p-4 space-y-3">
       <div className="flex items-start justify-between">
         <div>
-          <p className="font-semibold text-lg">{formatCurrency(sale.price)}</p>
+          <p className="font-semibold text-lg">
+            {formatCurrency(sale.price)}
+          </p>
           <p className="text-sm text-[var(--muted-foreground)]">
             {formatRelativeTime(sale.date)}
           </p>
@@ -125,7 +132,9 @@ function MobileCard({ sale }: { sale: ComparableSale }) {
         </span>
       </div>
       <div className="flex items-center justify-between text-sm">
-        <span className="text-[var(--muted-foreground)]">Condition</span>
+        <span className="text-[var(--muted-foreground)]">
+          Condition
+        </span>
         <span className="font-medium">{sale.condition}</span>
       </div>
       {sale.url && (
@@ -146,9 +155,13 @@ function MobileCard({ sale }: { sale: ComparableSale }) {
 // Component
 // ============================================================================
 
-export function MarketDataTable({ data, className }: MarketDataTableProps) {
+export function MarketDataTable({
+  data,
+  className,
+}: MarketDataTableProps) {
   const [sortField, setSortField] = React.useState<SortField>('date');
-  const [sortDirection, setSortDirection] = React.useState<SortDirection>('desc');
+  const [sortDirection, setSortDirection] =
+    React.useState<SortDirection>('desc');
 
   // Handle sort toggle
   const handleSort = (field: SortField) => {
@@ -164,7 +177,9 @@ export function MarketDataTable({ data, className }: MarketDataTableProps) {
 
   // Sort data
   const sortedData = React.useMemo(() => {
-    return [...data].sort((a, b) => sortComparator(a, b, sortField, sortDirection));
+    return [...data].sort((a, b) =>
+      sortComparator(a, b, sortField, sortDirection)
+    );
   }, [data, sortField, sortDirection]);
 
   // Render sort icon
@@ -188,7 +203,9 @@ export function MarketDataTable({ data, className }: MarketDataTableProps) {
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-center py-8 text-[var(--muted-foreground)]">
-            <p className="text-sm">No comparable sales data available</p>
+            <p className="text-sm">
+              No comparable sales data available
+            </p>
           </div>
         </CardContent>
       </Card>
@@ -255,12 +272,18 @@ export function MarketDataTable({ data, className }: MarketDataTableProps) {
             <TableBody>
               {sortedData.map((sale) => (
                 <TableRow key={sale.id}>
-                  <TableCell className="font-medium">{sale.source}</TableCell>
-                  <TableCell>
-                    <span className="text-sm">{formatRelativeTime(sale.date)}</span>
+                  <TableCell className="font-medium">
+                    {sale.source}
                   </TableCell>
                   <TableCell>
-                    <span className="font-semibold">{formatCurrency(sale.price)}</span>
+                    <span className="text-sm">
+                      {formatRelativeTime(sale.date)}
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    <span className="font-semibold">
+                      {formatCurrency(sale.price)}
+                    </span>
                   </TableCell>
                   <TableCell>{sale.condition}</TableCell>
                 </TableRow>
@@ -278,9 +301,9 @@ export function MarketDataTable({ data, className }: MarketDataTableProps) {
 
         {/* Data source note */}
         <p className="text-xs text-[var(--muted-foreground)] mt-4 pt-4 border-t">
-          Note: Comparable sales data is aggregated from multiple marketplaces and
-          updated regularly. Prices may vary based on condition, seller, and market
-          conditions.
+          Note: Comparable sales data is aggregated from multiple
+          marketplaces and updated regularly. Prices may vary based on
+          condition, seller, and market conditions.
         </p>
       </CardContent>
     </Card>

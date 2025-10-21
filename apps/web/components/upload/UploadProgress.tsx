@@ -100,6 +100,7 @@ export function UploadProgress({
       >
         <div className="relative h-48 w-48 flex-shrink-0 overflow-hidden rounded-xl bg-white dark:bg-gray-700 border-2 border-emerald-300/50 shadow-lg">
           {thumbnailUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
             <img
               src={thumbnailUrl}
               alt={file.name}
