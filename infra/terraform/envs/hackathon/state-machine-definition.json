@@ -188,7 +188,8 @@
               "authenticityResult.$": "$.parallelResults[1].authenticityResult.Payload.authenticityResult",
               "requestId.$": "$.parallelResults[1].authenticityResult.Payload.requestId"
             }
-          ]
+          ],
+          "skipCardFetch": true
         }
       },
       "ResultPath": "$.aggregatorResult",

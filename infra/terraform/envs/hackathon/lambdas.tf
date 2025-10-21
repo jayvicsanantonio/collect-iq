@@ -695,10 +695,11 @@ module "lambda_aggregator" {
   vpc_security_group_ids = [aws_security_group.lambda.id]
 
   environment_variables = {
-    REGION     = var.aws_region
-    DDB_TABLE      = module.dynamodb_collectiq.table_name
-    EVENT_BUS_NAME = module.eventbridge_bus.bus_name # Will be added when EventBridge is deployed
-    XRAY_ENABLED   = "false" # Disable X-Ray SDK to avoid context issues
+    REGION            = var.aws_region
+    DDB_TABLE         = module.dynamodb_collectiq.table_name
+    CARD_ID_INDEX_NAME = "CardIdIndex"
+    EVENT_BUS_NAME    = module.eventbridge_bus.bus_name # Will be added when EventBridge is deployed
+    XRAY_ENABLED      = "false" # Disable X-Ray SDK to avoid context issues
   }
 
   custom_iam_policy_json = jsonencode({

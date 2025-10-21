@@ -16,7 +16,7 @@ import { updateCard } from '../store/card-service.js';
 const eventBridgeClient = tracing.captureAWSv3Client(
   new EventBridgeClient({
     region: process.env.AWS_REGION || 'us-east-1',
-  }),
+  })
 );
 
 /**
@@ -38,6 +38,7 @@ interface AggregatorInput {
       requestId: string;
     },
   ];
+  skipCardFetch?: boolean; // If true, use upsert instead of fetch+update
 }
 
 /**
@@ -57,7 +58,7 @@ interface AggregatorOutput {
  * @returns Updated card object
  */
 export const handler: Handler<AggregatorInput, AggregatorOutput> = async (event) => {
-  const { userId, cardId, requestId, agentResults } = event;
+  const { userId, cardId, requestId, agentResults, skipCardFetch = false } = event;
   const startTime = Date.now();
 
   tracing.startSubsegment('aggregator_handler', { userId, cardId, requestId });
@@ -68,6 +69,7 @@ export const handler: Handler<AggregatorInput, AggregatorOutput> = async (event)
   logger.info('Aggregator task invoked', {
     userId,
     cardId,
+    skipCardFetch,
     requestId,
   });
 
@@ -123,7 +125,7 @@ export const handler: Handler<AggregatorInput, AggregatorOutput> = async (event)
     const updatedCard = await tracing.trace(
       'dynamodb_update_card',
       () => updateCard(userId, cardId, cardUpdate, requestId),
-      { userId, cardId, requestId },
+      { userId, cardId, requestId }
     );
 
     logger.info('Card updated successfully', {
@@ -148,7 +150,7 @@ export const handler: Handler<AggregatorInput, AggregatorOutput> = async (event)
           authenticityResult,
           requestId,
         }),
-      { userId, cardId, requestId },
+      { userId, cardId, requestId }
     );
 
     logger.info('Aggregator task completed successfully', {
@@ -187,7 +189,7 @@ export const handler: Handler<AggregatorInput, AggregatorOutput> = async (event)
         userId,
         cardId,
         requestId,
-      },
+      }
     );
 
     // Re-throw error to trigger Step Functions retry/error handling
@@ -206,7 +208,7 @@ async function emitCardUpdateEvent(
     valuationSummary: ValuationSummary;
     authenticityResult: AuthenticityResult;
     requestId: string;
-  },
+  }
 ): Promise<void> {
   const eventBusName = process.env.EVENT_BUS_NAME || 'collectiq-events';
 
@@ -271,7 +273,7 @@ async function emitCardUpdateEvent(
         cardId: card.cardId,
         userId: card.userId,
         requestId: metadata.requestId,
-      },
+      }
     );
   }
 }
