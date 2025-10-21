@@ -43,6 +43,16 @@ async function upsertCardResults(
   expressionAttributeNames['#updatedAt'] = 'updatedAt';
   expressionAttributeValues[':updatedAt'] = new Date().toISOString();
 
+  // Ensure cardId attribute exists for CardIdIndex GSI
+  updateExpressions.push('#cardId = :cardId');
+  expressionAttributeNames['#cardId'] = 'cardId';
+  expressionAttributeValues[':cardId'] = cardId;
+
+  // Ensure userId attribute exists for GSI1
+  updateExpressions.push('#userId = :userId');
+  expressionAttributeNames['#userId'] = 'userId';
+  expressionAttributeValues[':userId'] = userId;
+
   // Add fields to update
   const updateableFields = [
     'authenticityScore',
