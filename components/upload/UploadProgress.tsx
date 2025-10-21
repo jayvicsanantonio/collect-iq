@@ -4,7 +4,6 @@ import * as React from 'react';
 import { X, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import heic2any from 'heic2any';
 
 export interface UploadProgressProps {
   file: File;
@@ -25,7 +24,9 @@ export function UploadProgress({
   onRetry,
   className,
 }: UploadProgressProps) {
-  const [thumbnailUrl, setThumbnailUrl] = React.useState<string | null>(null);
+  const [thumbnailUrl, setThumbnailUrl] = React.useState<
+    string | null
+  >(null);
   const [isConverting, setIsConverting] = React.useState(false);
 
   React.useEffect(() => {
@@ -34,11 +35,16 @@ export function UploadProgress({
     const loadThumbnail = async () => {
       try {
         const fileName = file.name.toLowerCase();
-        const isHeicFile = fileName.endsWith('.heic') || fileName.endsWith('.heif');
+        const isHeicFile =
+          fileName.endsWith('.heic') || fileName.endsWith('.heif');
 
         if (isHeicFile) {
           // Convert HEIC to JPEG for preview
           setIsConverting(true);
+
+          // Dynamically import heic2any only on client side
+          const heic2any = (await import('heic2any')).default;
+
           const convertedBlob = await heic2any({
             blob: file,
             toType: 'image/jpeg',
@@ -46,7 +52,9 @@ export function UploadProgress({
           });
 
           // heic2any can return Blob or Blob[], handle both cases
-          const blob = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
+          const blob = Array.isArray(convertedBlob)
+            ? convertedBlob[0]
+            : convertedBlob;
           objectUrl = URL.createObjectURL(blob);
           setThumbnailUrl(objectUrl);
           setIsConverting(false);
@@ -92,7 +100,11 @@ export function UploadProgress({
       >
         <div className="relative h-48 w-48 flex-shrink-0 overflow-hidden rounded-xl bg-white dark:bg-gray-700 border-2 border-emerald-300/50 shadow-lg">
           {thumbnailUrl ? (
-            <img src={thumbnailUrl} alt={file.name} className="h-full w-full object-cover" />
+            <img
+              src={thumbnailUrl}
+              alt={file.name}
+              className="h-full w-full object-cover"
+            />
           ) : (
             <div className="flex h-full w-full flex-col items-center justify-center gap-3">
               <div className="h-12 w-12 animate-spin rounded-full border-4 border-gray-300 dark:border-gray-600 border-t-emerald-500" />
@@ -129,7 +141,9 @@ export function UploadProgress({
             <div className="space-y-3">
               <div className="flex items-center justify-between text-lg">
                 <span className="text-gray-700 dark:text-gray-200 font-semibold">
-                  {status === 'idle' ? 'Preparing...' : 'Uploading...'}
+                  {status === 'idle'
+                    ? 'Preparing...'
+                    : 'Uploading...'}
                 </span>
                 <span className="font-bold text-emerald-600 dark:text-emerald-400 text-2xl">
                   {Math.round(progressPercent)}%
@@ -158,7 +172,9 @@ export function UploadProgress({
           {status === 'error' && error && (
             <div className="flex items-start gap-3 text-lg text-red-600 dark:text-red-400">
               <AlertCircle className="h-8 w-8 flex-shrink-0 mt-0.5" />
-              <span className="break-words font-semibold">{error}</span>
+              <span className="break-words font-semibold">
+                {error}
+              </span>
             </div>
           )}
         </div>
@@ -177,7 +193,12 @@ export function UploadProgress({
           )}
 
           {status === 'error' && onRetry && (
-            <Button variant="outline" size="lg" onClick={onRetry} className="text-lg px-8 py-6">
+            <Button
+              variant="outline"
+              size="lg"
+              onClick={onRetry}
+              className="text-lg px-8 py-6"
+            >
               Retry Upload
             </Button>
           )}
@@ -192,5 +213,7 @@ function formatFileSize(bytes: number): string {
   const k = 1024;
   const sizes = ['Bytes', 'KB', 'MB', 'GB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${
+    sizes[i]
+  }`;
 }
