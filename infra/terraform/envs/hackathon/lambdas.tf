@@ -314,7 +314,7 @@ module "lambda_upload_presign" {
     REGION                   = var.aws_region
     BUCKET_UPLOADS           = module.s3_uploads.bucket_name
     MAX_UPLOAD_MB            = "12"
-    ALLOWED_UPLOAD_MIME      = "image/jpeg,image/png,image/heic,image/heif"
+    ALLOWED_UPLOAD_MIME      = "image/jpeg,image/png"
     KMS_KEY_ID               = "" # Using SSE-S3 for hackathon
     XRAY_ENABLED             = "false" # Disable X-Ray SDK to avoid context issues
   }

@@ -42,7 +42,7 @@ export function UploadProgress({
           const convertedBlob = await heic2any({
             blob: file,
             toType: 'image/jpeg',
-            quality: 0.8, // Good quality for preview
+            quality: 0.7, // Lower quality for preview (faster)
           });
 
           // heic2any can return Blob or Blob[], handle both cases
