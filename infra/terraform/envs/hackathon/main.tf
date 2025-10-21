@@ -300,7 +300,8 @@ module "eventbridge_bus" {
               "set": "<set>",
               "number": "<number>",
               "rarity": "<rarity>",
-              "conditionEstimate": "<conditionEstimate>"
+              "conditionEstimate": "<conditionEstimate>",
+              "frontS3Key": "<frontS3Key>"
             },
             "requestId": "<cardId>"
           }
