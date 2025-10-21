@@ -11,6 +11,7 @@ import { api, ApiError } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 import type { UploadError } from '@/components/upload/UploadDropzone';
 import type { CameraError } from '@/components/upload/CameraCapture';
+import heic2any from 'heic2any';
 
 // ============================================================================
 // Types
@@ -25,6 +26,53 @@ interface UploadState {
   error: string | null;
   s3Key: string | null;
   abortController: AbortController | null;
+}
+
+// ============================================================================
+// Helper Functions
+// ============================================================================
+
+/**
+ * Convert HEIC/HEIF file to JPEG
+ * Returns the original file if it's not HEIC/HEIF
+ */
+async function convertHeicToJpeg(file: File): Promise<File> {
+  const fileName = file.name.toLowerCase();
+  const isHeic = fileName.endsWith('.heic') || fileName.endsWith('.heif');
+
+  if (!isHeic) {
+    return file;
+  }
+
+  try {
+    console.log('Converting HEIC to JPEG:', file.name);
+
+    const convertedBlob = await heic2any({
+      blob: file,
+      toType: 'image/jpeg',
+      quality: 0.9, // High quality for upload
+    });
+
+    // heic2any can return Blob or Blob[], handle both
+    const blob = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
+
+    // Create new File with .jpg extension
+    const newFileName = file.name.replace(/\.(heic|heif)$/i, '.jpg');
+    const jpegFile = new File([blob], newFileName, {
+      type: 'image/jpeg',
+      lastModified: file.lastModified,
+    });
+
+    console.log('HEIC conversion successful:', {
+      original: `${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`,
+      converted: `${jpegFile.name} (${(jpegFile.size / 1024 / 1024).toFixed(2)} MB)`,
+    });
+
+    return jpegFile;
+  } catch (error) {
+    console.error('HEIC conversion failed:', error);
+    throw new Error('Failed to convert HEIC image. Please try a different format.');
+  }
 }
 
 // ============================================================================
@@ -62,11 +110,14 @@ export default function UploadPage() {
       });
 
       try {
-        // Step 1: Get presigned URL
+        // Step 1: Convert HEIC to JPEG if needed
+        const fileToUpload = await convertHeicToJpeg(file);
+
+        // Step 2: Get presigned URL
         const presignResponse = await api.getPresignedUrl({
-          filename: file.name,
-          contentType: file.type,
-          sizeBytes: file.size,
+          filename: fileToUpload.name,
+          contentType: fileToUpload.type,
+          sizeBytes: fileToUpload.size,
         });
 
         // Step 2: Upload to S3 with progress tracking
@@ -75,8 +126,7 @@ export default function UploadPage() {
         // Track upload progress
         xhr.upload.addEventListener('progress', (event) => {
           if (event.lengthComputable) {
-            const percentComplete =
-              (event.loaded / event.total) * 100;
+            const percentComplete = (event.loaded / event.total) * 100;
             setUploadState((prev) => ({
               ...prev,
               progress: percentComplete,
@@ -90,9 +140,7 @@ export default function UploadPage() {
             if (xhr.status >= 200 && xhr.status < 300) {
               resolve();
             } else {
-              reject(
-                new Error(`Upload failed with status ${xhr.status}`)
-              );
+              reject(new Error(`Upload failed with status ${xhr.status}`));
             }
           });
 
@@ -111,8 +159,8 @@ export default function UploadPage() {
 
           // Start upload
           xhr.open('PUT', presignResponse.uploadUrl);
-          xhr.setRequestHeader('Content-Type', file.type);
-          xhr.send(file);
+          xhr.setRequestHeader('Content-Type', fileToUpload.type);
+          xhr.send(fileToUpload);
         });
 
         // Step 3: Upload successful - update state
@@ -148,10 +196,7 @@ export default function UploadPage() {
         console.error('Upload error:', error);
 
         // Check if upload was cancelled
-        if (
-          error instanceof Error &&
-          error.message === 'Upload cancelled'
-        ) {
+        if (error instanceof Error && error.message === 'Upload cancelled') {
           setUploadState({
             file: null,
             progress: 0,
@@ -170,13 +215,9 @@ export default function UploadPage() {
           if (error.status === 413) {
             errorMessage = `File is too large. Max is 12 MB.`;
           } else if (error.status === 415) {
-            errorMessage =
-              'Unsupported format. Use JPG, PNG, or HEIC.';
+            errorMessage = 'Unsupported format. Use JPG, PNG, or HEIC.';
           } else {
-            errorMessage =
-              error.problem?.detail ||
-              error.problem?.title ||
-              error.message;
+            errorMessage = error.problem?.detail || error.problem?.title || error.message;
           }
         } else if (error instanceof Error) {
           errorMessage = error.message;
@@ -330,9 +371,7 @@ export default function UploadPage() {
                 status={uploadState.status}
                 error={uploadState.error || undefined}
                 onCancel={isUploading ? handleCancelUpload : undefined}
-                onRetry={
-                  uploadState.status === 'error' ? handleRetryUpload : undefined
-                }
+                onRetry={uploadState.status === 'error' ? handleRetryUpload : undefined}
                 className="shadow-2xl"
               />
             </div>
@@ -368,9 +407,7 @@ export default function UploadPage() {
                       />
                     </div>
                     <div className="space-y-2 sm:space-y-3">
-                      <h3 className="text-xl sm:text-2xl font-bold font-display">
-                        Capture Photo
-                      </h3>
+                      <h3 className="text-xl sm:text-2xl font-bold font-display">Capture Photo</h3>
                       <p className="text-sm sm:text-base text-[var(--muted-foreground)] leading-relaxed px-2 sm:px-4">
                         Use your camera to snap a photo of your card
                       </p>

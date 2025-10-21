@@ -34,9 +34,7 @@ export function UploadDropzone({
   className,
 }: UploadDropzoneProps) {
   const [isDragging, setIsDragging] = React.useState(false);
-  const [inlineError, setInlineError] = React.useState<string | null>(
-    null
-  );
+  const [inlineError, setInlineError] = React.useState<string | null>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const dragCounterRef = React.useRef(0);
 
@@ -59,9 +57,7 @@ export function UploadDropzone({
         const result = validateUploadFileSync(file);
         if (!result.valid) {
           const error: UploadError = {
-            type: result.error?.includes('too large')
-              ? 'file-size'
-              : 'file-type',
+            type: result.error?.includes('too large') ? 'file-size' : 'file-type',
             message: result.error || 'Invalid file',
             file,
           };
@@ -106,10 +102,7 @@ export function UploadDropzone({
       if (disabled) return;
 
       dragCounterRef.current += 1;
-      if (
-        event.dataTransfer.items &&
-        event.dataTransfer.items.length > 0
-      ) {
+      if (event.dataTransfer.items && event.dataTransfer.items.length > 0) {
         setIsDragging(true);
       }
     },
@@ -131,13 +124,10 @@ export function UploadDropzone({
     [disabled]
   );
 
-  const handleDragOver = React.useCallback(
-    (event: React.DragEvent) => {
-      event.preventDefault();
-      event.stopPropagation();
-    },
-    []
-  );
+  const handleDragOver = React.useCallback((event: React.DragEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+  }, []);
 
   const handleDrop = React.useCallback(
     (event: React.DragEvent) => {
@@ -204,7 +194,7 @@ export function UploadDropzone({
       <input
         ref={fileInputRef}
         type="file"
-        accept={UPLOAD_CONFIG.supportedFormats.join(',')}
+        accept="image/jpeg,image/png,image/heic,.heic,.heif"
         onChange={handleFileInputChange}
         className="hidden"
         disabled={disabled}
@@ -240,9 +230,7 @@ export function UploadDropzone({
             {isDragging ? 'Drop your image here' : 'Upload File'}
           </h3>
           <p className="text-base text-[var(--muted-foreground)] leading-relaxed px-4">
-            {isDragging
-              ? 'Release to upload'
-              : 'Drag and drop or click to browse'}
+            {isDragging ? 'Release to upload' : 'Drag and drop or click to browse'}
           </p>
           {!isDragging && (
             <p className="text-sm text-[var(--muted-foreground)] opacity-75">

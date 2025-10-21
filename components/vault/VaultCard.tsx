@@ -86,8 +86,8 @@ export function VaultCard({ card, onRefresh, onDelete, onClick }: VaultCardProps
                 <MoreVertical className="h-5 w-5 text-gray-700" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent 
-              align="end" 
+            <DropdownMenuContent
+              align="end"
               className="bg-white border border-gray-200 shadow-lg min-w-[200px]"
             >
               <DropdownMenuItem
@@ -115,11 +115,12 @@ export function VaultCard({ card, onRefresh, onDelete, onClick }: VaultCardProps
         </div>
       </div>
       {/* Only show card details if we have meaningful data */}
-      {(card.name || card.set || card.valueMedian !== undefined || card.authenticityScore !== undefined) && (
+      {(card.name ||
+        card.set ||
+        card.valueMedian !== undefined ||
+        card.authenticityScore !== undefined) && (
         <CardContent className="p-4">
-          {card.name && (
-            <h3 className="font-semibold text-base truncate mb-1">{card.name}</h3>
-          )}
+          {card.name && <h3 className="font-semibold text-base truncate mb-1">{card.name}</h3>}
           {(card.set || card.number) && (
             <p className="text-sm text-[var(--muted-foreground)] truncate mb-2">
               {card.set}
