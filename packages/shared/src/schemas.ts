@@ -92,6 +92,19 @@ export const AuthenticityDetailsSchema = z.object({
 
 export type AuthenticityDetails = z.infer<typeof AuthenticityDetailsSchema>;
 
+/**
+ * Valuation summary from AI analysis
+ */
+export const ValuationSummarySchema = z.object({
+  summary: z.string(),
+  fairValue: z.number(),
+  trend: z.enum(['rising', 'falling', 'stable']),
+  recommendation: z.string(),
+  confidence: z.number().min(0).max(1),
+});
+
+export type ValuationSummary = z.infer<typeof ValuationSummarySchema>;
+
 export const CardSchema = z.object({
   cardId: z.string().uuid(),
   userId: z.string(),
@@ -309,16 +322,6 @@ export const AuthenticityResultSchema = z.object({
 });
 
 export type AuthenticityResult = z.infer<typeof AuthenticityResultSchema>;
-
-export const ValuationSummarySchema = z.object({
-  summary: z.string(),
-  fairValue: z.number(),
-  trend: z.enum(['rising', 'falling', 'stable']),
-  recommendation: z.string(),
-  confidence: z.number().min(0).max(1),
-});
-
-export type ValuationSummary = z.infer<typeof ValuationSummarySchema>;
 
 // ============================================================================
 // Revaluation Schemas
