@@ -6,7 +6,6 @@ import { PriceQuery, RawComp, PricingResult } from '@collectiq/shared';
 import { PricingService } from './pricing-service.js';
 import { PokemonTCGAdapter } from './pokemontcg-adapter.js';
 import { PriceSource } from './base-price-adapter.js';
-import { savePricingSnapshot, getPricingSnapshot } from '../store/pricing-cache.js';
 import { logger, metrics } from '../utils/index.js';
 
 export class PricingOrchestrator {
@@ -23,21 +22,7 @@ export class PricingOrchestrator {
   /**
    * Fetch all comps from available sources in parallel
    */
-  async fetchAllComps(
-    query: PriceQuery,
-    userId?: string,
-    cardId?: string,
-    forceRefresh = false
-  ): Promise<PricingResult> {
-    // Check cache first (if userId and cardId provided)
-    if (!forceRefresh && userId && cardId) {
-      const cached = await this.getCachedResult(userId, cardId);
-      if (cached) {
-        logger.info('Returning cached pricing result', { userId, cardId });
-        return cached;
-      }
-    }
-
+  async fetchAllComps(query: PriceQuery): Promise<PricingResult> {
     logger.info('Fetching pricing from all sources', { query });
 
     // Fetch from all available sources in parallel
@@ -47,7 +32,7 @@ export class PricingOrchestrator {
       // Return fallback result with zeros instead of throwing error
       logger.warn('No pricing data available from any source, returning fallback', { query });
 
-      const fallbackResult: PricingResult = {
+      return {
         valueLow: 0,
         valueMedian: 0,
         valueHigh: 0,
@@ -56,23 +41,11 @@ export class PricingOrchestrator {
         confidence: 0,
         message: 'No pricing data available from any source',
       };
-
-      // Cache the fallback result to avoid repeated lookups
-      if (userId && cardId) {
-        await this.cacheResult(userId, cardId, fallbackResult);
-      }
-
-      return fallbackResult;
     }
 
     // Normalize and fuse the data
     const normalizedComps = this.pricingService.normalize(rawComps);
     const pricingResult = this.pricingService.fuse(normalizedComps, query);
-
-    // Cache the result (if userId and cardId provided)
-    if (userId && cardId) {
-      await this.cacheResult(userId, cardId, pricingResult);
-    }
 
     logger.info('Pricing result computed', {
       compsCount: pricingResult.compsCount,
@@ -148,32 +121,6 @@ export class PricingOrchestrator {
     }
 
     return allComps;
-  }
-
-  /**
-   * Get cached pricing result
-   */
-  private async getCachedResult(userId: string, cardId: string): Promise<PricingResult | null> {
-    try {
-      return await getPricingSnapshot(userId, cardId);
-    } catch {
-      logger.warn('Failed to get cached pricing result', { userId, cardId });
-      return null;
-    }
-  }
-
-  /**
-   * Cache pricing result in DynamoDB
-   */
-  private async cacheResult(userId: string, cardId: string, result: PricingResult): Promise<void> {
-    try {
-      const ttlSeconds = parseInt(process.env.CACHE_TTL_SECONDS || '300', 10);
-      await savePricingSnapshot(userId, cardId, result, undefined, ttlSeconds);
-      logger.info('Pricing result cached', { userId, cardId, ttlSeconds });
-    } catch (err) {
-      // Don't fail the request if caching fails
-      logger.error('Failed to cache pricing result', err as Error, { userId, cardId });
-    }
   }
 
   /**

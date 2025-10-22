@@ -41,7 +41,6 @@ interface PricingAgentInput {
     };
   };
   requestId: string;
-  forceRefresh?: boolean;
 }
 
 /**
@@ -62,7 +61,7 @@ interface PricingAgentOutput {
  * @returns Pricing result and valuation summary
  */
 export const handler: Handler<PricingAgentInput, PricingAgentOutput> = async (event) => {
-  const { userId, cardId, cardMeta, requestId, forceRefresh = false } = event;
+  const { userId, cardId, cardMeta, requestId } = event;
   const startTime = Date.now();
 
   tracing.startSubsegment('pricing_agent_handler', { userId, cardId, requestId });
@@ -75,7 +74,6 @@ export const handler: Handler<PricingAgentInput, PricingAgentOutput> = async (ev
     cardName: cardMeta.name,
     set: cardMeta.set,
     condition: cardMeta.conditionEstimate,
-    forceRefresh,
     requestId,
   });
 
@@ -124,18 +122,13 @@ export const handler: Handler<PricingAgentInput, PricingAgentOutput> = async (ev
     const pricingResult = await tracing.trace(
       'pricing_fetch_all_comps',
       () =>
-        orchestrator.fetchAllComps(
-          {
-            cardName,
-            set: set || undefined,
-            number: collectorNumber || undefined,
-            condition,
-            windowDays: 14, // Default 14-day window
-          },
-          userId,
-          cardId,
-          forceRefresh
-        ),
+        orchestrator.fetchAllComps({
+          cardName,
+          set: set || undefined,
+          number: collectorNumber || undefined,
+          condition,
+          windowDays: 14, // Default 14-day window
+        }),
       { userId, cardId, requestId }
     );
 
