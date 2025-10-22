@@ -7,6 +7,7 @@
 import { PriceQuery, RawComp } from '@collectiq/shared';
 import { BasePriceAdapter } from './base-price-adapter.js';
 import { logger, getSecret } from '../utils/index.js';
+import { getAPIPricingCache, saveAPIPricingCache } from '../store/index.js';
 
 interface PokemonTCGCard {
   id: string;
@@ -79,30 +80,80 @@ export class PokemonTCGAdapter extends BasePriceAdapter {
    * Fetch comparable sales from Pokémon TCG API
    */
   protected async fetchCompsInternal(query: PriceQuery): Promise<RawComp[]> {
-    // Get API key (optional but increases rate limit)
-    await this.ensureApiKey();
-
-    // Search for cards matching the query
-    const cards = await this.searchCards(query);
-
-    if (cards.length === 0) {
-      logger.info('No Pokémon TCG cards found', { query });
-      return [];
+    // Check cache first (cross-user cache based on card name + set)
+    if (query.cardName) {
+      const cachedComps = await getAPIPricingCache(query.cardName, query.set);
+      if (cachedComps) {
+        logger.info('Pokémon TCG API cache hit', {
+          cardName: query.cardName,
+          set: query.set,
+          compsCount: cachedComps.length,
+        });
+        return cachedComps;
+      }
     }
 
-    // Extract pricing data from all matching cards
-    const allComps: RawComp[] = [];
-
-    for (const card of cards) {
-      const comps = this.extractCompsFromCard(card, query);
-      allComps.push(...comps);
-    }
-
-    logger.info(`Pokémon TCG adapter fetched ${allComps.length} comps from ${cards.length} cards`, {
-      query,
+    // Cache miss - fetch from API
+    logger.info('Pokémon TCG API cache miss, fetching from API', {
+      cardName: query.cardName,
+      set: query.set,
     });
 
-    return allComps;
+    try {
+      // Get API key (optional but increases rate limit)
+      await this.ensureApiKey();
+
+      // Search for cards matching the query
+      const cards = await this.searchCards(query);
+
+      if (cards.length === 0) {
+        logger.info('No Pokémon TCG cards found, not caching empty result', { query });
+        return [];
+      }
+
+      // Extract pricing data from all matching cards
+      const allComps: RawComp[] = [];
+
+      for (const card of cards) {
+        const comps = this.extractCompsFromCard(card, query);
+        allComps.push(...comps);
+      }
+
+      logger.info(
+        `Pokémon TCG adapter fetched ${allComps.length} comps from ${cards.length} cards`,
+        {
+          query,
+        }
+      );
+
+      // Only cache if we have valid data (card name exists and comps found)
+      if (query.cardName && allComps.length > 0) {
+        await saveAPIPricingCache(query.cardName, query.set, allComps);
+        logger.info('Cached successful API result', {
+          cardName: query.cardName,
+          set: query.set,
+          compsCount: allComps.length,
+        });
+      } else if (allComps.length === 0) {
+        logger.info('No pricing data found, not caching empty result', {
+          cardName: query.cardName,
+          set: query.set,
+        });
+      }
+
+      return allComps;
+    } catch (error) {
+      // Don't cache errors - let them propagate
+      logger.error(
+        'Pokémon TCG API error, not caching',
+        error instanceof Error ? error : new Error(String(error)),
+        {
+          cardName: query.cardName,
+          set: query.set,
+        }
+      );
+      throw error;
+    }
   }
 
   /**

@@ -27,3 +27,6 @@ export {
   getPricingSnapshot,
   deletePricingSnapshots,
 } from './pricing-cache.js';
+
+// API-level pricing cache operations
+export { getAPIPricingCache, saveAPIPricingCache } from './api-pricing-cache.js';
