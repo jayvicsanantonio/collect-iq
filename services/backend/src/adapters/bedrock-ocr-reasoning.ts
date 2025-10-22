@@ -26,8 +26,8 @@ const BEDROCK_OCR_CONFIG = {
   modelId: process.env.BEDROCK_MODEL_ID || 'anthropic.claude-sonnet-4-20250514-v1:0',
   maxTokens: parseInt(process.env.BEDROCK_OCR_MAX_TOKENS || '4096', 10),
   temperature: parseFloat(process.env.BEDROCK_OCR_TEMPERATURE || '0.15'),
-  maxRetries: 3,
-  retryDelay: 1000, // milliseconds
+  maxRetries: parseInt(process.env.BEDROCK_MAX_RETRIES || '3', 10),
+  retryDelay: parseInt(process.env.BEDROCK_RETRY_DELAY_MS || '1000', 10),
 };
 
 /**

@@ -5,11 +5,14 @@
 
 import type { Handler } from 'aws-lambda';
 import type { FeatureEnvelope, AuthenticityResult } from '@collectiq/shared';
-import { logger } from '../utils/logger.js';
-import { tracing } from '../utils/tracing.js';
-import { computePerceptualHashFromS3 } from '../utils/phash.js';
-import { computeVisualHashConfidence } from '../utils/reference-hash-comparison.js';
-import { computeAuthenticitySignals } from '../utils/authenticity-signals.js';
+import {
+  logger,
+  tracing,
+  computePerceptualHashFromS3,
+  computeVisualHashConfidence,
+  computeAuthenticitySignals,
+  getCardIdentifiersWithConfidence,
+} from '../utils/index.js';
 import { bedrockService } from '../adapters/bedrock-service.js';
 
 /**
@@ -95,47 +98,23 @@ export const handler: Handler<AuthenticityAgentInput, AuthenticityAgentOutput> =
   tracing.addAnnotation('cardId', cardId);
 
   // Extract card information from enriched metadata
-  let cardName: string | undefined;
-  let cardSet: string | undefined;
-  let cardRarity: string | undefined;
+  const identifiers = getCardIdentifiersWithConfidence(cardMeta);
+  const { cardName, set: cardSet, rarity: cardRarity } = identifiers;
 
   if (cardMeta.ocrMetadata) {
-    // Use enriched metadata from OCR reasoning agent
-    cardName = cardMeta.ocrMetadata.name?.value || cardMeta.name;
-    cardRarity = cardMeta.ocrMetadata.rarity?.value || cardMeta.rarity;
-
-    // Handle both single-value and multi-candidate set results
-    if (cardMeta.ocrMetadata.set) {
-      if (
-        'candidates' in cardMeta.ocrMetadata.set &&
-        cardMeta.ocrMetadata.set.candidates?.length > 0
-      ) {
-        cardSet = cardMeta.ocrMetadata.set.candidates[0].value;
-      } else {
-        cardSet = cardMeta.ocrMetadata.set.value || cardMeta.set;
-      }
-    } else {
-      cardSet = cardMeta.set;
-    }
-
     logger.info('Authenticity Agent invoked with OCR reasoning metadata', {
       userId,
       cardId,
       cardName,
       cardSet,
       cardRarity,
-      nameConfidence: cardMeta.ocrMetadata.name?.confidence,
-      rarityConfidence: cardMeta.ocrMetadata.rarity?.confidence,
-      overallConfidence: cardMeta.ocrMetadata.overallConfidence,
-      verifiedByAI: cardMeta.ocrMetadata.verifiedByAI,
+      nameConfidence: identifiers.nameConfidence,
+      rarityConfidence: identifiers.rarityConfidence,
+      overallConfidence: identifiers.overallConfidence,
+      verifiedByAI: identifiers.verifiedByAI,
       requestId,
     });
   } else {
-    // Fallback to legacy metadata
-    cardName = cardMeta.name;
-    cardSet = cardMeta.set;
-    cardRarity = cardMeta.rarity;
-
     logger.info('Authenticity Agent invoked with legacy metadata', {
       userId,
       cardId,

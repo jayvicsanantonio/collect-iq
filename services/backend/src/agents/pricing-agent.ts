@@ -5,8 +5,7 @@
 
 import type { Handler } from 'aws-lambda';
 import type { FeatureEnvelope, PricingResult, ValuationSummary } from '@collectiq/shared';
-import { logger } from '../utils/logger.js';
-import { tracing } from '../utils/tracing.js';
+import { logger, tracing, getCardIdentifiersWithConfidence } from '../utils/index.js';
 import { getPricingOrchestrator } from '../adapters/pricing-orchestrator.js';
 import { bedrockService } from '../adapters/bedrock-service.js';
 
@@ -83,61 +82,22 @@ export const handler: Handler<PricingAgentInput, PricingAgentOutput> = async (ev
   try {
     // Step 1: Extract card information from enriched metadata
     // Prefer OCR reasoning metadata over legacy extraction
-    let cardName: string;
-    let set: string;
-    let rarity: string | undefined;
-    let collectorNumber: string | undefined;
+    const identifiers = getCardIdentifiersWithConfidence(cardMeta);
+    const { cardName, set, rarity, collectorNumber } = identifiers;
 
     if (cardMeta.ocrMetadata) {
-      // Use enriched metadata from OCR reasoning agent
-      cardName = cardMeta.ocrMetadata.name?.value || cardMeta.name || 'Unknown Card';
-
-      // Handle both single-value and multi-candidate set results
-      if (cardMeta.ocrMetadata.set) {
-        if (
-          'candidates' in cardMeta.ocrMetadata.set &&
-          cardMeta.ocrMetadata.set.candidates?.length > 0
-        ) {
-          // Use the highest confidence candidate
-          set = cardMeta.ocrMetadata.set.candidates[0].value;
-        } else {
-          set = cardMeta.ocrMetadata.set.value || cardMeta.set || '';
-        }
-      } else {
-        set = cardMeta.set || '';
-      }
-
-      rarity = cardMeta.ocrMetadata.rarity?.value || cardMeta.rarity;
-      collectorNumber = cardMeta.ocrMetadata.collectorNumber?.value || cardMeta.number;
-
-      // Calculate set confidence for logging
-      let setConfidence: number | undefined;
-      if (cardMeta.ocrMetadata.set) {
-        if ('candidates' in cardMeta.ocrMetadata.set) {
-          setConfidence = cardMeta.ocrMetadata.set.candidates?.[0]?.confidence;
-        } else {
-          setConfidence = cardMeta.ocrMetadata.set.confidence;
-        }
-      }
-
       logger.info('Using OCR reasoning metadata for pricing', {
         cardName,
         set,
         rarity,
         collectorNumber,
-        nameConfidence: cardMeta.ocrMetadata.name?.confidence,
-        setConfidence,
-        overallConfidence: cardMeta.ocrMetadata.overallConfidence,
-        verifiedByAI: cardMeta.ocrMetadata.verifiedByAI,
+        nameConfidence: identifiers.nameConfidence,
+        setConfidence: identifiers.setConfidence,
+        overallConfidence: identifiers.overallConfidence,
+        verifiedByAI: identifiers.verifiedByAI,
         requestId,
       });
     } else {
-      // Fallback to legacy metadata (for backward compatibility)
-      cardName = cardMeta.name || 'Unknown Card';
-      set = cardMeta.set || '';
-      rarity = cardMeta.rarity;
-      collectorNumber = cardMeta.number;
-
       logger.warn('OCR reasoning metadata not available, using legacy metadata', {
         cardName,
         set,
