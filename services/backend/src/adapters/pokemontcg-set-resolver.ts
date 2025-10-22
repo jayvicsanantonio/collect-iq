@@ -127,7 +127,7 @@ export class PokemonTCGSetResolver {
   }
 
   /**
-   * Search for cards by name
+   * Search for cards by name with timeout
    */
   private async searchCardByName(cardName: string): Promise<PokemonTCGCard[]> {
     const cleanName = cardName.replace(/[^\w\s-]/g, '').trim();
@@ -141,17 +141,32 @@ export class PokemonTCGSetResolver {
       headers['X-Api-Key'] = this.apiKey;
     }
 
-    const response = await fetch(url, {
-      method: 'GET',
-      headers,
-    });
+    // Add timeout to prevent hanging
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
 
-    if (!response.ok) {
-      throw new Error(`Pokémon TCG API error: ${response.status} ${response.statusText}`);
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        headers,
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        throw new Error(`Pokémon TCG API error: ${response.status} ${response.statusText}`);
+      }
+
+      const data = (await response.json()) as PokemonTCGResponse;
+      return data.data;
+    } catch (error) {
+      clearTimeout(timeoutId);
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new Error('Pokémon TCG API request timed out after 5 seconds');
+      }
+      throw error;
     }
-
-    const data = (await response.json()) as PokemonTCGResponse;
-    return data.data;
   }
 
   /**

@@ -102,6 +102,7 @@ export const handler: Handler<OcrReasoningAgentInput, OcrReasoningAgentOutput> =
     const bedrockLatency = Date.now() - bedrockStartTime;
 
     // Step 4: Verify set using Pokémon TCG API (if card name and collector number available)
+    // This is optional - if it fails, we continue with AI result
     if (cardMetadata.name.value && cardMetadata.collectorNumber.value) {
       logger.info('Verifying set via Pokémon TCG API', {
         cardId,
@@ -112,12 +113,22 @@ export const handler: Handler<OcrReasoningAgentInput, OcrReasoningAgentOutput> =
       });
 
       try {
-        const resolver = getPokemonTCGSetResolver();
-        const setMatch = await resolver.resolveSet(
-          cardMetadata.name.value,
-          cardMetadata.collectorNumber.value,
-          requestId
+        // Set a timeout for the entire verification process
+        const verificationPromise = (async () => {
+          const resolver = getPokemonTCGSetResolver();
+          return await resolver.resolveSet(
+            cardMetadata.name.value!,
+            cardMetadata.collectorNumber.value,
+            requestId
+          );
+        })();
+
+        // Race against a 8-second timeout
+        const timeoutPromise = new Promise<null>((resolve) =>
+          setTimeout(() => resolve(null), 8000)
         );
+
+        const setMatch = await Promise.race([verificationPromise, timeoutPromise]);
 
         if (setMatch) {
           // Update set with API-verified data
@@ -143,7 +154,7 @@ export const handler: Handler<OcrReasoningAgentInput, OcrReasoningAgentOutput> =
             requestId,
           });
         } else {
-          logger.warn('Could not verify set via API, using AI result', {
+          logger.warn('Set verification timed out or returned no match, using AI result', {
             cardId,
             cardName: cardMetadata.name.value,
             collectorNumber: cardMetadata.collectorNumber.value,
@@ -152,16 +163,14 @@ export const handler: Handler<OcrReasoningAgentInput, OcrReasoningAgentOutput> =
           });
         }
       } catch (error) {
-        logger.error(
-          'Failed to verify set via API, using AI result',
-          error instanceof Error ? error : new Error(String(error)),
-          {
-            cardId,
-            cardName: cardMetadata.name.value,
-            collectorNumber: cardMetadata.collectorNumber.value,
-            requestId,
-          }
-        );
+        // Don't fail the entire OCR process if API verification fails
+        logger.warn('Failed to verify set via API, using AI result', {
+          error: error instanceof Error ? error.message : String(error),
+          cardId,
+          cardName: cardMetadata.name.value,
+          collectorNumber: cardMetadata.collectorNumber.value,
+          requestId,
+        });
       }
     }
 
