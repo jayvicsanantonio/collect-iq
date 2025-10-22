@@ -230,7 +230,7 @@
   - Update EventBridge event to include OCR metadata
   - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7_
 
-- [ ] 14. Add comprehensive logging
+- [x] 14. Add comprehensive logging
   - Add INFO level logs for OCR reasoning start with cardId and OCR block count
   - Add DEBUG level logs for prompt generation with prompt lengths
   - Add INFO level logs for Bedrock response with latency, token count, and confidence

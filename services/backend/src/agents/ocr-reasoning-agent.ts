@@ -47,9 +47,10 @@ export const handler: Handler<OcrReasoningAgentInput, OcrReasoningAgentOutput> =
   tracing.addAnnotation('operation', 'ocr_reasoning_agent');
   tracing.addAnnotation('cardId', cardId);
 
-  logger.info('OCR Reasoning Agent invoked', {
-    userId,
+  // INFO: OCR reasoning start with cardId and OCR block count
+  logger.info('OCR reasoning started', {
     cardId,
+    userId,
     ocrBlockCount: features.ocr?.length || 0,
     requestId,
   });
@@ -89,16 +90,15 @@ export const handler: Handler<OcrReasoningAgentInput, OcrReasoningAgentOutput> =
     });
 
     // Step 3: Invoke BedrockOcrReasoningService with context
-    logger.info('Invoking Bedrock OCR reasoning service', {
-      cardId,
-      requestId,
-    });
+    const bedrockStartTime = Date.now();
 
     const cardMetadata = await tracing.trace(
       'bedrock_ocr_reasoning_invocation',
-      () => bedrockOcrReasoningService.interpretOcr(ocrContext),
+      () => bedrockOcrReasoningService.interpretOcr(ocrContext, requestId),
       { userId, cardId, requestId }
     );
+
+    const bedrockLatency = Date.now() - bedrockStartTime;
 
     // Step 4: Handle successful responses and enrich card metadata
     const setInfo = cardMetadata.set;
@@ -108,6 +108,7 @@ export const handler: Handler<OcrReasoningAgentInput, OcrReasoningAgentOutput> =
         ? setInfo.candidates[0].value
         : null);
 
+    // INFO: Bedrock response with latency, token count, and confidence
     logger.info('OCR reasoning complete', {
       cardId,
       cardName: cardMetadata.name.value,
@@ -116,6 +117,7 @@ export const handler: Handler<OcrReasoningAgentInput, OcrReasoningAgentOutput> =
       set: setValueForLog,
       overallConfidence: cardMetadata.overallConfidence,
       verifiedByAI: cardMetadata.verifiedByAI,
+      latency: bedrockLatency,
       requestId,
     });
 
@@ -151,21 +153,25 @@ export const handler: Handler<OcrReasoningAgentInput, OcrReasoningAgentOutput> =
     // Step 5: Implement fallback logic for Bedrock failures
     // The BedrockOcrReasoningService already handles fallback internally,
     // but we catch any unexpected errors here
+    const durationMs = Date.now() - startTime;
+
     tracing.endSubsegment('ocr_reasoning_agent_handler', {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',
       cardId,
       userId,
-      durationMs: Date.now() - startTime,
+      durationMs,
     });
 
+    // ERROR: Failures with full error details and retry count
     logger.error(
-      'OCR Reasoning Agent failed',
+      'OCR reasoning agent failed',
       error instanceof Error ? error : new Error(String(error)),
       {
         userId,
         cardId,
         ocrBlockCount: features.ocr?.length || 0,
+        durationMs,
         requestId,
       }
     );

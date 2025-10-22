@@ -223,13 +223,17 @@ Provide your analysis in the JSON format specified in the system prompt.`;
   /**
    * Parse Bedrock response text to extract JSON
    */
-  private parseResponse(responseText: string): CardMetadata {
+  private parseResponse(responseText: string, requestId?: string): CardMetadata {
     // Try to extract JSON from response
     // Bedrock might wrap JSON in markdown code blocks
     const jsonMatch =
       responseText.match(/```json\s*([\s\S]*?)\s*```/) || responseText.match(/\{[\s\S]*\}/);
 
     if (!jsonMatch) {
+      logger.error('No JSON found in Bedrock response', new Error('JSON extraction failed'), {
+        responsePreview: responseText.substring(0, 200),
+        requestId,
+      });
       throw new Error('No JSON found in Bedrock response');
     }
 
@@ -238,13 +242,20 @@ Provide your analysis in the JSON format specified in the system prompt.`;
     try {
       const parsed = JSON.parse(jsonText);
       const validated = CardMetadataSchema.parse(parsed);
+
+      logger.debug('Bedrock response parsed and validated successfully', {
+        overallConfidence: validated.overallConfidence,
+        requestId,
+      });
+
       return validated as CardMetadata;
     } catch (error) {
       logger.error(
         'Failed to parse or validate Bedrock OCR response',
         error instanceof Error ? error : new Error(String(error)),
         {
-          responseText: jsonText.substring(0, 500), // Log first 500 chars
+          responsePreview: jsonText.substring(0, 500), // Log first 500 chars
+          requestId,
         }
       );
       throw new Error('Invalid JSON or schema validation failed in Bedrock response');
@@ -254,29 +265,36 @@ Provide your analysis in the JSON format specified in the system prompt.`;
   /**
    * Invoke Bedrock with retry logic and exponential backoff
    */
-  private async invokeWithRetry(input: ConverseCommandInput): Promise<ConverseCommandOutput> {
+  private async invokeWithRetry(
+    input: ConverseCommandInput,
+    requestId?: string
+  ): Promise<ConverseCommandOutput> {
     let lastError: Error | null = null;
 
     for (let attempt = 1; attempt <= BEDROCK_OCR_CONFIG.maxRetries; attempt++) {
       try {
-        logger.debug('Invoking Bedrock for OCR reasoning', {
+        logger.debug('Invoking Bedrock API', {
           attempt,
           modelId: input.modelId,
           maxRetries: BEDROCK_OCR_CONFIG.maxRetries,
+          temperature: input.inferenceConfig?.temperature,
+          maxTokens: input.inferenceConfig?.maxTokens,
+          requestId,
         });
 
         const command = new ConverseCommand(input);
         const response = await tracing.trace(
           'bedrock_ocr_reasoning',
           () => bedrockClient.send(command),
-          { modelId: input.modelId, attempt }
+          { modelId: input.modelId, attempt, requestId }
         );
 
-        logger.info('Bedrock OCR reasoning invocation successful', {
+        logger.info('Bedrock invocation successful', {
           attempt,
           stopReason: response.stopReason,
           inputTokens: response.usage?.inputTokens,
           outputTokens: response.usage?.outputTokens,
+          requestId,
         });
 
         return response;
@@ -294,25 +312,41 @@ Provide your analysis in the JSON format specified in the system prompt.`;
           lastError.message.includes('TimeoutError') ||
           lastError.message.includes('RequestTimeout');
 
-        logger.warn('Bedrock OCR reasoning invocation failed', {
+        // WARN: Retry attempts with error details
+        logger.warn('Bedrock invocation failed, will retry', {
           attempt,
+          retryCount: attempt,
           maxRetries: BEDROCK_OCR_CONFIG.maxRetries,
           error: lastError.message,
+          errorType: lastError.name,
           isThrottling,
           isTimeout,
+          requestId,
         });
 
         if (attempt < BEDROCK_OCR_CONFIG.maxRetries) {
           // Exponential backoff: 1s, 2s, 4s
           const delay = BEDROCK_OCR_CONFIG.retryDelay * Math.pow(2, attempt - 1);
-          logger.debug('Retrying Bedrock OCR reasoning invocation', {
-            delay,
+          logger.debug('Retrying Bedrock invocation after delay', {
+            delayMs: delay,
             nextAttempt: attempt + 1,
+            requestId,
           });
           await new Promise((resolve) => setTimeout(resolve, delay));
         }
       }
     }
+
+    // ERROR: Final failure after all retries
+    logger.error(
+      'Bedrock invocation failed after all retries',
+      lastError || new Error('Unknown error'),
+      {
+        retryCount: BEDROCK_OCR_CONFIG.maxRetries,
+        finalError: lastError?.message,
+        requestId,
+      }
+    );
 
     throw new Error(
       `Bedrock OCR reasoning failed after ${BEDROCK_OCR_CONFIG.maxRetries} attempts: ${lastError?.message}`
@@ -377,15 +411,18 @@ Provide your analysis in the JSON format specified in the system prompt.`;
    * Interpret OCR results and extract card metadata
    * Main entry point for OCR reasoning
    */
-  async interpretOcr(context: OcrContext): Promise<CardMetadata> {
-    logger.info('Starting OCR reasoning', {
+  async interpretOcr(context: OcrContext, requestId?: string): Promise<CardMetadata> {
+    // INFO: OCR reasoning start with OCR block count
+    logger.info('Bedrock OCR reasoning service invoked', {
       ocrBlockCount: context.ocrBlocks.length,
       holoVariance: context.visualContext.holoVariance,
+      borderSymmetry: context.visualContext.borderSymmetry,
+      requestId,
     });
 
     // Handle empty OCR results
     if (context.ocrBlocks.length === 0) {
-      logger.warn('No OCR blocks provided for reasoning');
+      logger.warn('No OCR blocks provided for reasoning', { requestId });
       return {
         name: {
           value: null,
@@ -431,6 +468,17 @@ Provide your analysis in the JSON format specified in the system prompt.`;
     try {
       const startTime = Date.now();
 
+      const systemPrompt = this.createSystemPrompt();
+      const userPrompt = this.createUserPrompt(context);
+
+      // DEBUG: Prompt generation with prompt lengths
+      logger.debug('Bedrock prompts generated', {
+        systemPromptLength: systemPrompt.length,
+        userPromptLength: userPrompt.length,
+        totalPromptLength: systemPrompt.length + userPrompt.length,
+        requestId,
+      });
+
       const input: ConverseCommandInput = {
         modelId: BEDROCK_OCR_CONFIG.modelId,
         messages: [
@@ -438,14 +486,14 @@ Provide your analysis in the JSON format specified in the system prompt.`;
             role: 'user',
             content: [
               {
-                text: this.createUserPrompt(context),
+                text: userPrompt,
               },
             ],
           },
         ],
         system: [
           {
-            text: this.createSystemPrompt(),
+            text: systemPrompt,
           },
         ],
         inferenceConfig: {
@@ -454,7 +502,7 @@ Provide your analysis in the JSON format specified in the system prompt.`;
         },
       };
 
-      const response = await this.invokeWithRetry(input);
+      const response = await this.invokeWithRetry(input, requestId);
       const latency = Date.now() - startTime;
 
       // Extract response text
@@ -463,25 +511,29 @@ Provide your analysis in the JSON format specified in the system prompt.`;
         throw new Error('Empty response from Bedrock');
       }
 
-      logger.debug('Bedrock OCR reasoning response received', {
+      logger.debug('Bedrock response received', {
         responseLength: responseText.length,
         latency,
+        requestId,
       });
 
       // Parse and validate response
-      const metadata = this.parseResponse(responseText);
+      const metadata = this.parseResponse(responseText, requestId);
 
       // Record metrics
-      const inputTokens = response.usage?.inputTokens;
-      const outputTokens = response.usage?.outputTokens;
+      const inputTokens = response.usage?.inputTokens || 0;
+      const outputTokens = response.usage?.outputTokens || 0;
       await metrics.recordBedrockInvocation('ocr_reasoning', latency, outputTokens);
 
-      logger.info('Bedrock OCR reasoning complete', {
+      // INFO: Bedrock response with latency, token count, and confidence
+      logger.info('Bedrock OCR reasoning successful', {
         overallConfidence: metadata.overallConfidence,
         cardName: metadata.name.value,
         latency,
         inputTokens,
         outputTokens,
+        verifiedByAI: true,
+        requestId,
       });
 
       return {
@@ -489,16 +541,24 @@ Provide your analysis in the JSON format specified in the system prompt.`;
         verifiedByAI: true,
       };
     } catch (error) {
+      // ERROR: Failures with full error details
       logger.error(
         'Bedrock OCR reasoning failed',
         error instanceof Error ? error : new Error(String(error)),
         {
           ocrBlockCount: context.ocrBlocks.length,
+          requestId,
         }
       );
 
-      // Return fallback metadata
-      logger.warn('Returning fallback OCR metadata');
+      // WARN: Fallback activation with error reason
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.warn('Activating fallback OCR metadata', {
+        reason: errorMessage,
+        ocrBlockCount: context.ocrBlocks.length,
+        requestId,
+      });
+
       return this.createFallbackMetadata(context.ocrBlocks);
     }
   }
