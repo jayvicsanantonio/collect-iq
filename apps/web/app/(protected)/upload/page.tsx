@@ -475,14 +475,15 @@ export default function UploadPage() {
       </main>
 
       {/* Camera Capture Modal */}
-      {showCamera && (
-        <CameraCapture
-          isOpen={showCamera}
-          onCapture={handleCameraCapture}
-          onError={handleCameraError}
-          onClose={() => setShowCamera(false)}
-        />
-      )}
+      <CameraCapture
+        isOpen={showCamera}
+        onCapture={handleCameraCapture}
+        onError={handleCameraError}
+        onClose={() => {
+          console.log('Closing camera');
+          setShowCamera(false);
+        }}
+      />
     </div>
   );
 }

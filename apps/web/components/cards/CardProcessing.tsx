@@ -147,58 +147,24 @@ export function CardProcessing({
               <Loader2 className="h-20 w-20 text-[var(--vault-blue)] animate-spin relative" />
             </div>
 
-            {/* Stage List - Horizontal layout with icons */}
+            {/* Stage List - Horizontal layout without highlighting */}
             <div className="flex flex-col sm:flex-row gap-6 sm:gap-8 mb-12 w-full max-w-4xl">
               {STAGE_ORDER.map((stageName, index) => {
                 const stageConfig = STAGE_CONFIG[stageName];
-                const isCompleted = completed.includes(stageName);
-                const isCurrent = stageName === stage;
 
                 return (
                   <div
                     key={stageName}
-                    className={cn(
-                      'flex-1 text-center p-6 rounded-lg border-2 transition-all',
-                      {
-                        'border-[var(--vault-blue)] bg-[var(--vault-blue)]/5':
-                          isCurrent,
-                        'border-[var(--emerald-glow)] bg-[var(--emerald-glow)]/5':
-                          isCompleted,
-                        'border-[var(--border)] bg-[var(--card)]':
-                          !isCurrent && !isCompleted,
-                      }
-                    )}
+                    className="flex-1 text-center p-6 rounded-lg border-2 border-[var(--border)] bg-[var(--card)] transition-all"
                   >
                     <div className="flex flex-col items-center space-y-3">
-                      {/* Step number or checkmark */}
-                      <div
-                        className={cn(
-                          'w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm',
-                          {
-                            'bg-[var(--vault-blue)] text-white': isCurrent,
-                            'bg-[var(--emerald-glow)] text-white':
-                              isCompleted,
-                            'bg-[var(--muted)] text-[var(--muted-foreground)]':
-                              !isCurrent && !isCompleted,
-                          }
-                        )}
-                      >
-                        {isCompleted ? (
-                          <CheckCircle2 className="h-5 w-5" />
-                        ) : (
-                          index + 1
-                        )}
+                      {/* Step number */}
+                      <div className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm bg-[var(--muted)] text-[var(--muted-foreground)]">
+                        {index + 1}
                       </div>
 
                       {/* Stage title */}
-                      <p
-                        className={cn('font-semibold text-base', {
-                          'text-[var(--vault-blue)]': isCurrent,
-                          'text-[var(--emerald-glow)]': isCompleted,
-                          'text-[var(--muted-foreground)]':
-                            !isCurrent && !isCompleted,
-                        })}
-                      >
+                      <p className="font-semibold text-base text-[var(--foreground)]">
                         {stageConfig.label}
                       </p>
 
