@@ -2,23 +2,23 @@
 
 ## Overview
 
-The OCR Reasoning Agent is a critical component in the CollectIQ card processing pipeline. It transforms raw OCR text from AWS Rekognition into structured, AI-verified card metadata using Claude Sonnet 4 (Amazon Bedrock) and the Pokémon TCG API.
+The OCR Reasoning Agent is a critical component in the CollectIQ card processing pipeline. It transforms raw OCR text from AWS Rekognition into structured, AI-verified card metadata using Claude Sonnet 4 (Amazon Bedrock).
 
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                     OCR Reasoning Agent                          │
-│                                                                   │
-│  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐      │
-│  │   Handler    │───▶│   Bedrock    │───▶│  API Verify  │      │
-│  │  (Lambda)    │    │   Service    │    │  (Optional)  │      │
-│  └──────────────┘    └──────────────┘    └──────────────┘      │
-│         │                    │                    │              │
-│         ▼                    ▼                    ▼              │
-│   Extract OCR         AI Reasoning        Set Verification      │
-│   Build Context       Extract Metadata    Match Collector #     │
-└─────────────────────────────────────────────────────────────────┘
+┌───────────────────────────────────────────────────────┐
+│              OCR Reasoning Agent                       │
+│                                                         │
+│  ┌──────────────┐    ┌──────────────┐                │
+│  │   Handler    │───▶│   Bedrock    │                │
+│  │  (Lambda)    │    │   Service    │                │
+│  └──────────────┘    └──────────────┘                │
+│         │                    │                         │
+│         ▼                    ▼                         │
+│   Extract OCR         AI Reasoning                    │
+│   Build Context       Extract Metadata                │
+└───────────────────────────────────────────────────────┘
 ```
 
 ## Complete Flow
@@ -317,128 +317,7 @@ private parseResponse(responseText: string, requestId?: string): CardMetadata {
 }
 ```
 
-### Step 5: API-Based Set Verification (NEW)
-
-**File**: `services/backend/src/agents/ocr-reasoning-agent.ts` (Lines 107-165)
-
-**Purpose**: Verify Claude's set determination against authoritative Pokémon TCG API data
-
-```typescript
-if (cardMetadata.name.value && cardMetadata.collectorNumber.value) {
-  logger.info('Verifying set via Pokémon TCG API', {
-    cardId,
-    cardName: cardMetadata.name.value,
-    collectorNumber: cardMetadata.collectorNumber.value,
-    aiSet: cardMetadata.set.value,
-    requestId,
-  });
-
-  try {
-    // Race against 25-second timeout
-    const verificationPromise = (async () => {
-      const resolver = getPokemonTCGSetResolver();
-      return await resolver.resolveSet(
-        cardMetadata.name.value!,
-        cardMetadata.collectorNumber.value,
-        requestId
-      );
-    })();
-
-    const timeoutPromise = new Promise<null>((resolve) => setTimeout(() => resolve(null), 25000));
-
-    const setMatch = await Promise.race([verificationPromise, timeoutPromise]);
-
-    if (setMatch) {
-      // OVERRIDE Claude's set with API-verified data
-      const previousSet = cardMetadata.set.value;
-      cardMetadata.set = {
-        value: setMatch.setName,
-        confidence: setMatch.confidence,
-        rationale: `${setMatch.matchReason}. Verified via Pokémon TCG API. ${
-          previousSet && previousSet !== setMatch.setName
-            ? `AI initially suggested "${previousSet}".`
-            : ''
-        }`,
-      };
-
-      logger.info('Set verified and updated via API', {
-        cardId,
-        aiSet: previousSet,
-        verifiedSet: setMatch.setName,
-        matchReason: setMatch.matchReason,
-        confidence: setMatch.confidence,
-        requestId,
-      });
-    }
-  } catch (error) {
-    // Graceful fallback - continue with AI result
-    logger.warn('Failed to verify set via API, using AI result', {
-      error: error instanceof Error ? error.message : String(error),
-      cardId,
-      requestId,
-    });
-  }
-}
-```
-
-#### 5.1: Query Pokémon TCG API
-
-**File**: `services/backend/src/adapters/pokemontcg-set-resolver.ts`
-
-```typescript
-async resolveSet(cardName: string, collectorNumber: string, requestId?: string) {
-  // 1. Search for all printings of this card
-  const cards = await this.searchCardByName(cardName);
-  // GET https://api.pokemontcg.io/v2/cards?q=name:"Charizard VMAX"&pageSize=50
-
-  // Returns:
-  // [
-  //   { name: "Charizard VMAX", set: { name: "Darkness Ablaze" }, number: "020/189" },
-  //   { name: "Charizard VMAX", set: { name: "Silver Tempest" }, number: "018/195" },
-  //   { name: "Charizard VMAX", set: { name: "Shining Fates" }, number: "SV107/SV122" }
-  // ]
-
-  // 2. Try exact collector number match
-  const exactMatch = this.findExactMatch(cards, "018/195");
-  if (exactMatch) {
-    return {
-      setName: "Silver Tempest",
-      confidence: 1.0,
-      matchReason: "Exact collector number match"
-    };
-  }
-
-  // 3. Try fuzzy match (handles OCR errors like "18/195" vs "018/195")
-  const fuzzyMatch = this.findFuzzyMatch(cards, collectorNumber);
-  if (fuzzyMatch) {
-    return {
-      setName: fuzzyMatch.setName,
-      confidence: 0.85,
-      matchReason: "Fuzzy collector number match (card number only)"
-    };
-  }
-
-  // 4. Fallback to most recent printing
-  return this.getMostRecentPrinting(cards);
-}
-```
-
-**Matching Strategies**:
-
-1. **Exact Match** (Confidence: 1.0)
-   - Collector number matches exactly: `"018/195" === "018/195"`
-2. **Fuzzy Match** (Confidence: 0.85)
-   - Card number matches, ignoring leading zeros: `"18/195" ≈ "018/195"`
-3. **Most Recent** (Confidence: 0.5)
-   - No match found, return most recently released printing
-
-**Timeout Protection**:
-
-- API request timeout: 20 seconds
-- Overall verification timeout: 25 seconds
-- Graceful fallback to AI result if timeout occurs
-
-### Step 6: Return Enriched Metadata
+### Step 5: Return Enriched Metadata
 
 **Lines 167-195**: Log and return results
 
@@ -478,8 +357,8 @@ return {
     },
     "set": {
       "value": "Silver Tempest",
-      "confidence": 1.0,
-      "rationale": "Exact collector number match. Verified via Pokémon TCG API."
+      "confidence": 0.75,
+      "rationale": "Copyright '© 2022 Pokémon' suggests 2022 release. Collector number format matches Silver Tempest."
     },
     "setSymbol": {
       "value": null,
@@ -502,7 +381,7 @@ return {
       "rationale": "No illustrator name detected in OCR text."
     },
     "overallConfidence": 0.88,
-    "reasoningTrail": "High-quality OCR with clear card name and collector number. Set verified via API.",
+    "reasoningTrail": "High-quality OCR with clear card name and collector number. Holographic variance confirms ultra rare status.",
     "verifiedByAI": true
   },
   "requestId": "req-789"
@@ -546,14 +425,6 @@ private createFallbackMetadata(ocrBlocks: OCRBlock[]): CardMetadata {
 }
 ```
 
-### API Verification Timeout
-
-If Pokémon TCG API times out or fails:
-
-- Continue with Claude's AI-inferred set
-- Log warning (not error)
-- Set `verifiedByAI: true` (Claude succeeded, API failed)
-
 ### No OCR Text
 
 If no OCR blocks detected:
@@ -567,8 +438,7 @@ If no OCR blocks detected:
 **Typical Latencies**:
 
 - Bedrock invocation: 2-5 seconds
-- API verification: 0.5-2 seconds (when successful)
-- Total OCR agent: 3-8 seconds
+- Total OCR agent: 2-6 seconds
 
 **Token Usage** (Claude):
 
@@ -579,8 +449,6 @@ If no OCR blocks detected:
 
 - Lambda timeout: 30 seconds
 - Bedrock retry: 3 attempts with exponential backoff
-- API request: 20 seconds
-- API verification: 25 seconds total
 
 ## Integration with Workflow
 
@@ -602,8 +470,6 @@ If no OCR blocks detected:
 
 1. **`ocr-reasoning-agent.ts`** - Lambda handler, orchestrates the flow
 2. **`bedrock-ocr-reasoning.ts`** - Bedrock service, AI reasoning logic
-3. **`pokemontcg-set-resolver.ts`** - API verification, set matching
-4. **`card-metadata.ts`** - Utility functions for extracting card identifiers
 
 ## Configuration
 
@@ -631,7 +497,7 @@ XRAY_ENABLED=false
 
 - INFO: OCR reasoning started/complete
 - DEBUG: Prompt generation, response parsing
-- WARN: API timeouts, fallback activation
+- WARN: Fallback activation
 - ERROR: Bedrock failures, unexpected errors
 
 **Metrics** (if CloudWatch permissions granted):
@@ -650,14 +516,12 @@ XRAY_ENABLED=false
 
 1. **Always check `verifiedByAI` flag** - Indicates whether Bedrock succeeded
 2. **Use confidence scores** - Filter low-confidence results for manual review
-3. **Monitor API timeout rate** - High rate indicates Pokémon TCG API issues
-4. **Review reasoning trails** - Helps debug incorrect extractions
-5. **Handle null values gracefully** - Not all fields are always present on cards
+3. **Review reasoning trails** - Helps debug incorrect extractions
+4. **Handle null values gracefully** - Not all fields are always present on cards
 
 ## Future Enhancements
 
-1. **Cache API responses** - Reduce API calls for popular cards
-2. **Image-based verification** - Compare uploaded image with API card images
-3. **Multi-language support** - Handle non-English cards
-4. **Rarity verification** - Cross-check rarity against API data
-5. **Set symbol recognition** - Use computer vision for set symbols
+1. **Image-based verification** - Compare uploaded image with reference card images
+2. **Multi-language support** - Handle non-English cards
+3. **Set symbol recognition** - Use computer vision for set symbols
+4. **Enhanced set determination** - Improve AI reasoning for ambiguous cases

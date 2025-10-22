@@ -11,7 +11,6 @@ import {
   type CardMetadata,
   type OcrContext,
 } from '../adapters/bedrock-ocr-reasoning.js';
-import { getPokemonTCGSetResolver } from '../adapters/pokemontcg-set-resolver.js';
 
 /**
  * Input structure for OCR Reasoning Agent
@@ -101,80 +100,7 @@ export const handler: Handler<OcrReasoningAgentInput, OcrReasoningAgentOutput> =
 
     const bedrockLatency = Date.now() - bedrockStartTime;
 
-    // Step 4: Verify set using Pokémon TCG API (if card name and collector number available)
-    // This is optional - if it fails, we continue with AI result
-    if (cardMetadata.name.value && cardMetadata.collectorNumber.value) {
-      logger.info('Verifying set via Pokémon TCG API', {
-        cardId,
-        cardName: cardMetadata.name.value,
-        collectorNumber: cardMetadata.collectorNumber.value,
-        aiSet: cardMetadata.set.value,
-        requestId,
-      });
-
-      try {
-        // Set a timeout for the entire verification process
-        const verificationPromise = (async () => {
-          const resolver = getPokemonTCGSetResolver();
-          return await resolver.resolveSet(
-            cardMetadata.name.value!,
-            cardMetadata.collectorNumber.value,
-            requestId
-          );
-        })();
-
-        // Race against a 25-second timeout (slightly longer than API timeout)
-        const timeoutPromise = new Promise<null>((resolve) =>
-          setTimeout(() => resolve(null), 25000)
-        );
-
-        const setMatch = await Promise.race([verificationPromise, timeoutPromise]);
-
-        if (setMatch) {
-          // Update set with API-verified data
-          const previousSet = cardMetadata.set.value;
-          cardMetadata.set = {
-            value: setMatch.setName,
-            confidence: setMatch.confidence,
-            rationale: `${setMatch.matchReason}. Verified via Pokémon TCG API. ${
-              previousSet && previousSet !== setMatch.setName
-                ? `AI initially suggested "${previousSet}".`
-                : ''
-            }`,
-          };
-
-          logger.info('Set verified and updated via API', {
-            cardId,
-            cardName: cardMetadata.name.value,
-            collectorNumber: cardMetadata.collectorNumber.value,
-            aiSet: previousSet,
-            verifiedSet: setMatch.setName,
-            matchReason: setMatch.matchReason,
-            confidence: setMatch.confidence,
-            requestId,
-          });
-        } else {
-          logger.warn('Set verification timed out or returned no match, using AI result', {
-            cardId,
-            cardName: cardMetadata.name.value,
-            collectorNumber: cardMetadata.collectorNumber.value,
-            aiSet: cardMetadata.set.value,
-            requestId,
-          });
-        }
-      } catch (error) {
-        // Don't fail the entire OCR process if API verification fails
-        logger.warn('Failed to verify set via API, using AI result', {
-          error: error instanceof Error ? error.message : String(error),
-          cardId,
-          cardName: cardMetadata.name.value,
-          collectorNumber: cardMetadata.collectorNumber.value,
-          requestId,
-        });
-      }
-    }
-
-    // Step 5: Handle successful responses and enrich card metadata
+    // Step 4: Handle successful responses and enrich card metadata
     const setInfo = cardMetadata.set;
     const setValueForLog =
       setInfo.value ||
@@ -224,7 +150,7 @@ export const handler: Handler<OcrReasoningAgentInput, OcrReasoningAgentOutput> =
       requestId,
     };
   } catch (error) {
-    // Step 5: Implement fallback logic for Bedrock failures
+    // Step 5: Handle errors and implement fallback logic
     // The BedrockOcrReasoningService already handles fallback internally,
     // but we catch any unexpected errors here
     const durationMs = Date.now() - startTime;
