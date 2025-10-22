@@ -201,20 +201,20 @@ export class PokemonTCGAdapter extends BasePriceAdapter {
 
   /**
    * Build search query string for Pokémon TCG API
-   * Uses fuzzy matching for card names to handle OCR variations
+   * Uses the API's query syntax: field:value with AND logic
    */
   private buildSearchQuery(query: PriceQuery): string {
     const conditions: string[] = [];
 
-    // Card name (required) - use wildcard for fuzzy matching
+    // Card name (required) - use quoted string for exact phrase matching
     if (query.cardName) {
-      // Clean up the card name (remove special characters that might confuse the API)
+      // Clean up the card name (remove special characters)
       const cleanName = query.cardName.replace(/[^\w\s-]/g, '').trim();
 
       // Skip if card name is just a number (likely OCR error)
       if (!/^\d+$/.test(cleanName)) {
-        // Use wildcard search for better matching with OCR results
-        conditions.push(`name:*${cleanName}*`);
+        // Use quoted string for phrase matching (no wildcards - they seem to break the API)
+        conditions.push(`name:"${cleanName}"`);
       } else {
         logger.warn('Card name appears to be just a number, likely OCR error', {
           cardName: query.cardName,
@@ -223,25 +223,14 @@ export class PokemonTCGAdapter extends BasePriceAdapter {
       }
     }
 
-    // Set name - only add if we have it
+    // Set name - use quoted string for exact phrase matching
     if (query.set) {
       const cleanSet = query.set.replace(/[^\w\s-]/g, '').trim();
-      conditions.push(`set.name:*${cleanSet}*`);
+      conditions.push(`set.name:"${cleanSet}"`);
     }
 
-    // Card number - exact match (skip if contains special characters that break the API)
-    if (query.number) {
-      // Skip collector numbers with special characters like / that break the API
-      // The API will still find the card by name + set
-      if (!/[/\\]/.test(query.number)) {
-        conditions.push(`number:${query.number}`);
-      } else {
-        logger.info('Skipping collector number with special characters', {
-          number: query.number,
-          reason: 'Contains / or \\ which breaks Pokémon TCG API query syntax',
-        });
-      }
-    }
+    // Skip collector number entirely - it often has special characters and isn't needed
+    // The combination of name + set is sufficient to find the card
 
     // If we have no valid conditions, return empty string
     if (conditions.length === 0) {
