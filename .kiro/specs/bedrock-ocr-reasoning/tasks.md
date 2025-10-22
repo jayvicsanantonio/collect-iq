@@ -222,7 +222,7 @@
     - Add logging to indicate use of OCR reasoning metadata
     - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7_
 
-- [ ] 13. Update Aggregator to persist OCR metadata
+- [x] 13. Update Aggregator to persist OCR metadata
   - Modify `services/backend/src/orchestration/aggregator.ts` to accept OCR metadata
   - Add OCR metadata fields to card update in DynamoDB
   - Include confidence scores and reasoning trail in persisted data

@@ -63,6 +63,7 @@ async function upsertCardResults(
     'compsCount',
     'sources',
     'pricingMessage',
+    'ocrMetadata',
   ];
 
   for (const field of updateableFields) {
@@ -102,6 +103,24 @@ interface AggregatorInput {
   userId: string;
   cardId: string;
   requestId: string;
+  ocrMetadata?: {
+    name: { value: string | null; confidence: number; rationale: string };
+    rarity: { value: string | null; confidence: number; rationale: string };
+    set:
+      | { value: string | null; confidence: number; rationale: string }
+      | {
+          value: string | null;
+          candidates: Array<{ value: string; confidence: number }>;
+          rationale: string;
+        };
+    setSymbol: { value: string | null; confidence: number; rationale: string };
+    collectorNumber: { value: string | null; confidence: number; rationale: string };
+    copyrightRun: { value: string | null; confidence: number; rationale: string };
+    illustrator: { value: string | null; confidence: number; rationale: string };
+    overallConfidence: number;
+    reasoningTrail: string;
+    verifiedByAI?: boolean;
+  };
   agentResults: [
     {
       pricingResult: PricingResult;
@@ -133,7 +152,7 @@ interface AggregatorOutput {
  * @returns Updated card object
  */
 export const handler: Handler<AggregatorInput, AggregatorOutput> = async (event) => {
-  const { userId, cardId, requestId, agentResults, skipCardFetch = false } = event;
+  const { userId, cardId, requestId, agentResults, ocrMetadata, skipCardFetch = false } = event;
   const startTime = Date.now();
 
   tracing.startSubsegment('aggregator_handler', { userId, cardId, requestId });
@@ -145,6 +164,8 @@ export const handler: Handler<AggregatorInput, AggregatorOutput> = async (event)
     userId,
     cardId,
     skipCardFetch,
+    hasOcrMetadata: !!ocrMetadata,
+    ocrVerifiedByAI: ocrMetadata?.verifiedByAI,
     requestId,
   });
 
@@ -186,6 +207,46 @@ export const handler: Handler<AggregatorInput, AggregatorOutput> = async (event)
     // Add pricing message if available (e.g., "No pricing data available")
     if (pricingResult.message) {
       cardUpdate.pricingMessage = pricingResult.message;
+    }
+
+    // Add OCR metadata if available
+    if (ocrMetadata) {
+      const setInfo = ocrMetadata.set;
+      const setValueForStorage =
+        setInfo.value ||
+        ('candidates' in setInfo && setInfo.candidates.length > 0
+          ? setInfo.candidates[0].value
+          : null);
+
+      cardUpdate.ocrMetadata = {
+        name: ocrMetadata.name.value,
+        nameConfidence: ocrMetadata.name.confidence,
+        rarity: ocrMetadata.rarity.value,
+        rarityConfidence: ocrMetadata.rarity.confidence,
+        set: setValueForStorage,
+        setConfidence:
+          'confidence' in setInfo
+            ? setInfo.confidence
+            : 'candidates' in setInfo && setInfo.candidates.length > 0
+              ? setInfo.candidates[0].confidence
+              : 0.0,
+        collectorNumber: ocrMetadata.collectorNumber.value,
+        collectorNumberConfidence: ocrMetadata.collectorNumber.confidence,
+        illustrator: ocrMetadata.illustrator.value,
+        illustratorConfidence: ocrMetadata.illustrator.confidence,
+        extractedAt: new Date().toISOString(),
+        reasoningTrail: ocrMetadata.reasoningTrail,
+        verifiedByAI: ocrMetadata.verifiedByAI,
+      };
+
+      logger.info('OCR metadata prepared for persistence', {
+        cardId,
+        cardName: ocrMetadata.name.value,
+        nameConfidence: ocrMetadata.name.confidence,
+        overallConfidence: ocrMetadata.overallConfidence,
+        verifiedByAI: ocrMetadata.verifiedByAI,
+        requestId,
+      });
     }
 
     logger.info('Card update prepared', {
@@ -323,6 +384,21 @@ async function emitCardUpdateEvent(
       pricingSources: metadata.pricingResult.sources,
       valuationTrend: metadata.valuationSummary.trend,
       valuationFairValue: metadata.valuationSummary.fairValue,
+      // Include OCR metadata if available
+      ocrMetadata: card.ocrMetadata
+        ? {
+            name: card.ocrMetadata.name,
+            nameConfidence: card.ocrMetadata.nameConfidence,
+            rarity: card.ocrMetadata.rarity,
+            rarityConfidence: card.ocrMetadata.rarityConfidence,
+            set: card.ocrMetadata.set,
+            setConfidence: card.ocrMetadata.setConfidence,
+            collectorNumber: card.ocrMetadata.collectorNumber,
+            illustrator: card.ocrMetadata.illustrator,
+            extractedAt: card.ocrMetadata.extractedAt,
+            verifiedByAI: card.ocrMetadata.verifiedByAI,
+          }
+        : undefined,
       requestId: metadata.requestId,
       timestamp: new Date().toISOString(),
     };
