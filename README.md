@@ -91,9 +91,16 @@ collect-iq-ui/
 
 ## Documentation
 
-- [AUTHENTICATION.md](./AUTHENTICATION.md) - Complete authentication guide
-- [DESIGN_SYSTEM.md](./DESIGN_SYSTEM.md) - Design system and styling guide
-- [ENVIRONMENT_SETUP.md](./ENVIRONMENT_SETUP.md) - Environment configuration
+📚 **[Complete Documentation](./docs/)** - All documentation is now organized in the `docs/` directory
+
+Quick links:
+
+- [Quick Start Guide](./docs/getting-started/QUICK_START.md) - Get up and running
+- [Authentication Guide](./docs/development/AUTHENTICATION.md) - Complete authentication setup
+- [Design System](./docs/development/DESIGN_SYSTEM.md) - UI components and styling
+- [Environment Setup](./docs/getting-started/ENVIRONMENT_SETUP.md) - Configuration guide
+- [Project Structure](./docs/architecture/PROJECT_STRUCTURE.md) - Understand the codebase
+- [Troubleshooting](./docs/troubleshooting/) - Common issues and solutions
 
 ## AWS Amplify Hosting
 
