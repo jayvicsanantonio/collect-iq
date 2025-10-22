@@ -4,9 +4,13 @@ data "aws_caller_identity" "current" {}
 
 locals {
   # Convert model IDs to ARNs if model_arns is empty
-  # This follows the least-privilege principle by restricting access to specific models
+  # Supports both foundation models and inference profiles
+  # Inference profiles use format: us.anthropic.claude-sonnet-4-20250514-v1:0
+  # Foundation models use format: anthropic.claude-3-5-sonnet-20240620-v1:0
   computed_model_arns = length(var.model_arns) > 0 ? var.model_arns : [
     for model_id in var.model_ids :
+    startswith(model_id, "us.") || startswith(model_id, "eu.") ?
+    "arn:aws:bedrock:${data.aws_region.current.name}::inference-profile/${model_id}" :
     "arn:aws:bedrock:${data.aws_region.current.name}::foundation-model/${model_id}"
   ]
 }

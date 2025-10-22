@@ -198,7 +198,7 @@ module "bedrock_access" {
   policy_description = "IAM policy for Bedrock model invocation"
 
   model_ids = [
-    "anthropic.claude-sonnet-4-20250514-v1:0"
+    "us.anthropic.claude-sonnet-4-20250514-v1:0"  # Cross-region inference profile
   ]
 
   tags = local.common_tags

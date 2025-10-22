@@ -23,7 +23,9 @@ const bedrockClient = tracing.captureAWSv3Client(
  * Bedrock OCR configuration from environment
  */
 const BEDROCK_OCR_CONFIG = {
-  modelId: process.env.BEDROCK_MODEL_ID || 'anthropic.claude-sonnet-4-20250514-v1:0',
+  // Use inference profile ARN for Claude Sonnet 4 (required for on-demand throughput)
+  // Cross-region inference profile provides better availability and automatic failover
+  modelId: process.env.BEDROCK_MODEL_ID || 'us.anthropic.claude-sonnet-4-20250514-v1:0',
   maxTokens: parseInt(process.env.BEDROCK_OCR_MAX_TOKENS || '4096', 10),
   temperature: parseFloat(process.env.BEDROCK_OCR_TEMPERATURE || '0.15'),
   maxRetries: parseInt(process.env.BEDROCK_MAX_RETRIES || '3', 10),

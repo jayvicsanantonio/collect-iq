@@ -605,7 +605,7 @@ module "lambda_ocr_reasoning_agent" {
 
   environment_variables = {
     REGION              = var.aws_region
-    BEDROCK_MODEL_ID    = "anthropic.claude-sonnet-4-20250514-v1:0"
+    BEDROCK_MODEL_ID    = "us.anthropic.claude-sonnet-4-20250514-v1:0"  # Cross-region inference profile
     BEDROCK_TEMPERATURE = "0.15"
     BEDROCK_MAX_TOKENS  = "4096"
     BEDROCK_MAX_RETRIES = "3"
@@ -709,7 +709,7 @@ module "lambda_authenticity_agent" {
 
   environment_variables = {
     REGION       = var.aws_region
-    BEDROCK_MODEL_ID = "anthropic.claude-sonnet-4-20250514-v1:0"
+    BEDROCK_MODEL_ID = "us.anthropic.claude-sonnet-4-20250514-v1:0"  # Cross-region inference profile
     BUCKET_UPLOADS   = module.s3_uploads.bucket_name
     BUCKET_SAMPLES   = "" # Optional authentic samples bucket
     XRAY_ENABLED     = "false" # Disable X-Ray SDK to avoid context issues

@@ -17,10 +17,10 @@ variable "model_arns" {
 }
 
 variable "model_ids" {
-  description = "List of Bedrock model IDs (will be converted to ARNs)"
+  description = "List of Bedrock model IDs or inference profile IDs (will be converted to ARNs)"
   type        = list(string)
   default = [
-    "anthropic.claude-sonnet-4-20250514-v1:0"
+    "us.anthropic.claude-sonnet-4-20250514-v1:0"  # Cross-region inference profile
   ]
 }
 
