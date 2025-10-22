@@ -7,15 +7,20 @@ locals {
   # Supports both foundation models and inference profiles
   # Inference profiles use format: us.anthropic.claude-sonnet-4-20250514-v1:0
   # Foundation models use format: anthropic.claude-3-5-sonnet-20240620-v1:0
-  # Note: Cross-region inference profiles need both account-less and account-specific ARNs
+  # Note: When using inference profiles, AWS requires permissions for:
+  # 1. The inference profile itself (both account-less and account-specific)
+  # 2. The underlying foundation model (SDK resolves to this internally)
   computed_model_arns = length(var.model_arns) > 0 ? var.model_arns : flatten([
     for model_id in var.model_ids : (
       startswith(model_id, "us.") || startswith(model_id, "eu.") || startswith(model_id, "apac.") || startswith(model_id, "jp.") ?
       [
-        # Account-less ARN for cross-region inference profiles
+        # Inference profile ARNs (account-less)
         "arn:aws:bedrock:${data.aws_region.current.name}::inference-profile/${model_id}",
-        # Account-specific ARN (SDK may resolve to this)
-        "arn:aws:bedrock:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:inference-profile/${model_id}"
+        # Inference profile ARNs (account-specific - SDK may resolve to this)
+        "arn:aws:bedrock:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:inference-profile/${model_id}",
+        # Underlying foundation model ARN (required - SDK resolves inference profile to this)
+        # Extract base model ID by removing region prefix (us., eu., etc.)
+        "arn:aws:bedrock:${data.aws_region.current.name}::foundation-model/${replace(model_id, "/^(us|eu|apac|jp|global)\\./", "")}"
       ] :
       [
         # Foundation model ARN (always account-less)
