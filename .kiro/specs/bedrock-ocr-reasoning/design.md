@@ -401,11 +401,7 @@ Return a valid JSON object matching this exact schema:
 {
   "name": { "value": "string|null", "confidence": 0.0-1.0, "rationale": "string" },
   "rarity": { "value": "string|null", "confidence": 0.0-1.0, "rationale": "string" },
-  "set": {
-    "value": "string|null",
-    "candidates": [{ "value": "string", "confidence": 0.0-1.0 }],
-    "rationale": "string"
-  },
+  "set": <SINGLE_VALUE_OR_MULTI_CANDIDATE>,
   "setSymbol": { "value": "string|null", "confidence": 0.0-1.0, "rationale": "string" },
   "collectorNumber": { "value": "string|null", "confidence": 0.0-1.0, "rationale": "string" },
   "copyrightRun": { "value": "string|null", "confidence": 0.0-1.0, "rationale": "string" },
@@ -413,6 +409,20 @@ Return a valid JSON object matching this exact schema:
   "overallConfidence": 0.0-1.0,
   "reasoningTrail": "string"
 }
+
+**Note on "set" field:** This field can be returned in TWO formats depending on certainty:
+
+1. **Single Value Format** (use when confident about one set):
+   { "value": "string|null", "confidence": 0.0-1.0, "rationale": "string" }
+
+2. **Multi-Candidate Format** (use when multiple sets are possible):
+   {
+     "value": "string|null",
+     "candidates": [{ "value": "string", "confidence": 0.0-1.0 }],
+     "rationale": "string"
+   }
+
+Choose the single value format when you have high confidence (>0.7) in a specific set. Use the multi-candidate format only when there are genuinely multiple plausible sets that cannot be distinguished from the available evidence.
 
 **Confidence Scoring Guidelines:**
 - 0.9-1.0: Exact match with high OCR confidence
