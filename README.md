@@ -94,6 +94,12 @@ CollectIQ implements an authentication-first, event-driven serverless architectu
        │               │ FeatureEnvelope     │
        │               ▼                     │
        │  ┌────────────────────────────────┐ │
+       │  │  Task 2: OCR Reasoning Agent   │ │  AI-powered OCR interpretation
+       │  │  (Lambda → Bedrock Claude 4.0) │ │  Error correction, metadata extraction
+       │  └────────────┬───────────────────┘ │  Confidence-scored structured output
+       │               │ CardMetadata        │
+       │               ▼                     │
+       │  ┌────────────────────────────────┐ │
        │  │    Parallel Execution          │ │  Concurrent agent invocation
        │  │  ┌──────────┐  ┌─────────────┐ │ │
        │  │  │ Pricing  │  │Authenticity │ │ │  Bedrock reasoning
@@ -104,7 +110,7 @@ CollectIQ implements an authentication-first, event-driven serverless architectu
        │               │                     │
        │               ▼                     │
        │  ┌────────────────────────────────┐ │
-       │  │  Task 3: Aggregator            │ │  Merge results
+       │  │  Task 4: Aggregator            │ │  Merge results
        │  │  (Merge + Persist)             │ │  Persist to DynamoDB
        │  └────────────────────────────────┘ │  Emit EventBridge events
        └──────────────┬───────────────────────┘
@@ -120,14 +126,15 @@ CollectIQ implements an authentication-first, event-driven serverless architectu
 
 ### Multi-Agent Orchestration
 
-CollectIQ implements AWS Multi-Agent Orchestration best practices with four specialized agents:
+CollectIQ implements AWS Multi-Agent Orchestration best practices with five specialized agents:
 
-1. **Ingestion Agent** — Fetches live pricing from eBay, TCGPlayer, PriceCharting APIs with rate limiting and exponential backoff
-2. **Valuation Agent** — Computes fair market value, confidence scores, and volatility metrics using Bedrock reasoning
-3. **Authenticity Agent** — Detects fake/altered cards via perceptual hashing, holographic analysis, and font validation
-4. **Feedback Agent** — Processes user corrections to refine models and enhance reference datasets
+1. **Rekognition Extract Agent** — Extracts visual features from card images using AWS Rekognition (OCR, holographic patterns, borders)
+2. **OCR Reasoning Agent** — Interprets raw OCR outputs using Amazon Bedrock (Claude Sonnet 4.0) to correct errors, infer metadata, and provide confidence-scored structured outputs
+3. **Pricing Agent** — Fetches live pricing from eBay, TCGPlayer, PriceCharting APIs and computes fair market value using Bedrock reasoning
+4. **Authenticity Agent** — Detects fake/altered cards via perceptual hashing, holographic analysis, and font validation using Bedrock reasoning
+5. **Aggregator** — Merges results from all agents, persists to DynamoDB, and emits EventBridge events for downstream processing
 
-Agents operate asynchronously through AWS Step Functions with automatic retries, error handling, and dead-letter queues.
+Agents operate asynchronously through AWS Step Functions with automatic retries, error handling, and dead-letter queues. The OCR Reasoning Agent acts as an intelligent layer between raw computer vision outputs and downstream business logic, significantly improving metadata extraction accuracy.
 
 ### Data Architecture
 
