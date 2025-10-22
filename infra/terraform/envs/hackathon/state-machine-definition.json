@@ -166,8 +166,14 @@
                   "userId.$": "$.userId",
                   "cardId.$": "$.cardId",
                   "features.$": "$.featureEnvelope.Payload.features",
-                  "cardMeta.$": "$.ocrMetadata.Payload.cardMetadata",
-                  "frontS3Key.$": "$.s3Keys.front",
+                  "cardMeta": {
+                    "name.$": "$.ocrMetadata.Payload.cardMetadata.name.value",
+                    "set.$": "$.ocrMetadata.Payload.cardMetadata.set.value",
+                    "rarity.$": "$.ocrMetadata.Payload.cardMetadata.rarity.value",
+                    "frontS3Key.$": "$.s3Keys.front",
+                    "backS3Key.$": "$.s3Keys.back",
+                    "ocrMetadata.$": "$.ocrMetadata.Payload.cardMetadata"
+                  },
                   "requestId.$": "$.requestId"
                 }
               },
