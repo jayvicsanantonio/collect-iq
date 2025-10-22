@@ -35,7 +35,7 @@
     - Export updated Card type
     - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7_
 
-- [ ] 3. Implement OCR reasoning agent Lambda
+- [x] 3. Implement OCR reasoning agent Lambda
   - Create `services/backend/src/agents/ocr-reasoning-agent.ts` handler
   - Define `OcrReasoningAgentInput` and `OcrReasoningAgentOutput` interfaces
   - Implement handler function to extract OCR blocks from FeatureEnvelope
