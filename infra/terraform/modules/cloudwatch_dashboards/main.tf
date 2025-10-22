@@ -389,7 +389,7 @@ resource "aws_cloudwatch_metric_alarm" "ocr_high_latency" {
   metric_name = "BedrockOcrLatency"
   namespace   = "CollectIQ/${var.dashboard_prefix}"
   period      = 300
-  statistic   = "p95"
+  extended_statistic = "p95"
   dimensions = {
     agent = "ocr-reasoning"
   }
