@@ -42,8 +42,6 @@ data "aws_iam_policy_document" "step_functions_assume_role" {
 
 # Policy to invoke Lambda functions
 resource "aws_iam_role_policy" "invoke_lambda" {
-  count = length(var.lambda_function_arns) > 0 ? 1 : 0
-
   name = "${var.state_machine_name}-invoke-lambda"
   role = aws_iam_role.step_functions_role.id
 
