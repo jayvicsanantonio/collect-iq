@@ -24,10 +24,10 @@ interface APIPricingCacheItem {
 }
 
 /**
- * Default TTL for API pricing cache (3600 seconds = 1 hour)
+ * Default TTL for API pricing cache (86400 seconds = 24 hours)
  * Longer than user cache since API data changes less frequently
  */
-const DEFAULT_API_CACHE_TTL_SECONDS = 3600;
+const DEFAULT_API_CACHE_TTL_SECONDS = 86400;
 
 /**
  * Generate cache key from card identifiers
