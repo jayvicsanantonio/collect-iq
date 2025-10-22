@@ -54,6 +54,12 @@ data "archive_file" "rekognition_extract" {
   output_path = "${path.module}/.terraform/lambda-packages/rekognition-extract.zip"
 }
 
+data "archive_file" "ocr_reasoning_agent" {
+  type        = "zip"
+  source_file = "${path.module}/../../../../services/backend/dist/agents/ocr-reasoning-agent.mjs"
+  output_path = "${path.module}/.terraform/lambda-packages/ocr-reasoning-agent.zip"
+}
+
 data "archive_file" "pricing_agent" {
   type        = "zip"
   source_file = "${path.module}/../../../../services/backend/dist/agents/pricing-agent.mjs"
@@ -572,6 +578,49 @@ module "lambda_rekognition_extract" {
   tags = local.common_tags
 }
 
+# 4.4.1 OCR Reasoning Agent Lambda
+# IAM Permissions:
+# - bedrock:InvokeModel (via bedrock_access policy) - restricted to anthropic.claude-sonnet-4-20250514-v1:0
+# - bedrock:InvokeModelWithResponseStream (via bedrock_access policy) - for streaming responses
+# - logs:CreateLogGroup, logs:CreateLogStream, logs:PutLogEvents (via AWSLambdaBasicExecutionRole)
+# - ec2:CreateNetworkInterface, ec2:DescribeNetworkInterfaces, ec2:DeleteNetworkInterface (via AWSLambdaVPCAccessExecutionRole)
+module "lambda_ocr_reasoning_agent" {
+  source = "../../modules/lambda_fn"
+
+  function_name = "${local.name_prefix}-ocr-reasoning-agent"
+  description   = "Interpret OCR results using Amazon Bedrock (Claude Sonnet 4.0)"
+  filename      = data.archive_file.ocr_reasoning_agent.output_path
+  source_code_hash = data.archive_file.ocr_reasoning_agent.output_base64sha256
+  handler       = "ocr-reasoning-agent.handler"
+  runtime       = "nodejs20.x"
+
+  memory_size = 512
+  timeout     = 30
+
+  # VPC Configuration
+  vpc_subnet_ids         = module.vpc.private_subnet_ids
+  vpc_security_group_ids = [aws_security_group.lambda.id]
+
+  environment_variables = {
+    REGION              = var.aws_region
+    BEDROCK_MODEL_ID    = "anthropic.claude-sonnet-4-20250514-v1:0"
+    BEDROCK_TEMPERATURE = "0.15"
+    BEDROCK_MAX_TOKENS  = "4096"
+    BEDROCK_MAX_RETRIES = "3"
+    XRAY_ENABLED        = "false" # Disabled to avoid context issues with module-level SDK initialization
+  }
+
+  # Bedrock access policy grants bedrock:InvokeModel permission
+  # restricted to the specific Claude Sonnet 4.0 model ARN
+  additional_policy_arns = [module.bedrock_access.policy_arn]
+
+  # X-Ray tracing disabled to avoid context issues
+  enable_xray_tracing = false
+  log_retention_days  = 7
+
+  tags = local.common_tags
+}
+
 # 4.5 Pricing Agent Lambda
 module "lambda_pricing_agent" {
   source = "../../modules/lambda_fn"
@@ -833,6 +882,11 @@ output "lambda_cards_revalue_invoke_arn" {
 output "lambda_rekognition_extract_arn" {
   description = "ARN of the rekognition_extract Lambda function"
   value       = module.lambda_rekognition_extract.function_arn
+}
+
+output "lambda_ocr_reasoning_agent_arn" {
+  description = "ARN of the ocr_reasoning_agent Lambda function"
+  value       = module.lambda_ocr_reasoning_agent.function_arn
 }
 
 output "lambda_pricing_agent_arn" {

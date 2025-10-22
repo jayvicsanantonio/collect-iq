@@ -14,3 +14,4 @@ export * from './authenticity-signals.js';
 export * from './idempotency.js';
 export * from './idempotency-middleware.js';
 export * from './response-headers.js';
+export * from './card-metadata.js';

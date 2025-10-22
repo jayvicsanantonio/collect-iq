@@ -5,8 +5,7 @@
 
 import type { Handler } from 'aws-lambda';
 import type { FeatureEnvelope, PricingResult, ValuationSummary } from '@collectiq/shared';
-import { logger } from '../utils/logger.js';
-import { tracing } from '../utils/tracing.js';
+import { logger, tracing, getCardIdentifiersWithConfidence } from '../utils/index.js';
 import { getPricingOrchestrator } from '../adapters/pricing-orchestrator.js';
 import { bedrockService } from '../adapters/bedrock-service.js';
 
@@ -24,6 +23,22 @@ interface PricingAgentInput {
     number?: string;
     rarity?: string;
     conditionEstimate?: string;
+    // Enriched metadata from OCR reasoning agent
+    ocrMetadata?: {
+      name?: { value: string | null; confidence: number; rationale: string };
+      rarity?: { value: string | null; confidence: number; rationale: string };
+      set?:
+        | { value: string | null; confidence: number; rationale: string }
+        | {
+            value: string | null;
+            candidates: Array<{ value: string; confidence: number }>;
+            rationale: string;
+          };
+      collectorNumber?: { value: string | null; confidence: number; rationale: string };
+      overallConfidence?: number;
+      reasoningTrail?: string;
+      verifiedByAI?: boolean;
+    };
   };
   requestId: string;
   forceRefresh?: boolean;
@@ -65,106 +80,41 @@ export const handler: Handler<PricingAgentInput, PricingAgentOutput> = async (ev
   });
 
   try {
-    // Step 1: Extract card information from features and metadata
-    // Try to get card name from metadata first, then fall back to OCR extraction
-    let cardName = cardMeta.name;
+    // Step 1: Extract card information from enriched metadata
+    // Prefer OCR reasoning metadata over legacy extraction
+    const identifiers = getCardIdentifiersWithConfidence(cardMeta);
+    const { cardName, set, rarity, collectorNumber } = identifiers;
 
-    if (!cardName && event.features?.ocr && event.features.ocr.length > 0) {
-      // Extract card name from OCR blocks
-      // Card names are typically:
-      // - At the top of the card (low Y position)
-      // - Short text (1-3 words, < 30 characters)
-      // - High confidence
-      // - Larger font than body text
-
-      const candidateBlocks = event.features.ocr
-        .filter((block) => {
-          const text = block.text || '';
-          const wordCount = text.split(/\s+/).length;
-          const charCount = text.length;
-          const topPosition = block.boundingBox?.top || 1;
-
-          // Filter criteria for card names:
-          // - Not too long (card names are usually 1-3 words)
-          // - Not too many characters (< 30 chars)
-          // - In the top 40% of the card
-          // - Not common ability words
-          const isReasonableLength = wordCount >= 1 && wordCount <= 4 && charCount <= 30;
-          const isNearTop = topPosition < 0.4;
-          const notAbilityText = !text
-            .toLowerCase()
-            .match(
-              /\b(flip|coin|heads|tails|damage|attack|energy|deck|discard|draw|search|your|opponent)\b/
-            );
-
-          return isReasonableLength && isNearTop && notAbilityText;
-        })
-        .sort((a, b) => {
-          // Among candidates, prefer:
-          // 1. Higher position (lower Y value)
-          // 2. Larger text
-          // 3. Higher confidence
-          const topA = a.boundingBox?.top || 1;
-          const topB = b.boundingBox?.top || 1;
-          const sizeA = (a.boundingBox?.height || 0) * (a.boundingBox?.width || 0);
-          const sizeB = (b.boundingBox?.height || 0) * (b.boundingBox?.width || 0);
-          const confidenceA = a.confidence || 0;
-          const confidenceB = b.confidence || 0;
-
-          // Prioritize top position, then size, then confidence
-          if (Math.abs(topA - topB) > 0.05) {
-            return topA - topB; // Lower Y = higher on card
-          }
-          return sizeB * confidenceB - sizeA * confidenceA;
-        });
-
-      if (candidateBlocks.length > 0) {
-        cardName = candidateBlocks[0].text || 'Unknown Card';
-
-        logger.info('Extracted card name from OCR', {
-          cardName,
-          ocrBlockCount: event.features.ocr.length,
-          candidateCount: candidateBlocks.length,
-          confidence: candidateBlocks[0].confidence,
-          position: candidateBlocks[0].boundingBox?.top,
-          requestId,
-        });
-      } else {
-        // Fallback: if no good candidates, take the topmost text
-        const topBlock = [...event.features.ocr].sort((a, b) => {
-          const topA = a.boundingBox?.top || 1;
-          const topB = b.boundingBox?.top || 1;
-          return topA - topB;
-        })[0];
-
-        cardName = topBlock?.text || 'Unknown Card';
-
-        logger.warn('No good card name candidates, using topmost text', {
-          cardName,
-          ocrBlockCount: event.features.ocr.length,
-          requestId,
-        });
-      }
-    }
-
-    if (!cardName) {
-      cardName = 'Unknown Card';
-      logger.warn('Card name not provided and could not extract from OCR', {
-        userId,
-        cardId,
-        hasFeatures: !!event.features,
-        ocrBlockCount: event.features?.ocr?.length || 0,
+    if (cardMeta.ocrMetadata) {
+      logger.info('Using OCR reasoning metadata for pricing', {
+        cardName,
+        set,
+        rarity,
+        collectorNumber,
+        nameConfidence: identifiers.nameConfidence,
+        setConfidence: identifiers.setConfidence,
+        overallConfidence: identifiers.overallConfidence,
+        verifiedByAI: identifiers.verifiedByAI,
+        requestId,
+      });
+    } else {
+      logger.warn('OCR reasoning metadata not available, using legacy metadata', {
+        cardName,
+        set,
+        rarity,
+        collectorNumber,
         requestId,
       });
     }
 
-    const set = cardMeta.set || '';
     const condition = cardMeta.conditionEstimate || 'Near Mint';
 
     // Step 2: Fetch pricing data from multiple sources
     logger.info('Fetching pricing data', {
       cardName,
       set,
+      rarity,
+      collectorNumber,
       condition,
       requestId,
     });
@@ -178,7 +128,7 @@ export const handler: Handler<PricingAgentInput, PricingAgentOutput> = async (ev
           {
             cardName,
             set: set || undefined,
-            number: cardMeta.number || undefined,
+            number: collectorNumber || undefined,
             condition,
             windowDays: 14, // Default 14-day window
           },

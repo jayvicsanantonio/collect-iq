@@ -2,6 +2,12 @@
 # This file defines the multi-agent orchestration workflow
 
 # ============================================================================
+# Data Sources
+# ============================================================================
+
+data "aws_caller_identity" "current" {}
+
+# ============================================================================
 # State Machine Definition with Lambda ARN Substitution
 # ============================================================================
 
@@ -15,9 +21,13 @@ locals {
       replace(
         replace(
           replace(
-            local.state_machine_definition_template,
-            "$${rekognition_extract_lambda_arn}",
-            module.lambda_rekognition_extract.function_arn
+            replace(
+              local.state_machine_definition_template,
+              "$${rekognition_extract_lambda_arn}",
+              module.lambda_rekognition_extract.function_arn
+            ),
+            "$${ocr_reasoning_agent_lambda_arn}",
+            try(module.lambda_ocr_reasoning_agent.function_arn, "arn:aws:lambda:${var.aws_region}:${data.aws_caller_identity.current.account_id}:function:${local.name_prefix}-ocr-reasoning-agent")
           ),
           "$${pricing_agent_lambda_arn}",
           module.lambda_pricing_agent.function_arn
@@ -45,13 +55,17 @@ module "step_functions" {
   state_machine_type = "STANDARD" # Use STANDARD for auditability and long-running workflows
 
   # Grant permissions to invoke all Lambda functions in the workflow
-  lambda_function_arns = [
-    module.lambda_rekognition_extract.function_arn,
-    module.lambda_pricing_agent.function_arn,
-    module.lambda_authenticity_agent.function_arn,
-    module.lambda_aggregator.function_arn,
-    module.lambda_error_handler.function_arn
-  ]
+  lambda_function_arns = concat(
+    [
+      module.lambda_rekognition_extract.function_arn,
+      module.lambda_pricing_agent.function_arn,
+      module.lambda_authenticity_agent.function_arn,
+      module.lambda_aggregator.function_arn,
+      module.lambda_error_handler.function_arn
+    ],
+    # Add OCR reasoning agent if it exists (will be created in task 6)
+    try([module.lambda_ocr_reasoning_agent.function_arn], [])
+  )
 
   # Enable X-Ray tracing for distributed tracing
   enable_xray_tracing = true

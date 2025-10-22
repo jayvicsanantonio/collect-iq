@@ -33,3 +33,28 @@ output "dashboard_names" {
     [aws_cloudwatch_dashboard.ai_services.dashboard_name]
   )
 }
+
+output "ocr_reasoning_alarms_sns_topic_arn" {
+  description = "ARN of the SNS topic for OCR reasoning alarms"
+  value       = length(aws_sns_topic.ocr_reasoning_alarms) > 0 ? aws_sns_topic.ocr_reasoning_alarms[0].arn : ""
+}
+
+output "ocr_high_fallback_rate_alarm_arn" {
+  description = "ARN of the high fallback rate alarm"
+  value       = length(aws_cloudwatch_metric_alarm.ocr_high_fallback_rate) > 0 ? aws_cloudwatch_metric_alarm.ocr_high_fallback_rate[0].arn : ""
+}
+
+output "ocr_high_latency_alarm_arn" {
+  description = "ARN of the high latency alarm"
+  value       = length(aws_cloudwatch_metric_alarm.ocr_high_latency) > 0 ? aws_cloudwatch_metric_alarm.ocr_high_latency[0].arn : ""
+}
+
+output "ocr_low_confidence_alarm_arn" {
+  description = "ARN of the low confidence alarm"
+  value       = length(aws_cloudwatch_metric_alarm.ocr_low_confidence) > 0 ? aws_cloudwatch_metric_alarm.ocr_low_confidence[0].arn : ""
+}
+
+output "ocr_high_token_usage_alarm_arn" {
+  description = "ARN of the high token usage alarm"
+  value       = length(aws_cloudwatch_metric_alarm.ocr_high_token_usage) > 0 ? aws_cloudwatch_metric_alarm.ocr_high_token_usage[0].arn : ""
+}

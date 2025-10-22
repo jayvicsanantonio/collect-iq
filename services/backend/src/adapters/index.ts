@@ -16,3 +16,13 @@ export { RekognitionAdapter, rekognitionAdapter } from './rekognition-adapter.js
 
 // Bedrock service
 export { BedrockService, bedrockService } from './bedrock-service.js';
+
+// Bedrock OCR reasoning service
+export {
+  BedrockOcrReasoningService,
+  bedrockOcrReasoningService,
+  type CardMetadata,
+  type FieldResult,
+  type MultiCandidateResult,
+  type OcrContext,
+} from './bedrock-ocr-reasoning.js';

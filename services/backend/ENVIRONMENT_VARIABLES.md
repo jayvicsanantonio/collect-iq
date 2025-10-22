@@ -164,26 +164,47 @@ This document lists all required environment variables for the CollectIQ backend
 ### BEDROCK_MODEL_ID
 
 - **Required**: Yes (for AI agents)
-- **Description**: Amazon Bedrock model identifier
+- **Description**: Amazon Bedrock model identifier for Claude Sonnet 4.0
 - **Example**: `anthropic.claude-sonnet-4-20250514-v1:0`
-- **Used by**: bedrock_service, pricing_agent, authenticity_agent
+- **Used by**: bedrock_service, bedrock_ocr_reasoning, pricing_agent, authenticity_agent, ocr_reasoning_agent
 - **Recommended**: `anthropic.claude-sonnet-4-20250514-v1:0` (Claude 4.0 Sonnet)
+- **Note**: Do not change unless upgrading to a newer model version
 
 ### BEDROCK_MAX_TOKENS
 
 - **Required**: No
 - **Description**: Maximum tokens for Bedrock responses
-- **Example**: `2048`
-- **Used by**: bedrock_service
-- **Default**: `2048`
+- **Example**: `4096`
+- **Used by**: bedrock_service, bedrock_ocr_reasoning
+- **Default**: `4096` (increased for OCR reasoning with detailed rationales)
+- **Note**: OCR reasoning requires higher token limits for structured metadata output
 
 ### BEDROCK_TEMPERATURE
 
 - **Required**: No
 - **Description**: Temperature parameter for Bedrock model (0.0-1.0)
-- **Example**: `0.2`
-- **Used by**: bedrock_service
-- **Default**: `0.2` (for consistency)
+- **Example**: `0.15`
+- **Used by**: bedrock_service, bedrock_ocr_reasoning
+- **Default**: `0.15` (low for deterministic OCR reasoning outputs)
+- **Note**: Lower temperature ensures consistent metadata extraction
+
+### BEDROCK_MAX_RETRIES
+
+- **Required**: No
+- **Description**: Maximum number of retry attempts for Bedrock invocations
+- **Example**: `3`
+- **Used by**: bedrock_ocr_reasoning
+- **Default**: `3`
+- **Note**: Handles transient errors like throttling and timeouts
+
+### BEDROCK_RETRY_DELAY_MS
+
+- **Required**: No
+- **Description**: Initial retry delay in milliseconds (uses exponential backoff)
+- **Example**: `1000`
+- **Used by**: bedrock_ocr_reasoning
+- **Default**: `1000` (1s, 2s, 4s backoff pattern)
+- **Note**: Exponential backoff helps avoid overwhelming Bedrock during throttling
 
 ## Observability Configuration
 
@@ -282,8 +303,10 @@ IDEMPOTENCY_TTL_SECONDS=600
 STEP_FUNCTIONS_ARN=arn:aws:states:us-east-1:123456789012:stateMachine:dev-collectiq-revalue
 EVENT_BUS_NAME=dev-collectiq-events
 BEDROCK_MODEL_ID=anthropic.claude-sonnet-4-20250514-v1:0
-BEDROCK_MAX_TOKENS=2048
-BEDROCK_TEMPERATURE=0.2
+BEDROCK_MAX_TOKENS=4096
+BEDROCK_TEMPERATURE=0.15
+BEDROCK_MAX_RETRIES=3
+BEDROCK_RETRY_DELAY_MS=1000
 LOG_LEVEL=DEBUG
 ```
 
@@ -303,9 +326,11 @@ CACHE_TTL_SECONDS=300
 IDEMPOTENCY_TTL_SECONDS=600
 STEP_FUNCTIONS_ARN=arn:aws:states:us-east-1:123456789012:stateMachine:prod-collectiq-revalue
 EVENT_BUS_NAME=prod-collectiq-events
-BEDROCK_MODEL_ID=anthropic.claude-4-sonnet-20250514-v1:0
-BEDROCK_MAX_TOKENS=2048
-BEDROCK_TEMPERATURE=0.2
+BEDROCK_MODEL_ID=anthropic.claude-sonnet-4-20250514-v1:0
+BEDROCK_MAX_TOKENS=4096
+BEDROCK_TEMPERATURE=0.15
+BEDROCK_MAX_RETRIES=3
+BEDROCK_RETRY_DELAY_MS=1000
 LOG_LEVEL=INFO
 ```
 

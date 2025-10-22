@@ -215,7 +215,7 @@ resource "aws_cloudwatch_dashboard" "ai_services" {
   dashboard_name = "${var.dashboard_prefix}-ai-services"
 
   dashboard_body = jsonencode({
-    widgets = [
+    widgets = concat([
       {
         type = "metric"
         properties = {
@@ -242,6 +242,207 @@ resource "aws_cloudwatch_dashboard" "ai_services" {
           title   = "Authenticity Score Distribution"
         }
       }
-    ]
+      ],
+      var.ocr_reasoning_lambda_name != "" ? [
+        {
+          type = "metric"
+          properties = {
+            metrics = [
+              ["CollectIQ/${var.dashboard_prefix}", "BedrockOcrLatency", "agent", "ocr-reasoning", { stat = "Average", label = "Average Latency" }],
+              ["...", { stat = "p95", label = "P95 Latency" }],
+              ["...", { stat = "p99", label = "P99 Latency" }]
+            ]
+            view   = "timeSeries"
+            region = data.aws_region.current.name
+            title  = "OCR Reasoning Latency"
+            period = 300
+            yAxis = {
+              left = {
+                label = "Milliseconds"
+              }
+            }
+          }
+        },
+        {
+          type = "metric"
+          properties = {
+            metrics = [
+              ["CollectIQ/${var.dashboard_prefix}", "BedrockOcrConfidence", "agent", "ocr-reasoning", { stat = "Average", label = "Average Confidence" }],
+              ["...", { stat = "Minimum", label = "Min Confidence" }]
+            ]
+            view   = "timeSeries"
+            region = data.aws_region.current.name
+            title  = "OCR Reasoning Confidence Scores"
+            period = 300
+            yAxis = {
+              left = {
+                label = "Confidence (0.0-1.0)"
+                min   = 0
+                max   = 1
+              }
+            }
+          }
+        },
+        {
+          type = "metric"
+          properties = {
+            metrics = [
+              ["CollectIQ/${var.dashboard_prefix}", "BedrockOcrInputTokens", "agent", "ocr-reasoning", { stat = "Average", label = "Input Tokens" }],
+              [".", "BedrockOcrOutputTokens", ".", ".", { stat = "Average", label = "Output Tokens" }]
+            ]
+            view   = "timeSeries"
+            region = data.aws_region.current.name
+            title  = "OCR Reasoning Token Usage"
+            period = 300
+            yAxis = {
+              left = {
+                label = "Token Count"
+              }
+            }
+          }
+        },
+        {
+          type = "metric"
+          properties = {
+            metrics = [
+              ["CollectIQ/${var.dashboard_prefix}", "BedrockOcrFallbackUsed", "agent", "ocr-reasoning", { stat = "Sum", label = "Fallback Count" }]
+            ]
+            view   = "timeSeries"
+            region = data.aws_region.current.name
+            title  = "OCR Reasoning Fallback Usage"
+            period = 300
+          }
+        }
+      ] : []
+    )
   })
+}
+
+# SNS Topic for OCR Reasoning Alarms
+resource "aws_sns_topic" "ocr_reasoning_alarms" {
+  count = var.ocr_reasoning_lambda_name != "" && var.alarm_sns_topic_arn == "" ? 1 : 0
+  name  = "${var.dashboard_prefix}-ocr-reasoning-alarms"
+
+  tags = var.tags
+}
+
+# CloudWatch Alarm: High Fallback Rate (>10%)
+resource "aws_cloudwatch_metric_alarm" "ocr_high_fallback_rate" {
+  count = var.ocr_reasoning_lambda_name != "" ? 1 : 0
+
+  alarm_name          = "${var.dashboard_prefix}-ocr-high-fallback-rate"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = 2
+  threshold           = 10
+  alarm_description   = "OCR reasoning fallback rate exceeds 10%"
+  treat_missing_data  = "notBreaching"
+
+  metric_query {
+    id          = "fallback_rate"
+    expression  = "(fallback_count / total_invocations) * 100"
+    label       = "Fallback Rate (%)"
+    return_data = true
+  }
+
+  metric_query {
+    id = "fallback_count"
+    metric {
+      metric_name = "BedrockOcrFallbackUsed"
+      namespace   = "CollectIQ/${var.dashboard_prefix}"
+      period      = 300
+      stat        = "Sum"
+      dimensions = {
+        agent = "ocr-reasoning"
+      }
+    }
+  }
+
+  metric_query {
+    id = "total_invocations"
+    metric {
+      metric_name = "BedrockOcrLatency"
+      namespace   = "CollectIQ/${var.dashboard_prefix}"
+      period      = 300
+      stat        = "SampleCount"
+      dimensions = {
+        agent = "ocr-reasoning"
+      }
+    }
+  }
+
+  alarm_actions = var.alarm_sns_topic_arn != "" ? [var.alarm_sns_topic_arn] : (length(aws_sns_topic.ocr_reasoning_alarms) > 0 ? [aws_sns_topic.ocr_reasoning_alarms[0].arn] : [])
+
+  tags = var.tags
+}
+
+# CloudWatch Alarm: High Latency (P95 >5 seconds)
+resource "aws_cloudwatch_metric_alarm" "ocr_high_latency" {
+  count = var.ocr_reasoning_lambda_name != "" ? 1 : 0
+
+  alarm_name          = "${var.dashboard_prefix}-ocr-high-latency"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = 2
+  threshold           = 5000
+  alarm_description   = "OCR reasoning P95 latency exceeds 5 seconds"
+  treat_missing_data  = "notBreaching"
+
+  metric_name = "BedrockOcrLatency"
+  namespace   = "CollectIQ/${var.dashboard_prefix}"
+  period      = 300
+  statistic   = "p95"
+  dimensions = {
+    agent = "ocr-reasoning"
+  }
+
+  alarm_actions = var.alarm_sns_topic_arn != "" ? [var.alarm_sns_topic_arn] : (length(aws_sns_topic.ocr_reasoning_alarms) > 0 ? [aws_sns_topic.ocr_reasoning_alarms[0].arn] : [])
+
+  tags = var.tags
+}
+
+# CloudWatch Alarm: Low Confidence Scores (average <0.6)
+resource "aws_cloudwatch_metric_alarm" "ocr_low_confidence" {
+  count = var.ocr_reasoning_lambda_name != "" ? 1 : 0
+
+  alarm_name          = "${var.dashboard_prefix}-ocr-low-confidence"
+  comparison_operator = "LessThanThreshold"
+  evaluation_periods  = 2
+  threshold           = 0.6
+  alarm_description   = "OCR reasoning average confidence score below 0.6"
+  treat_missing_data  = "notBreaching"
+
+  metric_name = "BedrockOcrConfidence"
+  namespace   = "CollectIQ/${var.dashboard_prefix}"
+  period      = 300
+  statistic   = "Average"
+  dimensions = {
+    agent = "ocr-reasoning"
+  }
+
+  alarm_actions = var.alarm_sns_topic_arn != "" ? [var.alarm_sns_topic_arn] : (length(aws_sns_topic.ocr_reasoning_alarms) > 0 ? [aws_sns_topic.ocr_reasoning_alarms[0].arn] : [])
+
+  tags = var.tags
+}
+
+# CloudWatch Alarm: High Token Usage (average >3000 output tokens)
+resource "aws_cloudwatch_metric_alarm" "ocr_high_token_usage" {
+  count = var.ocr_reasoning_lambda_name != "" ? 1 : 0
+
+  alarm_name          = "${var.dashboard_prefix}-ocr-high-token-usage"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = 2
+  threshold           = 3000
+  alarm_description   = "OCR reasoning average output token usage exceeds 3000"
+  treat_missing_data  = "notBreaching"
+
+  metric_name = "BedrockOcrOutputTokens"
+  namespace   = "CollectIQ/${var.dashboard_prefix}"
+  period      = 300
+  statistic   = "Average"
+  dimensions = {
+    agent = "ocr-reasoning"
+  }
+
+  alarm_actions = var.alarm_sns_topic_arn != "" ? [var.alarm_sns_topic_arn] : (length(aws_sns_topic.ocr_reasoning_alarms) > 0 ? [aws_sns_topic.ocr_reasoning_alarms[0].arn] : [])
+
+  tags = var.tags
 }

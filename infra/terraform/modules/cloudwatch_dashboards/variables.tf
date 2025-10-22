@@ -38,3 +38,15 @@ variable "tags" {
   type        = map(string)
   default     = {}
 }
+
+variable "alarm_sns_topic_arn" {
+  description = "ARN of SNS topic for alarm notifications"
+  type        = string
+  default     = ""
+}
+
+variable "ocr_reasoning_lambda_name" {
+  description = "Name of the OCR reasoning Lambda function for alarms"
+  type        = string
+  default     = ""
+}

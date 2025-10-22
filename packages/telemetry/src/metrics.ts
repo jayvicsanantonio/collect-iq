@@ -32,7 +32,7 @@ class MetricsService {
     metricName: string,
     value: number,
     unit: StandardUnit = StandardUnit.None,
-    dimensions?: MetricDimension,
+    dimensions?: MetricDimension
   ): Promise<void> {
     try {
       const metricDimensions = dimensions
@@ -124,7 +124,7 @@ class MetricsService {
    */
   async recordStepFunctionExecution(
     status: 'success' | 'failure',
-    durationMs: number,
+    durationMs: number
   ): Promise<void> {
     await this.putMetric('StepFunctionsExecutions', 1, StandardUnit.Count, {
       status,
@@ -159,7 +159,7 @@ class MetricsService {
   async recordBedrockInvocation(
     agent: string,
     latencyMs: number,
-    tokenCount?: number,
+    tokenCount?: number
   ): Promise<void> {
     await this.putMetric('BedrockLatency', latencyMs, StandardUnit.Milliseconds, {
       agent,
@@ -170,6 +170,45 @@ class MetricsService {
         agent,
       });
     }
+  }
+
+  /**
+   * Emit Bedrock OCR reasoning invocation metrics
+   */
+  async recordBedrockOcrInvocation(params: {
+    latency: number;
+    inputTokens: number;
+    outputTokens: number;
+    overallConfidence: number;
+    fallbackUsed: boolean;
+  }): Promise<void> {
+    const { latency, inputTokens, outputTokens, overallConfidence, fallbackUsed } = params;
+
+    // Emit latency metric
+    await this.putMetric('BedrockOcrLatency', latency, StandardUnit.Milliseconds, {
+      agent: 'ocr-reasoning',
+    });
+
+    // Emit input token metric
+    await this.putMetric('BedrockOcrInputTokens', inputTokens, StandardUnit.Count, {
+      agent: 'ocr-reasoning',
+    });
+
+    // Emit output token metric
+    await this.putMetric('BedrockOcrOutputTokens', outputTokens, StandardUnit.Count, {
+      agent: 'ocr-reasoning',
+    });
+
+    // Emit overall confidence metric
+    await this.putMetric('BedrockOcrConfidence', overallConfidence, StandardUnit.None, {
+      agent: 'ocr-reasoning',
+      confidenceRange: this.getScoreRange(overallConfidence),
+    });
+
+    // Emit fallback usage metric
+    await this.putMetric('BedrockOcrFallbackUsed', fallbackUsed ? 1 : 0, StandardUnit.Count, {
+      agent: 'ocr-reasoning',
+    });
   }
 
   /**
@@ -186,7 +225,7 @@ class MetricsService {
    */
   async recordCircuitBreakerStateChange(
     source: string,
-    state: 'open' | 'closed' | 'half-open',
+    state: 'open' | 'closed' | 'half-open'
   ): Promise<void> {
     await this.putMetric('CircuitBreakerStateChange', 1, StandardUnit.Count, {
       source,
