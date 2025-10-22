@@ -139,27 +139,11 @@ export function UploadProgress({
           </p>
 
           {(status === 'idle' || status === 'uploading') && (
-            <div className="space-y-3">
-              <div className="flex items-center justify-between text-lg">
-                <span className="text-gray-700 dark:text-gray-200 font-semibold">
-                  {status === 'idle'
-                    ? 'Preparing...'
-                    : 'Uploading...'}
-                </span>
-                <span className="font-bold text-emerald-600 dark:text-emerald-400 text-2xl">
-                  {Math.round(progressPercent)}%
-                </span>
-              </div>
-              <div className="h-5 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-600 shadow-inner">
-                <div
-                  className="h-full bg-gradient-to-r from-cyan-400 via-emerald-400 to-emerald-500 transition-all duration-300 ease-out shadow-lg"
-                  style={{ width: `${progressPercent}%` }}
-                  role="progressbar"
-                  aria-valuenow={progressPercent}
-                  aria-valuemin={0}
-                  aria-valuemax={100}
-                />
-              </div>
+            <div className="flex items-center gap-3">
+              <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-300 dark:border-gray-600 border-t-emerald-500" />
+              <span className="text-lg text-gray-700 dark:text-gray-200 font-semibold">
+                {status === 'idle' ? 'Preparing...' : 'Uploading...'}
+              </span>
             </div>
           )}
 

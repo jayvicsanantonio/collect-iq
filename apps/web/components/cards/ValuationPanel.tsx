@@ -89,7 +89,7 @@ export function ValuationPanel({
                     isRefreshing && 'animate-spin'
                   )}
                 />
-                Refresh
+                Re-evaluate
               </Button>
             )}
           </CardTitle>
@@ -119,7 +119,7 @@ export function ValuationPanel({
                     isRefreshing && 'animate-spin'
                   )}
                 />
-                {isRefreshing ? 'Refreshing...' : 'Refresh Valuation'}
+                {isRefreshing ? 'Re-evaluating...' : 'Re-evaluate'}
               </Button>
             )}
           </div>
