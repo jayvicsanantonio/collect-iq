@@ -2,7 +2,8 @@ data "aws_region" "current" {}
 
 locals {
   # OCR Reasoning widgets for AI Services dashboard
-  ocr_reasoning_widgets = var.ocr_reasoning_lambda_name != "" ? [
+  # Define all widgets unconditionally - they simply won't have data if Lambda doesn't exist
+  ocr_reasoning_widgets = [
     {
       type = "metric"
       properties = {
@@ -72,7 +73,7 @@ locals {
         period = 300
       }
     }
-  ] : []
+  ]
 }
 
 # API Performance Dashboard
