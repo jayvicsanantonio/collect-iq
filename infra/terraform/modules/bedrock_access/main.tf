@@ -7,23 +7,22 @@ locals {
   # Supports both foundation models and inference profiles
   # Inference profiles use format: us.anthropic.claude-sonnet-4-20250514-v1:0
   # Foundation models use format: anthropic.claude-3-5-sonnet-20240620-v1:0
-  # Note: When using inference profiles, AWS requires permissions for:
-  # 1. The inference profile itself (both account-less and account-specific)
-  # 2. The underlying foundation model (SDK resolves to this internally)
+  # Note: Cross-region inference profiles route requests across multiple regions
+  # IAM policy must use wildcard for region to allow cross-region routing
   computed_model_arns = length(var.model_arns) > 0 ? var.model_arns : flatten([
     for model_id in var.model_ids : (
-      startswith(model_id, "us.") || startswith(model_id, "eu.") || startswith(model_id, "apac.") || startswith(model_id, "jp.") ?
+      startswith(model_id, "us.") || startswith(model_id, "eu.") || startswith(model_id, "apac.") || startswith(model_id, "jp.") || startswith(model_id, "global.") ?
       [
-        # Inference profile ARNs (account-less)
-        "arn:aws:bedrock:${data.aws_region.current.name}::inference-profile/${model_id}",
-        # Inference profile ARNs (account-specific - SDK may resolve to this)
-        "arn:aws:bedrock:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:inference-profile/${model_id}",
-        # Underlying foundation model ARN (required - SDK resolves inference profile to this)
+        # Inference profile ARNs (account-less) - use wildcard region for cross-region routing
+        "arn:aws:bedrock:*::inference-profile/${model_id}",
+        # Inference profile ARNs (account-specific) - use wildcard region for cross-region routing
+        "arn:aws:bedrock:*:${data.aws_caller_identity.current.account_id}:inference-profile/${model_id}",
+        # Underlying foundation model ARN - use wildcard region for cross-region routing
         # Extract base model ID by removing region prefix (us., eu., etc.)
-        "arn:aws:bedrock:${data.aws_region.current.name}::foundation-model/${replace(model_id, "/^(us|eu|apac|jp|global)\\./", "")}"
+        "arn:aws:bedrock:*::foundation-model/${replace(model_id, "/^(us|eu|apac|jp|global)\\./", "")}"
       ] :
       [
-        # Foundation model ARN (always account-less)
+        # Foundation model ARN (single region)
         "arn:aws:bedrock:${data.aws_region.current.name}::foundation-model/${model_id}"
       ]
     )

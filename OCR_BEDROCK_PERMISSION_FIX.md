@@ -49,23 +49,28 @@ Benefits of inference profiles:
 
 Modified `infra/terraform/modules/bedrock_access/main.tf` to detect inference profiles and construct correct ARNs.
 
-**Critical Discovery**: When using inference profiles, AWS requires permissions for THREE ARN formats:
+**Critical Discovery**: Cross-region inference profiles route requests to multiple AWS regions dynamically. The IAM policy must use wildcard regions:
 
 ```hcl
 # For inference profile: us.anthropic.claude-sonnet-4-20250514-v1:0
-# IAM policy must include ALL THREE:
+# IAM policy must include ALL THREE with wildcard regions:
 
-# 1. Inference profile (account-less)
-"arn:aws:bedrock:us-east-1::inference-profile/us.anthropic.claude-sonnet-4-20250514-v1:0"
+# 1. Inference profile (account-less) - wildcard region for cross-region routing
+"arn:aws:bedrock:*::inference-profile/us.anthropic.claude-sonnet-4-20250514-v1:0"
 
-# 2. Inference profile (account-specific - SDK resolves to this)
-"arn:aws:bedrock:us-east-1:825478277761:inference-profile/us.anthropic.claude-sonnet-4-20250514-v1:0"
+# 2. Inference profile (account-specific) - wildcard region for cross-region routing
+"arn:aws:bedrock:*:825478277761:inference-profile/us.anthropic.claude-sonnet-4-20250514-v1:0"
 
-# 3. Underlying foundation model (SDK internally resolves inference profile to this)
-"arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-sonnet-4-20250514-v1:0"
+# 3. Underlying foundation model - wildcard region (request may route to us-east-1, us-east-2, us-west-2, etc.)
+"arn:aws:bedrock:*::foundation-model/anthropic.claude-sonnet-4-20250514-v1:0"
 ```
 
-This matches the AWS documentation pattern where inference profiles act as routing layers over foundation models, requiring permissions for both the profile and the underlying model.
+**Why Wildcard Regions?**
+
+- Cross-region inference profiles automatically route to the best available region
+- A request from `us-east-1` might be routed to `us-east-2` or `us-west-2` for load balancing
+- Without wildcard regions, the IAM policy would only allow access in the Lambda's home region
+- This is the intended behavior of cross-region inference profiles for high availability
 
 ## Files Changed
 
