@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { Camera, X, RotateCw } from 'lucide-react';
+import { Camera } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -255,26 +255,21 @@ export function CameraCapture({
       {/* Main Camera Dialog */}
       <Dialog
         open={isOpen && !showPermissionDialog}
-        onOpenChange={onClose}
+        onOpenChange={(open) => {
+          if (!open) {
+            stopCamera();
+            onClose();
+          }
+        }}
       >
         <DialogContent className="!max-w-6xl p-0">
           <div className="relative flex flex-col">
             {/* Header */}
-            <div className="flex items-center justify-between border-b border-[var(--border)] p-4">
-              <div>
-                <DialogTitle>Capture Card Photo</DialogTitle>
-                <DialogDescription className="mt-1">
-                  Position your card in the frame and tap capture
-                </DialogDescription>
-              </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={onClose}
-                aria-label="Close camera"
-              >
-                <X className="h-5 w-5" />
-              </Button>
+            <div className="border-b border-[var(--border)] p-4 bg-[var(--card)]">
+              <DialogTitle className="text-[var(--foreground)]">Capture Card Photo</DialogTitle>
+              <DialogDescription className="mt-1 text-[var(--muted-foreground)]">
+                Position your card in the frame and tap capture
+              </DialogDescription>
             </div>
 
             {/* Video Preview */}
@@ -297,33 +292,18 @@ export function CameraCapture({
             </div>
 
             {/* Controls */}
-            <div className="flex items-center justify-between gap-4 p-4 bg-[var(--card)]">
-              {/* Flip camera button (mobile) */}
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={flipCamera}
-                disabled={isCapturing || !stream}
-                aria-label="Flip camera"
-                className="sm:invisible"
-              >
-                <RotateCw className="h-5 w-5" />
-              </Button>
-
+            <div className="flex items-center justify-center p-6 bg-[var(--card)]">
               {/* Capture button */}
               <Button
                 variant="primary"
                 size="lg"
                 onClick={capturePhoto}
                 disabled={isCapturing || !stream}
-                className="flex-1 max-w-xs"
+                className="min-w-[200px] px-8"
               >
-                <Camera className="mr-2 h-5 w-5" />
-                {isCapturing ? 'Capturing...' : 'Capture Photo'}
+                <Camera className="mr-2 h-5 w-5 flex-shrink-0" />
+                {isCapturing ? 'Capturing...' : 'Capture'}
               </Button>
-
-              {/* Spacer for alignment */}
-              <div className="w-10 sm:invisible" />
             </div>
           </div>
 
