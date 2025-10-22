@@ -48,8 +48,8 @@
   - Return enriched CardMetadata to Step Functions
   - _Requirements: 1.1, 1.2, 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 6.1, 6.2, 6.3, 6.4, 6.5, 7.1, 7.2, 7.3, 7.4, 7.5_
 
-- [ ] 4. Create utility modules
-  - [ ] 4.1 Implement fuzzy matching utility
+- [x] 4. Create utility modules
+  - [x] 4.1 Implement fuzzy matching utility
     - Create `services/backend/src/utils/fuzzy-matching.ts`
     - Implement `levenshteinDistance()` function for string similarity
     - Implement `findBestMatch()` function to find closest match from candidates
@@ -57,7 +57,7 @@
     - Add unit tests for edge cases (empty strings, identical strings, no matches)
     - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5_
 
-  - [ ] 4.2 Create Pokémon TCG knowledge base
+  - [x] 4.2 Create Pokémon TCG knowledge base
     - Create `services/backend/src/utils/pokemon-knowledge.ts`
     - Define `POKEMON_SETS` constant with set names, symbols, and years
     - Define `RARITY_PATTERNS` constant with rarity indicators
@@ -65,7 +65,7 @@
     - Export constants for use in fallback logic and validation
     - _Requirements: 2.1, 3.5, 3.6_
 
-  - [ ] 4.3 Implement fallback metadata generator
+  - [x] 4.3 Implement fallback metadata generator
     - Add `createFallbackMetadata()` function to `services/backend/src/adapters/bedrock-ocr-reasoning.ts`
     - Extract card name from topmost OCR block
     - Set all other fields to null with 0.0 confidence
