@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { useCardImage } from '@/hooks/use-card-image';
 
 export interface CardDetailProps {
   card: CardType;
@@ -67,15 +68,11 @@ export function CardDetail({
   onDelete,
   onShare,
 }: CardDetailProps) {
-  const [imageError, setImageError] = React.useState(false);
   const [isFeedbackModalOpen, setIsFeedbackModalOpen] = React.useState(false);
   const { toast } = useToast();
   
-  // Prioritize imageUrl over S3 key for better fallback
-  // For mock data, imageUrl will be the Pokemon TCG API URL
-  // For real data, we'll construct from S3 key
-  const imageUrl = card.imageUrl || 
-    (card.frontS3Key ? `${process.env.NEXT_PUBLIC_API_BASE}/images/${card.frontS3Key}` : null);
+  // Use the same image loading hook as VaultCard
+  const { imageUrl, isLoading: imageLoading, error: imageError } = useCardImage(card.frontS3Key);
 
   const hasAuthenticityData = 
     card.authenticityScore !== null && 
@@ -163,91 +160,57 @@ export function CardDetail({
 
   return (
     <div className="space-y-6">
-      {/* Action Buttons */}
-      {(onReEvaluate || onDelete || onShare) && (
-        <div className="flex flex-wrap gap-2 justify-end">
-          {onReEvaluate && (
-            <Button
-              variant="outline"
-              onClick={onReEvaluate}
-              disabled={isRefreshing}
-              className="gap-2"
-            >
-              <RefreshCw className={cn('h-4 w-4', isRefreshing && 'animate-spin')} />
-              Re-evaluate
-            </Button>
-          )}
-          {onShare && (
-            <Button
-              variant="outline"
-              onClick={onShare}
-              className="gap-2"
-            >
-              <Share2 className="h-4 w-4" />
-              Share
-            </Button>
-          )}
-          {onDelete && (
-            <Button
-              variant="outline"
-              onClick={onDelete}
-              className="gap-2 text-[var(--destructive)] hover:text-[var(--destructive)]"
-            >
-              <Trash2 className="h-4 w-4" />
-              Delete
-            </Button>
-          )}
-        </div>
-      )}
-
-      <div className="grid gap-4 lg:grid-cols-[340px_1fr]">
-        {/* Card Image Section - Fixed width with natural aspect ratio */}
-        <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm">Card Image</CardTitle>
-        </CardHeader>
-        <CardContent className="pb-4">
-          {imageUrl && !imageError ? (
-            <Dialog>
-              <DialogTrigger asChild>
-                <div className="relative group cursor-pointer rounded-lg overflow-hidden bg-[var(--muted)] aspect-[2.5/3.5] max-w-[300px] mx-auto">
-                  <Image
-                    src={imageUrl}
-                    alt={card.name || 'Card image'}
-                    fill
-                    className="object-contain transition-transform duration-200 group-hover:scale-105"
-                    onError={() => setImageError(true)}
-                  />
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-200 flex items-center justify-center">
-                    <ZoomIn className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+      <div className="grid gap-6 lg:grid-cols-[400px_1fr]">
+        {/* Card Image Section */}
+        <Card className="overflow-hidden border-[6px] border-emerald-400/70 hover:border-cyan-400 transition-all" style={{ boxShadow: '0 6px 25px rgba(16, 185, 129, 0.5)' }}>
+          <div className="relative aspect-[2.5/3.5] bg-[var(--muted)]">
+            {imageLoading && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="h-8 w-8 animate-spin rounded-full border-4 border-[var(--muted)] border-t-[var(--color-holo-cyan)]" />
+              </div>
+            )}
+            {imageError && (
+              <div className="absolute inset-0 flex items-center justify-center text-[var(--muted-foreground)] text-sm p-4 text-center">
+                Failed to load image
+              </div>
+            )}
+            {imageUrl && !imageError && (
+              <Dialog>
+                <DialogTrigger asChild>
+                  <div className="relative group cursor-pointer h-full">
+                    <Image
+                      src={imageUrl}
+                      alt={card.name || 'Card image'}
+                      fill
+                      className="object-cover transition-transform duration-200 group-hover:scale-105"
+                      sizes="(max-width: 768px) 100vw, 400px"
+                    />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-200 flex items-center justify-center">
+                      <ZoomIn className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+                    </div>
                   </div>
-                </div>
-              </DialogTrigger>
-              <DialogContent className="max-w-4xl w-full">
-                <div className="relative w-full aspect-[2.5/3.5]">
-                  <Image
-                    src={imageUrl}
-                    alt={card.name || 'Card image'}
-                    fill
-                    className="object-contain"
-                  />
-                </div>
-              </DialogContent>
-            </Dialog>
-          ) : (
-            <div className="aspect-[2.5/3.5] max-w-[300px] mx-auto bg-[var(--muted)] rounded-lg flex items-center justify-center text-[var(--muted-foreground)]">
-              <p className="text-sm">Image not available</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                </DialogTrigger>
+                <DialogContent className="max-w-4xl w-full">
+                  <div className="relative w-full aspect-[2.5/3.5]">
+                    <Image
+                      src={imageUrl}
+                      alt={card.name || 'Card image'}
+                      fill
+                      className="object-contain"
+                    />
+                  </div>
+                </DialogContent>
+              </Dialog>
+            )}
+          </div>
+        </Card>
 
-      {/* Card Details Summary - Full height to match image */}
-      <Card className="flex flex-col self-start" style={{ height: 'calc(300px * 3.5 / 2.5 + 3.5rem)' }}>
-        <CardHeader className="pb-2 flex-shrink-0">
-          <CardTitle className="text-sm">Card Details</CardTitle>
+      {/* Card Details Summary */}
+      <Card className="flex flex-col">
+        <CardHeader className="pb-4 flex-shrink-0">
+          <CardTitle>Card Details</CardTitle>
         </CardHeader>
-        <CardContent className="flex-1 flex flex-col space-y-3 overflow-y-auto pb-4">
+        <CardContent className="flex-1 flex flex-col space-y-4 pb-6">
           {/* Basic Info */}
           <div className="space-y-1.5 text-sm">
             <div className="flex justify-between">

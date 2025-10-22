@@ -93,7 +93,7 @@ export function AuthenticityBadge({
         </TooltipTrigger>
         <TooltipContent
           side="bottom"
-          className="max-w-xs p-4 space-y-3"
+          className="max-w-sm sm:max-w-md lg:max-w-lg p-4 space-y-3 w-auto min-w-[280px]"
           aria-live="polite"
         >
           <div className="space-y-2">
@@ -110,15 +110,15 @@ export function AuthenticityBadge({
                 <div className="space-y-1.5">
                   {breakdown.visualHashConfidence !== null && 
                    breakdown.visualHashConfidence !== undefined && (
-                    <div className="flex items-center justify-between">
-                      <span className="flex items-center gap-2">
+                    <div className="flex items-center justify-between gap-4">
+                      <span className="flex items-center gap-2 whitespace-nowrap">
                         <span
-                          className="w-2 h-2 rounded-full bg-blue-500"
+                          className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0"
                           aria-hidden="true"
                         />
                         Visual Hash
                       </span>
-                      <span className="font-medium">
+                      <span className="font-medium whitespace-nowrap">
                         {Math.round(breakdown.visualHashConfidence * 100)}%
                       </span>
                     </div>
@@ -126,15 +126,15 @@ export function AuthenticityBadge({
 
                   {breakdown.textMatchConfidence !== null && 
                    breakdown.textMatchConfidence !== undefined && (
-                    <div className="flex items-center justify-between">
-                      <span className="flex items-center gap-2">
+                    <div className="flex items-center justify-between gap-4">
+                      <span className="flex items-center gap-2 whitespace-nowrap">
                         <span
-                          className="w-2 h-2 rounded-full bg-purple-500"
+                          className="w-2 h-2 rounded-full bg-purple-500 flex-shrink-0"
                           aria-hidden="true"
                         />
                         Text Match
                       </span>
-                      <span className="font-medium">
+                      <span className="font-medium whitespace-nowrap">
                         {Math.round(breakdown.textMatchConfidence * 100)}%
                       </span>
                     </div>
@@ -142,15 +142,15 @@ export function AuthenticityBadge({
 
                   {breakdown.holoPatternConfidence !== null && 
                    breakdown.holoPatternConfidence !== undefined && (
-                    <div className="flex items-center justify-between">
-                      <span className="flex items-center gap-2">
+                    <div className="flex items-center justify-between gap-4">
+                      <span className="flex items-center gap-2 whitespace-nowrap">
                         <span
-                          className="w-2 h-2 rounded-full bg-cyan-500"
+                          className="w-2 h-2 rounded-full bg-cyan-500 flex-shrink-0"
                           aria-hidden="true"
                         />
                         Holo Pattern
                       </span>
-                      <span className="font-medium">
+                      <span className="font-medium whitespace-nowrap">
                         {Math.round(breakdown.holoPatternConfidence * 100)}%
                       </span>
                     </div>

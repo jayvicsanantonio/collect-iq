@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { Upload, Vault, LogOut, User, Sparkles, Menu, X } from 'lucide-react';
+import { Upload, Vault, LogOut, User, Sparkles, Menu, X, Sun, Moon } from 'lucide-react';
 import { getSession, signOut } from '@/lib/auth';
 import type { UserSession } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
@@ -19,9 +19,19 @@ export function Sidebar() {
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [theme, setTheme] = useState<'light' | 'dark'>('dark');
 
   useEffect(() => {
     checkAuth();
+    // Check for saved theme preference
+    const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
+    if (savedTheme) {
+      setTheme(savedTheme);
+      document.documentElement.classList.toggle('dark', savedTheme === 'dark');
+    } else {
+      // Default to dark mode
+      document.documentElement.classList.add('dark');
+    }
   }, []);
 
   async function checkAuth() {
@@ -38,6 +48,13 @@ export function Sidebar() {
   async function handleSignOut() {
     setIsSigningOut(true);
     await signOut();
+  }
+
+  function toggleTheme() {
+    const newTheme = theme === 'dark' ? 'light' : 'dark';
+    setTheme(newTheme);
+    document.documentElement.classList.toggle('dark', newTheme === 'dark');
+    localStorage.setItem('theme', newTheme);
   }
 
   const isActive = (path: string) => pathname === path;
@@ -120,6 +137,27 @@ export function Sidebar() {
           <span>My Vault</span>
         </Link>
       </nav>
+
+      {/* Theme Toggle */}
+      <div className="px-4 pb-2">
+        <button
+          onClick={toggleTheme}
+          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-[var(--muted-foreground)] hover:bg-[var(--accent)] hover:text-[var(--accent-foreground)]"
+          aria-label="Toggle theme"
+        >
+          {theme === 'dark' ? (
+            <>
+              <Moon className="w-5 h-5" />
+              <span>Dark Mode</span>
+            </>
+          ) : (
+            <>
+              <Sun className="w-5 h-5" />
+              <span>Light Mode</span>
+            </>
+          )}
+        </button>
+      </div>
 
       {/* User Section */}
       <div className="p-4 border-t border-[var(--border)] space-y-2">

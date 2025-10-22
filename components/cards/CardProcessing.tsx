@@ -111,26 +111,6 @@ export function CardProcessing({
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Progress Bar */}
-        {!error && (
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span className="text-[var(--muted-foreground)]">
-                Progress
-              </span>
-              <span className="font-medium">
-                {progressPercentage}%
-              </span>
-            </div>
-            <div className="h-2 w-full overflow-hidden rounded-full bg-[var(--muted)]">
-              <div
-                className="h-full bg-gradient-to-r from-[var(--vault-blue)] to-[var(--holo-cyan)] transition-all duration-500 ease-out"
-                style={{ width: `${progressPercentage}%` }}
-              />
-            </div>
-          </div>
-        )}
-
         {/* Error State */}
         {error && (
           <div className="rounded-lg border border-[var(--destructive)] bg-[var(--destructive)]/10 p-4">
