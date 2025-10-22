@@ -206,8 +206,8 @@
   - Export fixtures for use in unit and integration tests
   - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7_
 
-- [ ] 12. Update downstream agents to use enriched metadata
-  - [ ] 12.1 Update Pricing Agent
+- [x] 12. Update downstream agents to use enriched metadata
+  - [x] 12.1 Update Pricing Agent
     - Modify `services/backend/src/agents/pricing-agent.ts` to accept enriched cardMeta
     - Use OCR reasoning card name instead of extracting from OCR blocks
     - Use OCR reasoning set and rarity for pricing queries
@@ -215,7 +215,7 @@
     - Add logging to indicate use of OCR reasoning metadata
     - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7_
 
-  - [ ] 12.2 Update Authenticity Agent
+  - [x] 12.2 Update Authenticity Agent
     - Modify `services/backend/src/agents/authenticity_agent.ts` to accept enriched cardMeta
     - Use OCR reasoning rarity for holographic expectation
     - Use OCR reasoning metadata for text match confidence calculation
