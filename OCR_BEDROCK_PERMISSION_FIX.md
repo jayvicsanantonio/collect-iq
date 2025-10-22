@@ -47,16 +47,18 @@ Benefits of inference profiles:
 
 ### 3. Updated ARN Construction
 
-Modified `infra/terraform/modules/bedrock_access/main.tf` to detect inference profiles and construct correct ARNs:
+Modified `infra/terraform/modules/bedrock_access/main.tf` to detect inference profiles and construct correct ARNs.
+
+**Important Discovery**: The AWS SDK resolves cross-region inference profile IDs to BOTH account-less and account-specific ARNs. The IAM policy must include both formats:
 
 ```hcl
-computed_model_arns = [
-  for model_id in var.model_ids :
-  startswith(model_id, "us.") || startswith(model_id, "eu.") ?
-  "arn:aws:bedrock:${region}::inference-profile/${model_id}" :
-  "arn:aws:bedrock:${region}::foundation-model/${model_id}"
-]
+# For inference profile: us.anthropic.claude-sonnet-4-20250514-v1:0
+# Need BOTH:
+"arn:aws:bedrock:us-east-1::inference-profile/us.anthropic.claude-sonnet-4-20250514-v1:0"
+"arn:aws:bedrock:us-east-1:825478277761:inference-profile/us.anthropic.claude-sonnet-4-20250514-v1:0"
 ```
+
+The Terraform module now generates both ARN formats for inference profiles to ensure compatibility.
 
 ## Files Changed
 
