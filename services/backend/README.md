@@ -136,7 +136,7 @@ ALLOWED_UPLOAD_MIME=image/jpeg,image/png,image/heic
 MAX_UPLOAD_MB=12
 CACHE_TTL_SECONDS=300
 IDEMPOTENCY_TTL_SECONDS=600
-BEDROCK_MODEL_ID=anthropic.claude-3-sonnet-20240229-v1:0
+BEDROCK_MODEL_ID=anthropic.claude-sonnet-4-20250514-v1:0
 CARD_ID_INDEX_NAME=CardIdIndex # optional GSI for cardId lookups; falls back to scan if unset
 ```
 

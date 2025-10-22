@@ -20,8 +20,7 @@ variable "model_ids" {
   description = "List of Bedrock model IDs (will be converted to ARNs)"
   type        = list(string)
   default = [
-    "anthropic.claude-3-sonnet-20240229-v1:0",
-    "anthropic.claude-3-5-sonnet-20240620-v1:0"
+    "anthropic.claude-sonnet-4-20250514-v1:0"
   ]
 }
 

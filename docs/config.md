@@ -77,7 +77,7 @@ JWT_AUDIENCE=1a2b3c4d5e6f7g8h9i0j
 
 ```bash
 # Amazon Bedrock
-BEDROCK_MODEL_ID=anthropic.claude-4-sonnet-20250514
+BEDROCK_MODEL_ID=anthropic.claude-sonnet-4-20250514-v1:0
 BEDROCK_REGION=us-east-1
 # Description: Claude 4.0 Sonnet for valuation and authenticity agents
 
