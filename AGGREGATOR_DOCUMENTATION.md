@@ -241,6 +241,7 @@ const cardUpdate: Partial<Card> = {
   valueHigh: pricingResult.valueHigh,
   compsCount: pricingResult.compsCount,
   sources: pricingResult.sources,
+  valuationSummary: valuationSummary, // AI-generated valuation summary
 
   // Authenticity data (always included)
   authenticityScore: authenticityResult.authenticityScore,
@@ -448,6 +449,7 @@ async function upsertCardResults(
     'compsCount',
     'sources',
     'pricingMessage',
+    'valuationSummary',
     'ocrMetadata',
     'name',
     'set',
@@ -547,6 +549,7 @@ export async function updateCard(
     'compsCount',
     'sources',
     'pricingMessage',
+    'valuationSummary',
   ];
 
   for (const field of updateableFields) {
@@ -788,6 +791,7 @@ interface Card {
   compsCount?: number; // Number of comparables
   sources?: string[]; // Data sources
   pricingMessage?: string; // Optional message
+  valuationSummary?: ValuationSummary; // AI-generated valuation summary
 
   // OCR metadata (from OCR Reasoning Agent)
   ocrMetadata?: {
@@ -2155,6 +2159,13 @@ type Subscription {
     "valueHigh": 250.00,
     "compsCount": 15,
     "sources": ["ebay", "tcgplayer"],
+    "valuationSummary": {
+      "summary": "Strong market demand",
+      "fairValue": 200.00,
+      "trend": "rising",
+      "recommendation": "Hold for appreciation",
+      "confidence": 0.82
+    },
     "authenticityScore": 0.91,
     "authenticitySignals": { ... },
     "ocrMetadata": { ... },
@@ -2207,6 +2218,13 @@ type Subscription {
     "set": null,   // Not updated from OCR
     "valueLow": 150.00,
     "valueMedian": 200.00,
+    "valuationSummary": {
+      "summary": "Strong market demand",
+      "fairValue": 200.00,
+      "trend": "rising",
+      "recommendation": "Hold for appreciation",
+      "confidence": 0.82
+    },
     "authenticityScore": 0.91,
     "ocrMetadata": {
       "name": null,
@@ -2272,6 +2290,13 @@ type Subscription {
     "set": "Base Set", // Preserved from original
     "valueLow": 180.0, // Updated
     "valueMedian": 230.0, // Updated
+    "valuationSummary": {
+      "summary": "Price trending upward",
+      "fairValue": 230.0,
+      "trend": "rising",
+      "recommendation": "Strong hold",
+      "confidence": 0.85
+    },
     "authenticityScore": 0.91,
     "createdAt": "2025-10-22T10:30:00Z",
     "updatedAt": "2025-10-22T11:45:00Z" // New timestamp
