@@ -26,6 +26,22 @@ interface AuthenticityAgentInput {
     rarity?: string;
     frontS3Key: string;
     backS3Key?: string;
+    // Enriched metadata from OCR reasoning agent
+    ocrMetadata?: {
+      name?: { value: string | null; confidence: number; rationale: string };
+      rarity?: { value: string | null; confidence: number; rationale: string };
+      set?:
+        | { value: string | null; confidence: number; rationale: string }
+        | {
+            value: string | null;
+            candidates: Array<{ value: string; confidence: number }>;
+            rationale: string;
+          };
+      collectorNumber?: { value: string | null; confidence: number; rationale: string };
+      overallConfidence?: number;
+      reasoningTrail?: string;
+      verifiedByAI?: boolean;
+    };
   };
   requestId: string;
 }
@@ -78,12 +94,57 @@ export const handler: Handler<AuthenticityAgentInput, AuthenticityAgentOutput> =
   tracing.addAnnotation('operation', 'authenticity_agent');
   tracing.addAnnotation('cardId', cardId);
 
-  logger.info('Authenticity Agent invoked', {
-    userId,
-    cardId,
-    cardName: cardMeta.name,
-    requestId,
-  });
+  // Extract card information from enriched metadata
+  let cardName: string | undefined;
+  let cardSet: string | undefined;
+  let cardRarity: string | undefined;
+
+  if (cardMeta.ocrMetadata) {
+    // Use enriched metadata from OCR reasoning agent
+    cardName = cardMeta.ocrMetadata.name?.value || cardMeta.name;
+    cardRarity = cardMeta.ocrMetadata.rarity?.value || cardMeta.rarity;
+
+    // Handle both single-value and multi-candidate set results
+    if (cardMeta.ocrMetadata.set) {
+      if (
+        'candidates' in cardMeta.ocrMetadata.set &&
+        cardMeta.ocrMetadata.set.candidates?.length > 0
+      ) {
+        cardSet = cardMeta.ocrMetadata.set.candidates[0].value;
+      } else {
+        cardSet = cardMeta.ocrMetadata.set.value || cardMeta.set;
+      }
+    } else {
+      cardSet = cardMeta.set;
+    }
+
+    logger.info('Authenticity Agent invoked with OCR reasoning metadata', {
+      userId,
+      cardId,
+      cardName,
+      cardSet,
+      cardRarity,
+      nameConfidence: cardMeta.ocrMetadata.name?.confidence,
+      rarityConfidence: cardMeta.ocrMetadata.rarity?.confidence,
+      overallConfidence: cardMeta.ocrMetadata.overallConfidence,
+      verifiedByAI: cardMeta.ocrMetadata.verifiedByAI,
+      requestId,
+    });
+  } else {
+    // Fallback to legacy metadata
+    cardName = cardMeta.name;
+    cardSet = cardMeta.set;
+    cardRarity = cardMeta.rarity;
+
+    logger.info('Authenticity Agent invoked with legacy metadata', {
+      userId,
+      cardId,
+      cardName,
+      cardSet,
+      cardRarity,
+      requestId,
+    });
+  }
 
   try {
     // Step 1: Compute visual hash from front image
@@ -92,40 +153,45 @@ export const handler: Handler<AuthenticityAgentInput, AuthenticityAgentOutput> =
     const frontHash = await tracing.trace(
       'compute_perceptual_hash',
       () => computePerceptualHashFromS3(cardMeta.frontS3Key),
-      { cardId, userId },
+      { cardId, userId }
     );
 
     logger.info('Visual hash computed', { frontHash });
 
     // Step 2: Compare with reference hashes
-    logger.info('Comparing with reference hashes', { cardName: cardMeta.name });
+    logger.info('Comparing with reference hashes', { cardName });
 
-    const visualHashConfidence = cardMeta.name
+    const visualHashConfidence = cardName
       ? await tracing.trace(
           'compute_visual_hash_confidence',
-          () => computeVisualHashConfidence(frontHash, cardMeta.name as string),
-          { cardId, cardName: cardMeta.name },
+          () => computeVisualHashConfidence(frontHash, cardName as string),
+          { cardId, cardName }
         )
       : 0.5; // Neutral confidence if card name unknown
 
     logger.info('Visual hash confidence computed', { visualHashConfidence });
 
     // Step 3: Determine if card is expected to be holographic
-    const expectedHolo = isExpectedHolographic(cardMeta.rarity);
+    // Use OCR reasoning rarity for more accurate holographic expectation
+    const expectedHolo = isExpectedHolographic(cardRarity);
 
     logger.info('Holographic expectation determined', {
-      rarity: cardMeta.rarity,
+      rarity: cardRarity,
       expectedHolo,
+      usingOcrMetadata: !!cardMeta.ocrMetadata,
     });
 
     // Step 4: Compute authenticity signals
-    logger.info('Computing authenticity signals');
+    // Use OCR reasoning metadata for text match confidence calculation
+    logger.info('Computing authenticity signals', {
+      usingOcrMetadata: !!cardMeta.ocrMetadata,
+    });
 
     const signals = computeAuthenticitySignals(
       features,
       visualHashConfidence,
-      cardMeta.name,
-      expectedHolo,
+      cardName,
+      expectedHolo
     );
 
     logger.info('Authenticity signals computed', signals);
@@ -140,13 +206,13 @@ export const handler: Handler<AuthenticityAgentInput, AuthenticityAgentOutput> =
           features,
           signals,
           cardMeta: {
-            name: cardMeta.name,
-            set: cardMeta.set,
-            rarity: cardMeta.rarity,
+            name: cardName,
+            set: cardSet,
+            rarity: cardRarity,
             expectedHolo,
           },
         }),
-      { userId, cardId, requestId },
+      { userId, cardId, requestId }
     );
 
     logger.info('Authenticity analysis complete', {
@@ -184,7 +250,7 @@ export const handler: Handler<AuthenticityAgentInput, AuthenticityAgentOutput> =
         userId,
         cardId,
         requestId,
-      },
+      }
     );
 
     // Re-throw error to trigger Step Functions retry/error handling
