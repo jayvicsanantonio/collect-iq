@@ -1,5 +1,80 @@
 data "aws_region" "current" {}
 
+locals {
+  # OCR Reasoning widgets for AI Services dashboard
+  ocr_reasoning_widgets = var.ocr_reasoning_lambda_name != "" ? [
+    {
+      type = "metric"
+      properties = {
+        metrics = [
+          ["CollectIQ/${var.dashboard_prefix}", "BedrockOcrLatency", "agent", "ocr-reasoning", { stat = "Average", label = "Average Latency" }],
+          ["...", { stat = "p95", label = "P95 Latency" }],
+          ["...", { stat = "p99", label = "P99 Latency" }]
+        ]
+        view   = "timeSeries"
+        region = data.aws_region.current.name
+        title  = "OCR Reasoning Latency"
+        period = 300
+        yAxis = {
+          left = {
+            label = "Milliseconds"
+          }
+        }
+      }
+    },
+    {
+      type = "metric"
+      properties = {
+        metrics = [
+          ["CollectIQ/${var.dashboard_prefix}", "BedrockOcrConfidence", "agent", "ocr-reasoning", { stat = "Average", label = "Average Confidence" }],
+          ["...", { stat = "Minimum", label = "Min Confidence" }]
+        ]
+        view   = "timeSeries"
+        region = data.aws_region.current.name
+        title  = "OCR Reasoning Confidence Scores"
+        period = 300
+        yAxis = {
+          left = {
+            label = "Confidence (0.0-1.0)"
+            min   = 0
+            max   = 1
+          }
+        }
+      }
+    },
+    {
+      type = "metric"
+      properties = {
+        metrics = [
+          ["CollectIQ/${var.dashboard_prefix}", "BedrockOcrInputTokens", "agent", "ocr-reasoning", { stat = "Average", label = "Input Tokens" }],
+          [".", "BedrockOcrOutputTokens", ".", ".", { stat = "Average", label = "Output Tokens" }]
+        ]
+        view   = "timeSeries"
+        region = data.aws_region.current.name
+        title  = "OCR Reasoning Token Usage"
+        period = 300
+        yAxis = {
+          left = {
+            label = "Token Count"
+          }
+        }
+      }
+    },
+    {
+      type = "metric"
+      properties = {
+        metrics = [
+          ["CollectIQ/${var.dashboard_prefix}", "BedrockOcrFallbackUsed", "agent", "ocr-reasoning", { stat = "Sum", label = "Fallback Count" }]
+        ]
+        view   = "timeSeries"
+        region = data.aws_region.current.name
+        title  = "OCR Reasoning Fallback Usage"
+        period = 300
+      }
+    }
+  ] : []
+}
+
 # API Performance Dashboard
 resource "aws_cloudwatch_dashboard" "api_performance" {
   dashboard_name = "${var.dashboard_prefix}-api-performance"
@@ -215,105 +290,36 @@ resource "aws_cloudwatch_dashboard" "ai_services" {
   dashboard_name = "${var.dashboard_prefix}-ai-services"
 
   dashboard_body = jsonencode({
-    widgets = concat([
-      {
-        type = "metric"
-        properties = {
-          metrics = [
-            ["AWS/Rekognition", "ResponseTime", { stat = "Average", label = "Rekognition Response Time" }],
-            ["AWS/Bedrock", "Invocations", { stat = "Sum", label = "Bedrock Invocations" }]
-          ]
-          view   = "timeSeries"
-          region = data.aws_region.current.name
-          title  = "AI Services Usage"
-          period = 300
-        }
-      },
-      {
-        type = "log"
-        properties = {
-          query   = <<-EOT
+    widgets = concat(
+      [
+        {
+          type = "metric"
+          properties = {
+            metrics = [
+              ["AWS/Rekognition", "ResponseTime", { stat = "Average", label = "Rekognition Response Time" }],
+              ["AWS/Bedrock", "Invocations", { stat = "Sum", label = "Bedrock Invocations" }]
+            ]
+            view   = "timeSeries"
+            region = data.aws_region.current.name
+            title  = "AI Services Usage"
+            period = 300
+          }
+        },
+        {
+          type = "log"
+          properties = {
+            query   = <<-EOT
             SOURCE '/aws/lambda/${var.lambda_function_names[0]}'
             | fields @timestamp, @message
             | filter @message like /authenticityScore/
             | stats count() by bin(5m)
           EOT
-          region  = data.aws_region.current.name
-          title   = "Authenticity Score Distribution"
+            region = data.aws_region.current.name
+            title  = "Authenticity Score Distribution"
+          }
         }
-      }
       ],
-      var.ocr_reasoning_lambda_name != "" ? [
-        {
-          type = "metric"
-          properties = {
-            metrics = [
-              ["CollectIQ/${var.dashboard_prefix}", "BedrockOcrLatency", "agent", "ocr-reasoning", { stat = "Average", label = "Average Latency" }],
-              ["...", { stat = "p95", label = "P95 Latency" }],
-              ["...", { stat = "p99", label = "P99 Latency" }]
-            ]
-            view   = "timeSeries"
-            region = data.aws_region.current.name
-            title  = "OCR Reasoning Latency"
-            period = 300
-            yAxis = {
-              left = {
-                label = "Milliseconds"
-              }
-            }
-          }
-        },
-        {
-          type = "metric"
-          properties = {
-            metrics = [
-              ["CollectIQ/${var.dashboard_prefix}", "BedrockOcrConfidence", "agent", "ocr-reasoning", { stat = "Average", label = "Average Confidence" }],
-              ["...", { stat = "Minimum", label = "Min Confidence" }]
-            ]
-            view   = "timeSeries"
-            region = data.aws_region.current.name
-            title  = "OCR Reasoning Confidence Scores"
-            period = 300
-            yAxis = {
-              left = {
-                label = "Confidence (0.0-1.0)"
-                min   = 0
-                max   = 1
-              }
-            }
-          }
-        },
-        {
-          type = "metric"
-          properties = {
-            metrics = [
-              ["CollectIQ/${var.dashboard_prefix}", "BedrockOcrInputTokens", "agent", "ocr-reasoning", { stat = "Average", label = "Input Tokens" }],
-              [".", "BedrockOcrOutputTokens", ".", ".", { stat = "Average", label = "Output Tokens" }]
-            ]
-            view   = "timeSeries"
-            region = data.aws_region.current.name
-            title  = "OCR Reasoning Token Usage"
-            period = 300
-            yAxis = {
-              left = {
-                label = "Token Count"
-              }
-            }
-          }
-        },
-        {
-          type = "metric"
-          properties = {
-            metrics = [
-              ["CollectIQ/${var.dashboard_prefix}", "BedrockOcrFallbackUsed", "agent", "ocr-reasoning", { stat = "Sum", label = "Fallback Count" }]
-            ]
-            view   = "timeSeries"
-            region = data.aws_region.current.name
-            title  = "OCR Reasoning Fallback Usage"
-            period = 300
-          }
-        }
-      ] : []
+      local.ocr_reasoning_widgets
     )
   })
 }
