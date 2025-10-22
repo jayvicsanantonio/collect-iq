@@ -138,79 +138,86 @@ export function CardProcessing({
           </div>
         )}
 
-        {/* Processing Stages */}
-        <div className="space-y-4">
-          {STAGE_ORDER.map((stageName) => {
-            const stageConfig = STAGE_CONFIG[stageName];
-            const isCompleted = completed.includes(stageName);
-            const isCurrent = stageName === stage && !error;
-            const isPending = !isCompleted && !isCurrent && !error;
-
-            return (
-              <div
-                key={stageName}
-                className={cn(
-                  'flex items-start gap-4 rounded-lg border p-4 transition-all',
-                  {
-                    'border-[var(--vault-blue)] bg-[var(--vault-blue)]/5':
-                      isCurrent,
-                    'border-[var(--border)] bg-[var(--card)]':
-                      !isCurrent,
-                    'opacity-50': isPending,
-                  }
-                )}
-              >
-                {/* Stage Icon */}
-                <div className="flex-shrink-0 mt-0.5">
-                  {isCompleted && (
-                    <CheckCircle2 className="h-5 w-5 text-[var(--emerald-glow)]" />
-                  )}
-                  {isCurrent && (
-                    <Loader2 className="h-5 w-5 text-[var(--vault-blue)] animate-spin" />
-                  )}
-                  {isPending && (
-                    <div className="h-5 w-5 rounded-full border-2 border-[var(--muted)]" />
-                  )}
-                </div>
-
-                {/* Stage Content */}
-                <div className="flex-1 space-y-1">
-                  <div className="flex items-center justify-between">
-                    <h3
-                      className={cn('font-medium', {
-                        'text-[var(--vault-blue)]': isCurrent,
-                        'text-[var(--foreground)]':
-                          isCompleted || isPending,
-                      })}
-                    >
-                      {stageConfig.label}
-                    </h3>
-                    {isCompleted && (
-                      <span className="text-xs text-[var(--emerald-glow)]">
-                        Complete
-                      </span>
-                    )}
-                    {isCurrent && (
-                      <span className="text-xs text-[var(--vault-blue)]">
-                        In Progress
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-sm text-[var(--muted-foreground)]">
-                    {stageConfig.description}
-                  </p>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Help Text */}
+        {/* Single Unified Progress */}
         {!error && (
-          <p className="text-xs text-center text-[var(--muted-foreground)]">
-            This process typically takes 20-30 seconds. You can safely
-            navigate away and return later.
-          </p>
+          <div className="flex flex-col items-center justify-center py-12 px-6">
+            {/* Single Circular Loader with glow effect */}
+            <div className="mb-12 relative">
+              <div className="absolute inset-0 blur-xl opacity-30 bg-[var(--vault-blue)]" />
+              <Loader2 className="h-20 w-20 text-[var(--vault-blue)] animate-spin relative" />
+            </div>
+
+            {/* Stage List - Horizontal layout with icons */}
+            <div className="flex flex-col sm:flex-row gap-6 sm:gap-8 mb-12 w-full max-w-4xl">
+              {STAGE_ORDER.map((stageName, index) => {
+                const stageConfig = STAGE_CONFIG[stageName];
+                const isCompleted = completed.includes(stageName);
+                const isCurrent = stageName === stage;
+
+                return (
+                  <div
+                    key={stageName}
+                    className={cn(
+                      'flex-1 text-center p-6 rounded-lg border-2 transition-all',
+                      {
+                        'border-[var(--vault-blue)] bg-[var(--vault-blue)]/5':
+                          isCurrent,
+                        'border-[var(--emerald-glow)] bg-[var(--emerald-glow)]/5':
+                          isCompleted,
+                        'border-[var(--border)] bg-[var(--card)]':
+                          !isCurrent && !isCompleted,
+                      }
+                    )}
+                  >
+                    <div className="flex flex-col items-center space-y-3">
+                      {/* Step number or checkmark */}
+                      <div
+                        className={cn(
+                          'w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm',
+                          {
+                            'bg-[var(--vault-blue)] text-white': isCurrent,
+                            'bg-[var(--emerald-glow)] text-white':
+                              isCompleted,
+                            'bg-[var(--muted)] text-[var(--muted-foreground)]':
+                              !isCurrent && !isCompleted,
+                          }
+                        )}
+                      >
+                        {isCompleted ? (
+                          <CheckCircle2 className="h-5 w-5" />
+                        ) : (
+                          index + 1
+                        )}
+                      </div>
+
+                      {/* Stage title */}
+                      <p
+                        className={cn('font-semibold text-base', {
+                          'text-[var(--vault-blue)]': isCurrent,
+                          'text-[var(--emerald-glow)]': isCompleted,
+                          'text-[var(--muted-foreground)]':
+                            !isCurrent && !isCompleted,
+                        })}
+                      >
+                        {stageConfig.label}
+                      </p>
+
+                      {/* Stage description */}
+                      <p className="text-sm text-[var(--muted-foreground)] leading-relaxed">
+                        {stageConfig.description}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Help Text */}
+            <p className="text-sm text-center text-[var(--muted-foreground)] w-full leading-relaxed px-4">
+              This process typically takes 20-30 seconds. You can safely
+              navigate away and return later.
+            </p>
+          </div>
         )}
       </CardContent>
     </Card>
