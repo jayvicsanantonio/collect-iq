@@ -105,15 +105,15 @@
   - Follow least-privilege principle
   - _Requirements: 1.3, 6.1, 6.2, 6.3, 6.4, 6.5_
 
-- [ ] 8. Implement CloudWatch metrics and alarms
-  - [ ] 8.1 Add custom metrics to metrics utility
+- [x] 8. Implement CloudWatch metrics and alarms
+  - [x] 8.1 Add custom metrics to metrics utility
     - Update `services/backend/src/utils/metrics.ts` with `recordBedrockOcrInvocation()` method
     - Emit metrics for latency, input tokens, output tokens, overall confidence
     - Emit metric for fallback usage (boolean)
     - Add namespace and dimensions for filtering
     - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5_
 
-  - [ ] 8.2 Create CloudWatch alarms
+  - [x] 8.2 Create CloudWatch alarms
     - Add alarm for high fallback rate (>10%) in `infra/terraform/modules/cloudwatch_dashboards/main.tf`
     - Add alarm for high latency (P95 >5 seconds)
     - Add alarm for low confidence scores (average <0.6)
