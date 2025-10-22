@@ -64,6 +64,10 @@ async function upsertCardResults(
     'sources',
     'pricingMessage',
     'ocrMetadata',
+    'name',
+    'set',
+    'rarity',
+    'number',
   ];
 
   for (const field of updateableFields) {
@@ -204,12 +208,45 @@ export const handler: Handler<AggregatorInput, AggregatorOutput> = async (event)
       },
     };
 
+    // Update card metadata from OCR if available and verified by AI
+    if (ocrMetadata && ocrMetadata.verifiedByAI) {
+      const setInfo = ocrMetadata.set;
+      const setValue =
+        setInfo.value ||
+        ('candidates' in setInfo && setInfo.candidates.length > 0
+          ? setInfo.candidates[0].value
+          : null);
+
+      // Update basic card fields with OCR-extracted data
+      if (ocrMetadata.name.value) {
+        cardUpdate.name = ocrMetadata.name.value;
+      }
+      if (setValue) {
+        cardUpdate.set = setValue;
+      }
+      if (ocrMetadata.rarity.value) {
+        cardUpdate.rarity = ocrMetadata.rarity.value;
+      }
+      if (ocrMetadata.collectorNumber.value) {
+        cardUpdate.number = ocrMetadata.collectorNumber.value;
+      }
+
+      logger.info('Card metadata updated from OCR', {
+        cardId,
+        name: ocrMetadata.name.value,
+        set: setValue,
+        rarity: ocrMetadata.rarity.value,
+        number: ocrMetadata.collectorNumber.value,
+        requestId,
+      });
+    }
+
     // Add pricing message if available (e.g., "No pricing data available")
     if (pricingResult.message) {
       cardUpdate.pricingMessage = pricingResult.message;
     }
 
-    // Add OCR metadata if available
+    // Add OCR metadata if available (stores confidence scores and reasoning)
     if (ocrMetadata) {
       const setInfo = ocrMetadata.set;
       const setValueForStorage =
@@ -245,6 +282,7 @@ export const handler: Handler<AggregatorInput, AggregatorOutput> = async (event)
         nameConfidence: ocrMetadata.name.confidence,
         overallConfidence: ocrMetadata.overallConfidence,
         verifiedByAI: ocrMetadata.verifiedByAI,
+        willUpdateCardFields: ocrMetadata.verifiedByAI,
         requestId,
       });
     }
