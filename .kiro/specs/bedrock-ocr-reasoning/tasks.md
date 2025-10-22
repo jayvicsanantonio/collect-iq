@@ -283,3 +283,11 @@
   - Remove deprecated OCR extraction code from Pricing Agent
   - Update architecture diagrams to include OCR reasoning agent
   - _Requirements: 1.1, 1.2, 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7_
+
+- [x] 17. Fix metric recording to use specific OCR method
+  - Replace `recordBedrockInvocation` call with `recordBedrockOcrInvocation` in `services/backend/src/adapters/bedrock-ocr-reasoning.ts` (line 526)
+  - Update the success path to pass all required parameters: latency, inputTokens, outputTokens, overallConfidence, fallbackUsed (false)
+  - Add metric recording in the catch block for fallback scenarios with fallbackUsed set to true
+  - Ensure inputTokens and outputTokens are captured from the Bedrock response usage object
+  - Ensure overallConfidence is captured from the parsed metadata
+  - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5_

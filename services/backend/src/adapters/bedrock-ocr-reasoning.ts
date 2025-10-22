@@ -465,9 +465,9 @@ Provide your analysis in the JSON format specified in the system prompt.`;
       };
     }
 
-    try {
-      const startTime = Date.now();
+    const startTime = Date.now();
 
+    try {
       const systemPrompt = this.createSystemPrompt();
       const userPrompt = this.createUserPrompt(context);
 
@@ -520,10 +520,16 @@ Provide your analysis in the JSON format specified in the system prompt.`;
       // Parse and validate response
       const metadata = this.parseResponse(responseText, requestId);
 
-      // Record metrics
+      // Record metrics with specific OCR method
       const inputTokens = response.usage?.inputTokens || 0;
       const outputTokens = response.usage?.outputTokens || 0;
-      await metrics.recordBedrockInvocation('ocr_reasoning', latency, outputTokens);
+      await metrics.recordBedrockOcrInvocation({
+        latency,
+        inputTokens,
+        outputTokens,
+        overallConfidence: metadata.overallConfidence,
+        fallbackUsed: false,
+      });
 
       // INFO: Bedrock response with latency, token count, and confidence
       logger.info('Bedrock OCR reasoning successful', {
@@ -559,7 +565,19 @@ Provide your analysis in the JSON format specified in the system prompt.`;
         requestId,
       });
 
-      return this.createFallbackMetadata(context.ocrBlocks);
+      const fallbackMetadata = this.createFallbackMetadata(context.ocrBlocks);
+
+      // Record metrics for fallback scenario
+      const latency = Date.now() - startTime;
+      await metrics.recordBedrockOcrInvocation({
+        latency,
+        inputTokens: 0,
+        outputTokens: 0,
+        overallConfidence: fallbackMetadata.overallConfidence,
+        fallbackUsed: true,
+      });
+
+      return fallbackMetadata;
     }
   }
 }
