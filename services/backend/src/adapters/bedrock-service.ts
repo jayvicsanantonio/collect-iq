@@ -32,8 +32,9 @@ const BEDROCK_CONFIG = {
   modelId: process.env.BEDROCK_MODEL_ID || 'anthropic.claude-sonnet-4-20250514-v1:0',
   maxTokens: parseInt(process.env.BEDROCK_MAX_TOKENS || '2048', 10),
   temperature: parseFloat(process.env.BEDROCK_TEMPERATURE || '0.2'),
-  maxRetries: 3,
-  retryDelay: 1000, // milliseconds
+  maxRetries: 5, // Increased from 3 to handle rate limits better
+  baseRetryDelay: 2000, // Base delay in milliseconds (increased from 1000)
+  maxRetryDelay: 30000, // Maximum delay cap (30 seconds)
 };
 
 /**
@@ -87,7 +88,7 @@ const BedrockValuationResponseSchema = z.object({
  */
 export class BedrockService {
   /**
-   * Invoke Bedrock with retry logic
+   * Invoke Bedrock with retry logic using exponential backoff with jitter
    * @param input - Converse command input
    * @returns Converse command output
    */
@@ -116,17 +117,39 @@ export class BedrockService {
         return response;
       } catch (error) {
         lastError = error instanceof Error ? error : new Error(String(error));
+        const isRateLimitError =
+          lastError.message.includes('Too many requests') ||
+          lastError.message.includes('ThrottlingException') ||
+          lastError.message.includes('TooManyRequestsException');
 
         logger.warn('Bedrock invocation failed', {
           attempt,
           maxRetries: BEDROCK_CONFIG.maxRetries,
           error: lastError.message,
+          isRateLimitError,
         });
 
         if (attempt < BEDROCK_CONFIG.maxRetries) {
-          // Exponential backoff
-          const delay = BEDROCK_CONFIG.retryDelay * Math.pow(2, attempt - 1);
-          logger.debug('Retrying Bedrock invocation', { delay, nextAttempt: attempt + 1 });
+          // Exponential backoff with jitter
+          // For rate limits, use more aggressive backoff
+          const baseDelay = isRateLimitError
+            ? BEDROCK_CONFIG.baseRetryDelay * 2
+            : BEDROCK_CONFIG.baseRetryDelay;
+
+          const exponentialDelay = baseDelay * Math.pow(2, attempt - 1);
+
+          // Add jitter (random 0-50% of delay) to prevent thundering herd
+          const jitter = Math.random() * exponentialDelay * 0.5;
+
+          // Cap at max delay
+          const delay = Math.min(exponentialDelay + jitter, BEDROCK_CONFIG.maxRetryDelay);
+
+          logger.debug('Retrying Bedrock invocation', {
+            delay: Math.round(delay),
+            nextAttempt: attempt + 1,
+            isRateLimitError,
+          });
+
           await new Promise((resolve) => setTimeout(resolve, delay));
         }
       }
