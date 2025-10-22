@@ -198,8 +198,7 @@ module "bedrock_access" {
   policy_description = "IAM policy for Bedrock model invocation"
 
   model_ids = [
-    "anthropic.claude-3-sonnet-20240229-v1:0",
-    "anthropic.claude-3-5-sonnet-20240620-v1:0"
+    "anthropic.claude-sonnet-4-20250514-v1:0"
   ]
 
   tags = local.common_tags

@@ -165,9 +165,9 @@ This document lists all required environment variables for the CollectIQ backend
 
 - **Required**: Yes (for AI agents)
 - **Description**: Amazon Bedrock model identifier
-- **Example**: `anthropic.claude-3-sonnet-20240229-v1:0`
+- **Example**: `anthropic.claude-sonnet-4-20250514-v1:0`
 - **Used by**: bedrock_service, pricing_agent, authenticity_agent
-- **Recommended**: `anthropic.claude-3-sonnet-20240229-v1:0` or `anthropic.claude-4-sonnet-20250514-v1:0`
+- **Recommended**: `anthropic.claude-sonnet-4-20250514-v1:0` (Claude 4.0 Sonnet)
 
 ### BEDROCK_MAX_TOKENS
 
@@ -281,7 +281,7 @@ CACHE_TTL_SECONDS=300
 IDEMPOTENCY_TTL_SECONDS=600
 STEP_FUNCTIONS_ARN=arn:aws:states:us-east-1:123456789012:stateMachine:dev-collectiq-revalue
 EVENT_BUS_NAME=dev-collectiq-events
-BEDROCK_MODEL_ID=anthropic.claude-3-sonnet-20240229-v1:0
+BEDROCK_MODEL_ID=anthropic.claude-sonnet-4-20250514-v1:0
 BEDROCK_MAX_TOKENS=2048
 BEDROCK_TEMPERATURE=0.2
 LOG_LEVEL=DEBUG
