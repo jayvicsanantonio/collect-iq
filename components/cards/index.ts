@@ -4,6 +4,9 @@ export type { CandidateListProps } from './CandidateList';
 export { AuthenticityBadge } from './AuthenticityBadge';
 export type { AuthenticityBadgeProps } from './AuthenticityBadge';
 
+export { AIInsights } from './AIInsights';
+export type { AIInsightsProps } from './AIInsights';
+
 export { FeedbackModal } from './FeedbackModal';
 export type { FeedbackModalProps } from './FeedbackModal';
 

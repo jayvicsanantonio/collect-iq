@@ -152,14 +152,25 @@ export function CameraCapture({
   // ============================================================================
 
   const stopCamera = React.useCallback(() => {
+    // Stop all tracks from the stream
     if (stream) {
-      stream.getTracks().forEach((track) => track.stop());
-      setStream(null);
+      stream.getTracks().forEach((track) => {
+        track.stop();
+        console.log('Stopped camera track:', track.label);
+      });
     }
 
-    if (videoRef.current) {
+    // Also stop tracks from video element if they exist
+    if (videoRef.current && videoRef.current.srcObject) {
+      const videoStream = videoRef.current.srcObject as MediaStream;
+      videoStream.getTracks().forEach((track) => {
+        track.stop();
+        console.log('Stopped video element track:', track.label);
+      });
       videoRef.current.srcObject = null;
     }
+
+    setStream(null);
   }, [stream]);
 
   // ============================================================================

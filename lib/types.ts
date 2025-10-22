@@ -63,6 +63,16 @@ export type AuthenticitySignals = z.infer<
   typeof AuthenticitySignalsSchema
 >;
 
+const ValuationSummarySchema = z.object({
+  summary: z.string(),
+  fairValue: z.number(),
+  trend: z.enum(['rising', 'falling', 'stable']),
+  recommendation: z.string(),
+  confidence: z.number().min(0).max(1),
+});
+
+export type ValuationSummary = z.infer<typeof ValuationSummarySchema>;
+
 export const CardSchema = z.object({
   cardId: z.string().uuid(),
   userId: z.string(),
@@ -80,6 +90,7 @@ export const CardSchema = z.object({
   valueLow: z.number().optional().nullable(),
   valueMedian: z.number().optional().nullable(),
   valueHigh: z.number().optional().nullable(),
+  valuationSummary: ValuationSummarySchema.optional().nullable(),
   conditionEstimate: z.string().optional().nullable(),
   createdAt: z.string(),
   updatedAt: z.string(),

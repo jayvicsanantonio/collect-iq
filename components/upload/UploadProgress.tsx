@@ -98,6 +98,19 @@ export function UploadProgress({
             : '0 8px 30px rgba(16, 185, 129, 0.5)',
         }}
       >
+        {/* Cancel button - positioned absolutely in top right */}
+        {status === 'uploading' && onCancel && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onCancel}
+            aria-label="Cancel upload"
+            className="absolute top-4 right-4 h-10 w-10"
+          >
+            <X className="h-5 w-5" />
+          </Button>
+        )}
+
         <div className="relative h-48 w-48 flex-shrink-0 overflow-hidden rounded-xl bg-white dark:bg-gray-700 border-2 border-emerald-300/50 shadow-lg">
           {thumbnailUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -164,20 +177,8 @@ export function UploadProgress({
           )}
         </div>
 
-        <div className="flex items-center gap-4 flex-shrink-0">
-          {status === 'uploading' && onCancel && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={onCancel}
-              aria-label="Cancel upload"
-              className="h-14 w-14"
-            >
-              <X className="h-7 w-7" />
-            </Button>
-          )}
-
-          {status === 'error' && onRetry && (
+        {status === 'error' && onRetry && (
+          <div className="flex items-center gap-4 flex-shrink-0">
             <Button
               variant="outline"
               size="lg"
@@ -186,8 +187,8 @@ export function UploadProgress({
             >
               Retry Upload
             </Button>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );
