@@ -7,8 +7,10 @@ import {
   RekognitionClient,
   DetectTextCommand,
   DetectLabelsCommand,
+  DetectModerationLabelsCommand,
   type DetectTextCommandOutput,
   type DetectLabelsCommandOutput,
+  type DetectModerationLabelsCommandOutput,
 } from '@aws-sdk/client-rekognition';
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
 import type {
@@ -407,6 +409,197 @@ export class RekognitionAdapter {
   }
 
   /**
+   * Detect moderation labels for content safety (explicit content, nudity, etc.)
+   * @param s3Key - S3 key of the image
+   * @returns Rekognition moderation labels response
+   */
+  async detectModerationLabels(s3Key: string): Promise<DetectModerationLabelsCommandOutput> {
+    const { bucket, key } = parseS3Key(s3Key);
+
+    logger.info('Detecting moderation labels with Rekognition', { s3Key, bucket, key });
+
+    try {
+      const command = new DetectModerationLabelsCommand({
+        Image: {
+          S3Object: {
+            Bucket: bucket,
+            Name: key,
+          },
+        },
+        MinConfidence: 60, // Lower threshold for safety
+      });
+
+      const response = await tracing.trace(
+        'rekognition_detect_moderation',
+        () => rekognitionClient.send(command),
+        { bucket, key }
+      );
+
+      logger.info('Moderation detection complete', {
+        s3Key,
+        moderationLabelsFound: response.ModerationLabels?.length || 0,
+      });
+
+      return response;
+    } catch (error) {
+      logger.error(
+        'Failed to detect moderation labels',
+        error instanceof Error ? error : new Error(String(error)),
+        { s3Key }
+      );
+      throw new Error(
+        `Rekognition moderation detection failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
+  }
+
+  /**
+   * Validate content safety - reject explicit or inappropriate content
+   * @param moderationResponse - Rekognition moderation labels response
+   * @throws Error if inappropriate content detected
+   */
+  private validateContentSafety(moderationResponse: DetectModerationLabelsCommandOutput): void {
+    const moderationLabels = moderationResponse.ModerationLabels || [];
+
+    // Categories to block for kid-friendly app
+    const blockedCategories = [
+      'Explicit Nudity',
+      'Suggestive',
+      'Violence',
+      'Visually Disturbing',
+      'Rude Gestures',
+      'Drugs',
+      'Tobacco',
+      'Alcohol',
+      'Gambling',
+      'Hate Symbols',
+    ];
+
+    const foundBlockedContent = moderationLabels
+      .filter((label) => {
+        const parentName = label.ParentName || label.Name || '';
+        const labelName = label.Name || '';
+        const confidence = label.Confidence || 0;
+
+        // Check if this label or its parent matches blocked categories
+        const isBlocked = blockedCategories.some(
+          (blocked) =>
+            parentName.includes(blocked) ||
+            labelName.includes(blocked) ||
+            // Also check for specific body part labels
+            labelName.includes('Exposed') ||
+            labelName.includes('Partial Nudity')
+        );
+
+        return isBlocked && confidence > 60;
+      })
+      .map((label) => label.Name);
+
+    if (foundBlockedContent.length > 0) {
+      const errorMsg = `Image contains inappropriate content and cannot be uploaded. This app is kid-friendly.`;
+      logger.warn('Content safety validation failed', {
+        foundBlockedContent,
+        moderationLabelsCount: moderationLabels.length,
+      });
+      throw new Error(errorMsg);
+    }
+
+    logger.info('Content safety validation passed', {
+      moderationLabelsCount: moderationLabels.length,
+    });
+  }
+
+  /**
+   * Validate that the image contains a trading card and not other objects
+   * @param labelsResponse - Rekognition labels response
+   * @throws Error if image is not a card
+   */
+  private validateCardImage(labelsResponse: DetectLabelsCommandOutput): void {
+    const labels = labelsResponse.Labels || [];
+
+    // Labels that indicate this is NOT a trading card
+    const invalidLabels = [
+      'Person',
+      'Human',
+      'Face',
+      'Portrait',
+      'Animal',
+      'Pet',
+      'Dog',
+      'Cat',
+      'Bird',
+      'Food',
+      'Meal',
+      'Dish',
+      'Vehicle',
+      'Car',
+      'Truck',
+      'Building',
+      'Architecture',
+      'Nature',
+      'Landscape',
+      'Screen',
+      'Monitor',
+      'Television',
+      'Furniture',
+      'Chair',
+      'Table',
+    ];
+
+    // Labels that indicate this IS likely a card
+    const validLabels = [
+      'Text',
+      'Document',
+      'Paper',
+      'Card',
+      'Poster',
+      'Flyer',
+      'Advertisement',
+      'Art',
+      'Drawing',
+      'Painting',
+    ];
+
+    const foundInvalidLabels = labels
+      .filter(
+        (label) =>
+          invalidLabels.some((invalid) =>
+            label.Name?.toLowerCase().includes(invalid.toLowerCase())
+          ) && (label.Confidence || 0) > 80
+      )
+      .map((label) => label.Name);
+
+    const foundValidLabels = labels
+      .filter(
+        (label) =>
+          validLabels.some((valid) => label.Name?.toLowerCase().includes(valid.toLowerCase())) &&
+          (label.Confidence || 0) > 70
+      )
+      .map((label) => label.Name);
+
+    logger.debug('Card validation labels', {
+      foundInvalidLabels,
+      foundValidLabels,
+      totalLabels: labels.length,
+    });
+
+    // If we found strong invalid labels and no valid labels, reject
+    if (foundInvalidLabels.length > 0 && foundValidLabels.length === 0) {
+      const errorMsg = `Image does not appear to be a trading card. Detected: ${foundInvalidLabels.join(', ')}`;
+      logger.warn('Card validation failed', {
+        foundInvalidLabels,
+        foundValidLabels,
+      });
+      throw new Error(errorMsg);
+    }
+
+    logger.info('Card validation passed', {
+      foundValidLabels,
+      foundInvalidLabels,
+    });
+  }
+
+  /**
    * Extract complete feature envelope from an image
    * This is the main entry point that orchestrates all feature extraction
    * @param s3Key - S3 key of the image
@@ -424,11 +617,21 @@ export class RekognitionAdapter {
       const metadata = await sharp(imageBuffer).metadata();
       const { width = 0, height = 0 } = metadata;
 
-      // Step 3: Detect card boundaries in the image
+      // Step 3: Run content moderation check first (kid-friendly requirement)
+      logger.info('Checking content safety');
+      const moderationResponse = await this.detectModerationLabels(s3Key);
+      this.validateContentSafety(moderationResponse);
+
+      // Step 4: Run label detection to validate this is a card
+      logger.info('Validating image is a trading card');
+      const labelsResponse = await this.detectLabels(s3Key);
+      this.validateCardImage(labelsResponse);
+
+      // Step 5: Detect card boundaries in the image
       logger.info('Detecting card boundaries before feature extraction');
       const cardBox = await this.detectCardBoundaries(imageBuffer, { width, height });
 
-      // Step 4: Crop to card if detected, otherwise use full image
+      // Step 6: Crop to card if detected, otherwise use full image
       let processedBuffer = imageBuffer;
       if (cardBox) {
         logger.info('Card detected, cropping to card boundaries', { cardBox });
@@ -437,14 +640,11 @@ export class RekognitionAdapter {
         logger.warn('Card boundaries not detected, using full image for analysis');
       }
 
-      // Step 5: Run OCR and label detection on the original image (for better text detection)
+      // Step 7: Run OCR on the original image (for better text detection)
       // But use cropped image for visual analysis
-      const [ocrBlocks, labelsResponse] = await Promise.all([
-        this.detectText(s3Key),
-        this.detectLabels(s3Key),
-      ]);
+      const ocrBlocks = await this.detectText(s3Key);
 
-      // Step 6: Extract visual features from cropped/processed image buffer
+      // Step 8: Extract visual features from cropped/processed image buffer
       const [borders, holoVariance, fontMetrics, quality, imageMeta] = await Promise.all([
         this.computeBorderMetrics(processedBuffer),
         this.computeHolographicVariance(processedBuffer, labelsResponse),

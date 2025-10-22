@@ -7,6 +7,7 @@ import type { Handler } from 'aws-lambda';
 import type { FeatureEnvelope } from '@collectiq/shared';
 import { logger } from '../utils/logger.js';
 import { rekognitionAdapter } from '../adapters/rekognition-adapter.js';
+import { deleteCard } from '../store/card-service.js';
 
 /**
  * Input structure for RekognitionExtract task
@@ -40,7 +41,7 @@ interface RekognitionExtractOutput {
  * @returns Feature envelopes for front and back images
  */
 export const handler: Handler<RekognitionExtractInput, RekognitionExtractOutput> = async (
-  event,
+  event
 ) => {
   const { userId, cardId, s3Keys, requestId } = event;
 
@@ -108,6 +109,13 @@ export const handler: Handler<RekognitionExtractInput, RekognitionExtractOutput>
 
     return output;
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+
+    // Check if this is a validation error (card validation or content safety)
+    const isCardValidationError = errorMessage.includes('does not appear to be a trading card');
+    const isContentSafetyError = errorMessage.includes('inappropriate content');
+    const shouldCleanup = isCardValidationError || isContentSafetyError;
+
     logger.error(
       'RekognitionExtract task failed',
       error instanceof Error ? error : new Error(String(error)),
@@ -116,8 +124,48 @@ export const handler: Handler<RekognitionExtractInput, RekognitionExtractOutput>
         cardId,
         s3Keys,
         requestId,
-      },
+        isCardValidationError,
+        isContentSafetyError,
+      }
     );
+
+    // If validation failed, clean up S3 and DynamoDB
+    if (shouldCleanup) {
+      const cleanupReason = isContentSafetyError ? 'inappropriate content' : 'invalid card type';
+
+      logger.info('Cleaning up rejected upload', {
+        userId,
+        cardId,
+        s3Keys,
+        requestId,
+        reason: cleanupReason,
+      });
+
+      try {
+        // Hard delete: removes both DynamoDB record and S3 objects
+        await deleteCard(userId, cardId, requestId, true);
+
+        logger.info('Rejected upload cleaned up successfully', {
+          userId,
+          cardId,
+          requestId,
+          reason: cleanupReason,
+        });
+      } catch (cleanupError) {
+        // Log cleanup failure but don't mask the original validation error
+        logger.error(
+          'Failed to clean up rejected upload',
+          cleanupError instanceof Error ? cleanupError : new Error(String(cleanupError)),
+          {
+            userId,
+            cardId,
+            s3Keys,
+            requestId,
+            reason: cleanupReason,
+          }
+        );
+      }
+    }
 
     // Re-throw error to trigger Step Functions retry/error handling
     throw error;
