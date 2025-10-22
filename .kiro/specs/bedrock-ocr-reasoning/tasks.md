@@ -96,7 +96,7 @@
   - Add CloudWatch log group with 7-day retention
   - _Requirements: 1.3, 1.4, 1.5_
 
-- [ ] 7. Configure IAM permissions
+- [x] 7. Configure IAM permissions
   - Update Lambda execution role in `infra/terraform/modules/lambda_fn/main.tf`
   - Add `bedrock:InvokeModel` permission for Claude Sonnet 4.0 model ARN
   - Restrict permission to specific model: `anthropic.claude-sonnet-4-20250514-v1:0`

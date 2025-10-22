@@ -579,6 +579,11 @@ module "lambda_rekognition_extract" {
 }
 
 # 4.4.1 OCR Reasoning Agent Lambda
+# IAM Permissions:
+# - bedrock:InvokeModel (via bedrock_access policy) - restricted to anthropic.claude-sonnet-4-20250514-v1:0
+# - bedrock:InvokeModelWithResponseStream (via bedrock_access policy) - for streaming responses
+# - logs:CreateLogGroup, logs:CreateLogStream, logs:PutLogEvents (via AWSLambdaBasicExecutionRole)
+# - ec2:CreateNetworkInterface, ec2:DescribeNetworkInterfaces, ec2:DeleteNetworkInterface (via AWSLambdaVPCAccessExecutionRole)
 module "lambda_ocr_reasoning_agent" {
   source = "../../modules/lambda_fn"
 
@@ -597,16 +602,19 @@ module "lambda_ocr_reasoning_agent" {
   vpc_security_group_ids = [aws_security_group.lambda.id]
 
   environment_variables = {
-    REGION           = var.aws_region
-    BEDROCK_MODEL_ID = "anthropic.claude-sonnet-4-20250514-v1:0"
+    REGION              = var.aws_region
+    BEDROCK_MODEL_ID    = "anthropic.claude-sonnet-4-20250514-v1:0"
     BEDROCK_TEMPERATURE = "0.15"
     BEDROCK_MAX_TOKENS  = "4096"
     BEDROCK_MAX_RETRIES = "3"
-    XRAY_ENABLED     = "false" # Disable X-Ray SDK to avoid context issues
+    XRAY_ENABLED        = "false" # Disabled to avoid context issues with module-level SDK initialization
   }
 
+  # Bedrock access policy grants bedrock:InvokeModel permission
+  # restricted to the specific Claude Sonnet 4.0 model ARN
   additional_policy_arns = [module.bedrock_access.policy_arn]
 
+  # X-Ray tracing disabled to avoid context issues
   enable_xray_tracing = false
   log_retention_days  = 7
 
