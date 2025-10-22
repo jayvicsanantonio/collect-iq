@@ -28,7 +28,6 @@ interface AuthenticityAgentInput {
     set?: string;
     rarity?: string;
     frontS3Key: string;
-    backS3Key?: string;
     // Enriched metadata from OCR reasoning agent
     ocrMetadata?: {
       name?: { value: string | null; confidence: number; rationale: string };
@@ -45,6 +44,10 @@ interface AuthenticityAgentInput {
       reasoningTrail?: string;
       verifiedByAI?: boolean;
     };
+  };
+  s3Keys: {
+    front: string;
+    back?: string;
   };
   requestId: string;
 }
@@ -90,7 +93,7 @@ function isExpectedHolographic(rarity?: string): boolean {
  * @returns Authenticity result with score, signals, and rationale
  */
 export const handler: Handler<AuthenticityAgentInput, AuthenticityAgentOutput> = async (event) => {
-  const { userId, cardId, features, cardMeta, requestId } = event;
+  const { userId, cardId, features, cardMeta, s3Keys, requestId } = event;
   const startTime = Date.now();
 
   tracing.startSubsegment('authenticity_agent_handler', { userId, cardId, requestId });
@@ -112,6 +115,8 @@ export const handler: Handler<AuthenticityAgentInput, AuthenticityAgentOutput> =
       rarityConfidence: identifiers.rarityConfidence,
       overallConfidence: identifiers.overallConfidence,
       verifiedByAI: identifiers.verifiedByAI,
+      frontS3Key: s3Keys.front,
+      hasBackImage: !!s3Keys.back,
       requestId,
     });
   } else {
@@ -121,17 +126,19 @@ export const handler: Handler<AuthenticityAgentInput, AuthenticityAgentOutput> =
       cardName,
       cardSet,
       cardRarity,
+      frontS3Key: s3Keys.front,
+      hasBackImage: !!s3Keys.back,
       requestId,
     });
   }
 
   try {
     // Step 1: Compute visual hash from front image
-    logger.info('Computing visual hash', { s3Key: cardMeta.frontS3Key });
+    logger.info('Computing visual hash', { s3Key: s3Keys.front });
 
     const frontHash = await tracing.trace(
       'compute_perceptual_hash',
-      () => computePerceptualHashFromS3(cardMeta.frontS3Key),
+      () => computePerceptualHashFromS3(s3Keys.front),
       { cardId, userId }
     );
 

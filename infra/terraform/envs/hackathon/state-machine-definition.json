@@ -171,9 +171,9 @@
                     "set.$": "$.ocrMetadata.Payload.cardMetadata.set.value",
                     "rarity.$": "$.ocrMetadata.Payload.cardMetadata.rarity.value",
                     "frontS3Key.$": "$.s3Keys.front",
-                    "backS3Key.$": "$.s3Keys.back",
                     "ocrMetadata.$": "$.ocrMetadata.Payload.cardMetadata"
                   },
+                  "s3Keys.$": "$.s3Keys",
                   "requestId.$": "$.requestId"
                 }
               },
