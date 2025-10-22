@@ -38,6 +38,60 @@
           "Next": "ErrorHandler"
         }
       ],
+      "Next": "OcrReasoningAgent"
+    },
+    "OcrReasoningAgent": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "${ocr_reasoning_agent_lambda_arn}",
+        "Payload": {
+          "userId.$": "$.userId",
+          "cardId.$": "$.cardId",
+          "features.$": "$.featureEnvelope.Payload.features",
+          "requestId.$": "$.requestId"
+        }
+      },
+      "ResultPath": "$.ocrMetadata",
+      "ResultSelector": {
+        "Payload.$": "$.Payload"
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 2,
+          "BackoffRate": 2.0
+        }
+      ],
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "ResultPath": "$.ocrError",
+          "Next": "OcrFallback"
+        }
+      ],
+      "Next": "ParallelAgents"
+    },
+    "OcrFallback": {
+      "Type": "Pass",
+      "Comment": "Fallback when OCR reasoning fails - continue with basic OCR data",
+      "Result": {
+        "cardMetadata": {
+          "name": {
+            "value": null,
+            "confidence": 0.0,
+            "rationale": "OCR reasoning agent failed - using fallback"
+          },
+          "verifiedByAI": false
+        }
+      },
+      "ResultPath": "$.ocrMetadata.Payload",
       "Next": "ParallelAgents"
     },
     "ParallelAgents": {
@@ -55,7 +109,7 @@
                   "userId.$": "$.userId",
                   "cardId.$": "$.cardId",
                   "features.$": "$.featureEnvelope.Payload.features",
-                  "cardMeta.$": "$.cardMeta",
+                  "cardMeta.$": "$.ocrMetadata.Payload.cardMetadata",
                   "requestId.$": "$.requestId"
                 }
               },
@@ -112,9 +166,8 @@
                   "userId.$": "$.userId",
                   "cardId.$": "$.cardId",
                   "features.$": "$.featureEnvelope.Payload.features",
-                  "cardMeta": {
-                    "frontS3Key.$": "$.s3Keys.front"
-                  },
+                  "cardMeta.$": "$.ocrMetadata.Payload.cardMetadata",
+                  "frontS3Key.$": "$.s3Keys.front",
                   "requestId.$": "$.requestId"
                 }
               },
@@ -178,6 +231,7 @@
           "userId.$": "$.userId",
           "cardId.$": "$.cardId",
           "requestId.$": "$.requestId",
+          "ocrMetadata.$": "$.ocrMetadata.Payload.cardMetadata",
           "agentResults": [
             {
               "pricingResult.$": "$.parallelResults[0].pricingResult.Payload.pricingResult",

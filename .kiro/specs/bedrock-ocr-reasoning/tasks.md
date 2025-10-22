@@ -74,7 +74,7 @@
     - Set `verifiedByAI: false` flag
     - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5_
 
-- [ ] 5. Update Step Functions workflow
+- [x] 5. Update Step Functions workflow
   - Modify `infra/terraform/modules/step_functions/main.tf` to add OCR reasoning task
   - Insert new Lambda task state between RekognitionExtract and ParallelAgents
   - Configure task to receive FeatureEnvelope from Rekognition
@@ -85,7 +85,7 @@
   - Update Authenticity Agent input to include enriched cardMeta from OCR reasoning
   - _Requirements: 1.1, 1.2, 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7_
 
-- [ ] 6. Add Lambda function infrastructure
+- [x] 6. Add Lambda function infrastructure
   - Create new Lambda function resource in `infra/terraform/modules/lambda_fn/main.tf`
   - Configure function name as `collectiq-ocr-reasoning-agent-${var.environment}`
   - Set runtime to Node.js 20
