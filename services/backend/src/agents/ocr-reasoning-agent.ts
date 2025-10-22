@@ -11,6 +11,7 @@ import {
   type CardMetadata,
   type OcrContext,
 } from '../adapters/bedrock-ocr-reasoning.js';
+import { getPokemonTCGSetResolver } from '../adapters/pokemontcg-set-resolver.js';
 
 /**
  * Input structure for OCR Reasoning Agent
@@ -100,7 +101,71 @@ export const handler: Handler<OcrReasoningAgentInput, OcrReasoningAgentOutput> =
 
     const bedrockLatency = Date.now() - bedrockStartTime;
 
-    // Step 4: Handle successful responses and enrich card metadata
+    // Step 4: Verify set using Pokémon TCG API (if card name and collector number available)
+    if (cardMetadata.name.value && cardMetadata.collectorNumber.value) {
+      logger.info('Verifying set via Pokémon TCG API', {
+        cardId,
+        cardName: cardMetadata.name.value,
+        collectorNumber: cardMetadata.collectorNumber.value,
+        aiSet: cardMetadata.set.value,
+        requestId,
+      });
+
+      try {
+        const resolver = getPokemonTCGSetResolver();
+        const setMatch = await resolver.resolveSet(
+          cardMetadata.name.value,
+          cardMetadata.collectorNumber.value,
+          requestId
+        );
+
+        if (setMatch) {
+          // Update set with API-verified data
+          const previousSet = cardMetadata.set.value;
+          cardMetadata.set = {
+            value: setMatch.setName,
+            confidence: setMatch.confidence,
+            rationale: `${setMatch.matchReason}. Verified via Pokémon TCG API. ${
+              previousSet && previousSet !== setMatch.setName
+                ? `AI initially suggested "${previousSet}".`
+                : ''
+            }`,
+          };
+
+          logger.info('Set verified and updated via API', {
+            cardId,
+            cardName: cardMetadata.name.value,
+            collectorNumber: cardMetadata.collectorNumber.value,
+            aiSet: previousSet,
+            verifiedSet: setMatch.setName,
+            matchReason: setMatch.matchReason,
+            confidence: setMatch.confidence,
+            requestId,
+          });
+        } else {
+          logger.warn('Could not verify set via API, using AI result', {
+            cardId,
+            cardName: cardMetadata.name.value,
+            collectorNumber: cardMetadata.collectorNumber.value,
+            aiSet: cardMetadata.set.value,
+            requestId,
+          });
+        }
+      } catch (error) {
+        logger.error(
+          'Failed to verify set via API, using AI result',
+          error instanceof Error ? error : new Error(String(error)),
+          {
+            cardId,
+            cardName: cardMetadata.name.value,
+            collectorNumber: cardMetadata.collectorNumber.value,
+            requestId,
+          }
+        );
+      }
+    }
+
+    // Step 5: Handle successful responses and enrich card metadata
     const setInfo = cardMetadata.set;
     const setValueForLog =
       setInfo.value ||
