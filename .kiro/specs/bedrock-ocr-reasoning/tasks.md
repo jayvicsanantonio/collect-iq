@@ -121,8 +121,8 @@
     - Configure SNS notifications for all alarms
     - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5_
 
-- [ ] 9. Write unit tests
-  - [ ] 9.1 Test Bedrock OCR reasoning service
+- [x] 9. Write unit tests
+  - [x] 9.1 Test Bedrock OCR reasoning service
     - Create `services/backend/src/tests/bedrock-ocr-reasoning.test.ts`
     - Test `createSystemPrompt()` includes all required instructions
     - Test `createUserPrompt()` formats OCR blocks correctly
@@ -132,7 +132,7 @@
     - Mock Bedrock client for isolated testing
     - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 8.1, 8.2, 8.3, 8.4, 8.5_
 
-  - [ ] 9.2 Test schema validation
+  - [x] 9.2 Test schema validation
     - Test validation of complete CardMetadata
     - Test validation of partial metadata with missing fields
     - Test validation failure handling with Zod errors
@@ -140,14 +140,14 @@
     - Test multi-candidate field validation
     - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 4.6_
 
-  - [ ] 9.3 Test fuzzy matching utility
+  - [x] 9.3 Test fuzzy matching utility
     - Test `levenshteinDistance()` with various string pairs
     - Test `findBestMatch()` with different thresholds
     - Test `normalizeForComparison()` with special characters and whitespace
     - Test edge cases (empty strings, identical strings, no matches)
     - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5_
 
-  - [ ] 9.4 Test fallback logic
+  - [x] 9.4 Test fallback logic
     - Test `createFallbackMetadata()` with empty OCR blocks
     - Test `createFallbackMetadata()` with valid OCR blocks
     - Test confidence score reduction (30% decrease)
