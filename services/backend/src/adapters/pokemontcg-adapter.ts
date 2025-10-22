@@ -229,9 +229,18 @@ export class PokemonTCGAdapter extends BasePriceAdapter {
       conditions.push(`set.name:*${cleanSet}*`);
     }
 
-    // Card number - exact match (wrap in quotes to handle special characters like /)
+    // Card number - exact match (skip if contains special characters that break the API)
     if (query.number) {
-      conditions.push(`number:"${query.number}"`);
+      // Skip collector numbers with special characters like / that break the API
+      // The API will still find the card by name + set
+      if (!/[/\\]/.test(query.number)) {
+        conditions.push(`number:${query.number}`);
+      } else {
+        logger.info('Skipping collector number with special characters', {
+          number: query.number,
+          reason: 'Contains / or \\ which breaks Pokémon TCG API query syntax',
+        });
+      }
     }
 
     // If we have no valid conditions, return empty string
