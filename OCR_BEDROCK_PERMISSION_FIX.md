@@ -75,10 +75,10 @@ Modified `infra/terraform/modules/bedrock_access/main.tf` to detect inference pr
 ## Files Changed
 
 - `services/backend/src/adapters/bedrock-ocr-reasoning.ts` - Updated default model ID
-- `infra/terraform/modules/bedrock_access/main.tf` - Added Converse permissions and inference profile ARN support
+- `infra/terraform/modules/bedrock_access/main.tf` - Added Converse permissions and inference profile ARN support with wildcard regions
 - `infra/terraform/modules/bedrock_access/variables.tf` - Updated default model ID
 - `infra/terraform/envs/hackathon/main.tf` - Updated model ID configuration
-- `infra/terraform/envs/hackathon/lambdas.tf` - Updated Lambda environment variables for both OCR and authenticity agents
+- `infra/terraform/envs/hackathon/lambdas.tf` - Updated Lambda environment variables and IAM policies for OCR, authenticity, and pricing agents
 
 ## Deployment Steps
 

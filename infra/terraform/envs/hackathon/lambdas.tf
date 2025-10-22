@@ -624,11 +624,19 @@ module "lambda_ocr_reasoning_agent" {
 }
 
 # 4.5 Pricing Agent Lambda
+# IAM Permissions:
+# - bedrock:Converse (via bedrock_access policy) - for AI-powered valuation summaries
+# - bedrock:ConverseStream (via bedrock_access policy) - for streaming responses
+# - bedrock:InvokeModel (via bedrock_access policy) - legacy API support
+# - dynamodb:PutItem, dynamodb:Query (via custom policy) - for pricing cache
+# - secretsmanager:GetSecretValue (via ssm_secrets policy) - for API keys
+# - logs:CreateLogGroup, logs:CreateLogStream, logs:PutLogEvents (via AWSLambdaBasicExecutionRole)
+# - ec2:CreateNetworkInterface, ec2:DescribeNetworkInterfaces, ec2:DeleteNetworkInterface (via AWSLambdaVPCAccessExecutionRole)
 module "lambda_pricing_agent" {
   source = "../../modules/lambda_fn"
 
   function_name = "${local.name_prefix}-pricing-agent"
-  description   = "Fetch pricing data from external APIs"
+  description   = "Fetch pricing data from external APIs and generate AI-powered valuation summaries"
   filename      = data.archive_file.pricing_agent.output_path
   source_code_hash = data.archive_file.pricing_agent.output_base64sha256
   handler       = "pricing-agent.handler"
@@ -643,6 +651,7 @@ module "lambda_pricing_agent" {
 
   environment_variables = {
     REGION                = var.aws_region
+    BEDROCK_MODEL_ID      = "us.anthropic.claude-sonnet-4-20250514-v1:0"  # Cross-region inference profile
     DDB_TABLE                 = module.dynamodb_collectiq.table_name
     EBAY_SECRET_ARN           = "" # Will be added when Secrets Manager is configured
     TCGPLAYER_SECRET_ARN      = "" # Will be added when Secrets Manager is configured
@@ -650,7 +659,8 @@ module "lambda_pricing_agent" {
     XRAY_ENABLED              = "false" # Disable X-Ray SDK to avoid context issues
   }
 
-  # additional_policy_arns will include ssm_secrets policy when deployed
+  # Bedrock access policy for AI-powered valuation summaries
+  additional_policy_arns = [module.bedrock_access.policy_arn]
 
   enable_xray_tracing = false
   log_retention_days  = 30
