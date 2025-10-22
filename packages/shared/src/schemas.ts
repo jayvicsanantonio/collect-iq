@@ -111,6 +111,7 @@ export const CardSchema = z.object({
   compsCount: z.number().optional(),
   sources: z.array(z.string()).optional(),
   pricingMessage: z.string().optional(), // Message when pricing data is unavailable
+  valuationSummary: ValuationSummarySchema.optional(), // AI-generated valuation summary
   ocrMetadata: z
     .object({
       name: z.string().nullable().optional(),

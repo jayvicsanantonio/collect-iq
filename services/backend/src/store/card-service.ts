@@ -53,6 +53,13 @@ interface CardItem {
   compsCount?: number;
   sources?: string[];
   pricingMessage?: string;
+  valuationSummary?: {
+    summary: string;
+    fairValue: number;
+    trend: 'rising' | 'falling' | 'stable';
+    recommendation: string;
+    confidence: number;
+  };
   createdAt: string; // Also serves as GSI1 range key
   updatedAt: string;
   deletedAt?: string;
@@ -232,6 +239,7 @@ function itemToCard(item: CardItem): Card {
   if (item.compsCount !== undefined) card.compsCount = item.compsCount;
   if (item.sources) card.sources = item.sources;
   if (item.pricingMessage) card.pricingMessage = item.pricingMessage;
+  if (item.valuationSummary) card.valuationSummary = item.valuationSummary;
 
   return CardSchema.parse(card);
 }
@@ -270,6 +278,7 @@ function cardToItem(card: Partial<Card>, userId: string, cardId: string): CardIt
   if (card.compsCount !== undefined) item.compsCount = card.compsCount;
   if (card.sources) item.sources = card.sources;
   if (card.pricingMessage) item.pricingMessage = card.pricingMessage;
+  if (card.valuationSummary) item.valuationSummary = card.valuationSummary;
 
   return item;
 }
@@ -547,6 +556,7 @@ export async function updateCard(
       'compsCount',
       'sources',
       'pricingMessage',
+      'valuationSummary',
     ];
 
     for (const field of updateableFields) {

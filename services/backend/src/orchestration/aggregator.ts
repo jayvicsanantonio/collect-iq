@@ -63,6 +63,7 @@ async function upsertCardResults(
     'compsCount',
     'sources',
     'pricingMessage',
+    'valuationSummary',
     'ocrMetadata',
     'name',
     'set',
@@ -196,6 +197,7 @@ export const handler: Handler<AggregatorInput, AggregatorOutput> = async (event)
       valueHigh: pricingResult.valueHigh,
       compsCount: pricingResult.compsCount,
       sources: pricingResult.sources,
+      valuationSummary: valuationSummary,
 
       // Authenticity data
       authenticityScore: authenticityResult.authenticityScore,
