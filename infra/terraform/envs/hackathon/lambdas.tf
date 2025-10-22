@@ -238,6 +238,16 @@ data "aws_iam_policy_document" "rekognition_extract_s3" {
       "${module.s3_uploads.bucket_arn}/*"
     ]
   }
+  
+  statement {
+    effect = "Allow"
+    actions = [
+      "s3:ListBucket"
+    ]
+    resources = [
+      module.s3_uploads.bucket_arn
+    ]
+  }
 }
 
 # DynamoDB UpdateItem policy for aggregator Lambda
