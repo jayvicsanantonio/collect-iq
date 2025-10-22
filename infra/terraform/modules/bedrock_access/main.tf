@@ -34,6 +34,18 @@ data "aws_iam_policy_document" "bedrock_access" {
     ]
     resources = local.computed_model_arns
   }
+
+  # Allow Bedrock Converse API for conversational model interactions
+  # Required for ConverseCommand and ConverseStreamCommand
+  statement {
+    sid    = "AllowBedrockConverse"
+    effect = "Allow"
+    actions = [
+      "bedrock:Converse",
+      "bedrock:ConverseStream"
+    ]
+    resources = local.computed_model_arns
+  }
 }
 
 resource "aws_iam_policy" "bedrock_access" {

@@ -580,8 +580,10 @@ module "lambda_rekognition_extract" {
 
 # 4.4.1 OCR Reasoning Agent Lambda
 # IAM Permissions:
-# - bedrock:InvokeModel (via bedrock_access policy) - restricted to anthropic.claude-sonnet-4-20250514-v1:0
-# - bedrock:InvokeModelWithResponseStream (via bedrock_access policy) - for streaming responses
+# - bedrock:Converse (via bedrock_access policy) - required for ConverseCommand API
+# - bedrock:ConverseStream (via bedrock_access policy) - for streaming responses
+# - bedrock:InvokeModel (via bedrock_access policy) - legacy API support
+# - bedrock:InvokeModelWithResponseStream (via bedrock_access policy) - legacy streaming support
 # - logs:CreateLogGroup, logs:CreateLogStream, logs:PutLogEvents (via AWSLambdaBasicExecutionRole)
 # - ec2:CreateNetworkInterface, ec2:DescribeNetworkInterfaces, ec2:DeleteNetworkInterface (via AWSLambdaVPCAccessExecutionRole)
 module "lambda_ocr_reasoning_agent" {
@@ -610,7 +612,7 @@ module "lambda_ocr_reasoning_agent" {
     XRAY_ENABLED        = "false" # Disabled to avoid context issues with module-level SDK initialization
   }
 
-  # Bedrock access policy grants bedrock:InvokeModel permission
+  # Bedrock access policy grants bedrock:Converse and bedrock:InvokeModel permissions
   # restricted to the specific Claude Sonnet 4.0 model ARN
   additional_policy_arns = [module.bedrock_access.policy_arn]
 
