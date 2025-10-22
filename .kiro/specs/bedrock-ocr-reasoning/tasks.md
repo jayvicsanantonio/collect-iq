@@ -12,8 +12,8 @@
   - Export singleton instance for use by agent
   - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 8.1, 8.2, 8.3, 8.4, 8.5_
 
-- [ ] 2. Create data models and schemas
-  - [ ] 2.1 Define TypeScript interfaces for OCR reasoning
+- [x] 2. Create data models and schemas
+  - [x] 2.1 Define TypeScript interfaces for OCR reasoning
     - Create `CardMetadata` interface with all field results
     - Create `FieldResult<T>` interface for single-value fields
     - Create `MultiCandidateResult<T>` interface for ambiguous fields
@@ -21,14 +21,14 @@
     - Add interfaces to `services/backend/src/adapters/bedrock-ocr-reasoning.ts`
     - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 4.6_
 
-  - [ ] 2.2 Create Zod validation schemas
+  - [x] 2.2 Create Zod validation schemas
     - Implement `CardMetadataSchema` in `services/backend/src/adapters/bedrock-ocr-reasoning.ts`
     - Add validation for all field types (single value, multi-candidate)
     - Add validation for confidence scores (0.0-1.0 range)
     - Add validation for required string fields (rationale, reasoningTrail)
     - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 4.6_
 
-  - [ ] 2.3 Update shared Card schema
+  - [x] 2.3 Update shared Card schema
     - Add `ocrMetadata` field to Card schema in `packages/shared/src/schemas.ts`
     - Include fields for name, rarity, set, collector number, illustrator with confidence scores
     - Add `extractedAt` timestamp and `reasoningTrail` fields

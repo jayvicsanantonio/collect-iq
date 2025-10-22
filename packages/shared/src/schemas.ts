@@ -111,6 +111,23 @@ export const CardSchema = z.object({
   compsCount: z.number().optional(),
   sources: z.array(z.string()).optional(),
   pricingMessage: z.string().optional(), // Message when pricing data is unavailable
+  ocrMetadata: z
+    .object({
+      name: z.string().nullable().optional(),
+      nameConfidence: z.number().min(0).max(1).optional(),
+      rarity: z.string().nullable().optional(),
+      rarityConfidence: z.number().min(0).max(1).optional(),
+      set: z.string().nullable().optional(),
+      setConfidence: z.number().min(0).max(1).optional(),
+      collectorNumber: z.string().nullable().optional(),
+      collectorNumberConfidence: z.number().min(0).max(1).optional(),
+      illustrator: z.string().nullable().optional(),
+      illustratorConfidence: z.number().min(0).max(1).optional(),
+      extractedAt: z.string().datetime().optional(),
+      reasoningTrail: z.string().optional(),
+      verifiedByAI: z.boolean().optional(),
+    })
+    .optional(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
 });
