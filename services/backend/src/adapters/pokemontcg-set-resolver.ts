@@ -113,15 +113,28 @@ export class PokemonTCGSetResolver {
       });
       return mostRecent;
     } catch (error) {
-      logger.error(
-        'Failed to resolve set via Pokémon TCG API',
-        error instanceof Error ? error : new Error(String(error)),
-        {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      const isTimeout = errorMessage.includes('timed out') || errorMessage.includes('AbortError');
+
+      // Log timeouts as warnings (expected), other errors as errors
+      if (isTimeout) {
+        logger.warn('Pokémon TCG API request timed out, will use AI result', {
           cardName,
           collectorNumber,
+          timeout: '20 seconds',
           requestId,
-        }
-      );
+        });
+      } else {
+        logger.error(
+          'Failed to resolve set via Pokémon TCG API',
+          error instanceof Error ? error : new Error(String(error)),
+          {
+            cardName,
+            collectorNumber,
+            requestId,
+          }
+        );
+      }
       return null;
     }
   }
@@ -143,7 +156,7 @@ export class PokemonTCGSetResolver {
 
     // Add timeout to prevent hanging
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+    const timeoutId = setTimeout(() => controller.abort(), 20000); // 20 second timeout
 
     try {
       const response = await fetch(url, {
@@ -163,7 +176,7 @@ export class PokemonTCGSetResolver {
     } catch (error) {
       clearTimeout(timeoutId);
       if (error instanceof Error && error.name === 'AbortError') {
-        throw new Error('Pokémon TCG API request timed out after 5 seconds');
+        throw new Error('Pokémon TCG API request timed out after 20 seconds');
       }
       throw error;
     }

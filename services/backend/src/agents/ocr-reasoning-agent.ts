@@ -123,9 +123,9 @@ export const handler: Handler<OcrReasoningAgentInput, OcrReasoningAgentOutput> =
           );
         })();
 
-        // Race against a 8-second timeout
+        // Race against a 25-second timeout (slightly longer than API timeout)
         const timeoutPromise = new Promise<null>((resolve) =>
-          setTimeout(() => resolve(null), 8000)
+          setTimeout(() => resolve(null), 25000)
         );
 
         const setMatch = await Promise.race([verificationPromise, timeoutPromise]);
