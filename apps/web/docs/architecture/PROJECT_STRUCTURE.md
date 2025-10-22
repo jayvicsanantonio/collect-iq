@@ -33,8 +33,7 @@ collect-iq/
 │
 ├── packages/                # Shared packages
 │   ├── shared/              # Shared types/schemas
-│   ├── config/              # Build/lint/test config
-│   └── telemetry/           # Logging/metrics utilities
+│   └── config/              # Build/lint/test config
 │
 ├── infra/
 │   └── terraform/           # Terraform infrastructure as code
@@ -79,12 +78,10 @@ collect-iq/
 ### Route Organization (Next.js App Router)
 
 - **(public)**: Unauthenticated routes accessible to all users
-
   - `/landing` - Landing page
   - `/auth/callback` - OAuth callback handler
 
 - **(protected)**: Routes requiring valid Cognito JWT
-
   - `/upload` - Card upload page
   - `/vault` - User's card collection
   - `/cards/[id]` - Card detail view

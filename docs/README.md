@@ -1,479 +1,291 @@
 # CollectIQ Documentation
 
-Welcome to the CollectIQ documentation! This directory contains comprehensive guides for understanding and working with the CollectIQ platform.
+Welcome to the comprehensive documentation for CollectIQ - an AI-powered trading card intelligence platform.
 
----
+## 📚 Documentation Structure
 
-## 📚 Documentation Index
+### [Project Documentation](./project/)
 
-### Getting Started
+High-level project information, requirements, and specifications.
 
-- **[Current Implementation](../CURRENT_IMPLEMENTATION.md)** - ✅ What's currently implemented (start here!)
-- **[Quick Start](../QUICK_START.md)** - Deploy in 3 steps
-- **[Quick Reference](./QUICK_REFERENCE.md)** - Fast lookup for common tasks, commands, and configurations
-- **[Project Specification](./Project%20Specification.md)** - High-level overview of the project
-- **[Market Opportunity](./Market%20Opportunity.md)** - Business context and market analysis
+**Specifications**:
 
-### Architecture & API
+- [Project Specification](./project/specifications/Project-Specification.md) - Complete project spec
+- [Project Structure](./project/specifications/Project-Structure.md) - Repository structure
+- [Market Opportunity](./project/specifications/Market-Opportunity.md) - Market analysis
 
-- **[API Flow Documentation](./API_FLOW.md)** - Complete guide to Lambda functions, endpoints, and data flow
-- **[Auto-Trigger Revaluation Guide](./AUTO_TRIGGER_REVALUE.md)** - How to automatically trigger AI analysis after upload
+**Requirements**:
 
-### Domain-Specific Guides
+- [Hackathon Requirements](./project/requirements/) - Hackathon phase requirements
+- [Venture Requirements](./project/requirements/) - Venture phase requirements
 
-- **[Frontend/](./Frontend/)** - Next.js app architecture, components, and UI patterns
-- **[Backend/](./Backend/)** - Lambda functions, Step Functions, and AI agents
-- **[DevOps/](./DevOps/)** - Infrastructure, deployment, and monitoring
+**Presentations**:
 
-### Product Requirements
+- [Investor Presentation](./project/presentations/CollectIQ-Investor-Presentation.md) - Investor pitch
 
-- **[Hackathon - Product Requirements](./Hackathon%20-%20Product%20Requirements.md)** - MVP scope for hackathon
-- **[Venture - Product Requirements](./Venture%20-%20Product%20Requirements.md)** - Long-term product vision
+### [Backend Documentation](./backend/)
 
----
+Complete documentation for the serverless AWS backend service.
 
-## 🚀 Quick Start
+**Getting Started**:
 
-### For Developers
+- [IAM Requirements](./backend/getting-started/IAM_REQUIREMENTS.md) - Required IAM permissions
+- [Environment Variables](./backend/getting-started/ENVIRONMENT_VARIABLES.md) - Configuration guide
+- [E2E Quick Start](./backend/getting-started/E2E_QUICK_START.md) - Quick testing guide
 
-1. **Understand the architecture:**
-   - Read [API Flow Documentation](./API_FLOW.md)
-   - Review [Quick Reference](./QUICK_REFERENCE.md)
+**Development**:
 
-2. **Set up your environment:**
+- [Deployment Guide](./backend/development/DEPLOYMENT.md) - Complete deployment instructions
+- [Testing Guide](./backend/development/TESTING.md) - E2E test setup
+- [Authentication](./backend/development/AUTHENTICATION.md) - JWT verification
+- [API Endpoints](./backend/development/API_ENDPOINTS.md) - API documentation
+- [Security Headers](./backend/development/SECURITY_HEADERS.md) - Security configuration
+- [Idempotency](./backend/development/IDEMPOTENCY.md) - Idempotency implementation
 
-   ```bash
-   # Clone repository
-   git clone https://github.com/your-org/collect-iq.git
-   cd collect-iq
+**Architecture**:
 
-   # Install dependencies
-   pnpm install
+- [Adapters](./backend/architecture/ADAPTERS.md) - External service integrations
 
-   # Copy environment variables
-   cp apps/web/.env.example apps/web/.env.local
-   # Fill in your values
+**Agents**:
 
-   # Start development server
-   pnpm web:dev
-   ```
+- [Agents Overview](./backend/agents/) - All AI agents documentation
+- [Pricing Agent](./backend/agents/Pricing-Agent.md) - Market valuation
+- [Authenticity Agent](./backend/agents/Authenticity-Agent.md) - Fake detection
+- [OCR Reasoning Agent](./backend/agents/OCR-Reasoning-Agent.md) - OCR interpretation
+- [Rekognition Extract](./backend/agents/Rekognition-Extract.md) - Feature extraction
+- [Aggregator](./backend/agents/Aggregator-Agent.md) - Result aggregation
 
-3. **Enable auto-trigger (optional):**
-   - Follow [Auto-Trigger Guide](./AUTO_TRIGGER_REVALUE.md)
-   - Set `NEXT_PUBLIC_AUTO_TRIGGER_REVALUE=true` in `.env.local`
+**Features**:
 
-### For DevOps
+- [Card Detection](./backend/features/CARD_DETECTION.md) - Card detection feature
+- [OCR Card Name Extraction](./backend/features/OCR-Card-Name-Extraction.md) - OCR extraction
+- [HEIC Support](./backend/features/HEIC-Support.md) - HEIC image format support
+- [Image Display](./backend/features/Image-Display-Implementation.md) - Image display implementation
 
-1. **Deploy infrastructure:**
+**Workflows**:
 
-   ```bash
-   cd infra/terraform/envs/hackathon
-   terraform init
-   terraform plan
-   terraform apply
-   ```
+- [Upload Flow](./backend/workflows/Upload-Flow.md) - Complete upload workflow
+- [Revalue Workflow](./backend/workflows/Revalue-Workflow.md) - AI analysis workflow
+- [Auto-Trigger Revalue](./backend/workflows/Auto-Trigger-Revalue.md) - Automatic revaluation
+- [Card Operations](./backend/workflows/Card-Operations-Flow.md) - CRUD operations
+- [API Flow](./backend/workflows/API-Flow.md) - API request flows
 
-2. **Configure services:**
-   - Set up Cognito user pool
-   - Configure API Gateway
-   - Deploy Lambda functions
-   - Create Step Functions state machine
+**Setup**:
 
-3. **Monitor deployment:**
-   - Check CloudWatch dashboards
-   - Set up alarms
-   - Review logs
+- [Pokémon TCG API Setup](./backend/setup/Pokemon-TCG-API-Setup.md) - TCG API integration
+- [Pricing API Setup](./backend/setup/Pricing-API-Setup.md) - Pricing APIs setup
+- [Pricing Alternatives](./backend/setup/Pricing-Alternatives.md) - Alternative pricing sources
 
----
+**Operations**:
 
-## 🏗️ Architecture Overview
+- [Operations Overview](./backend/operations/) - Infrastructure, deployment, monitoring
+- [Operations Specification](./backend/operations/Operations-Specification.md) - Complete operations guide
+- [AWS Cost Model & Optimization](./backend/operations/AWS-Cost-Model-Optimization.md) - Cost management
 
-### High-Level Flow
+**Troubleshooting**:
 
-```
-User → Next.js Frontend → API Gateway → Lambda Functions
-                                            ↓
-                                    Step Functions
-                                            ↓
-                        ┌───────────────────┴───────────────────┐
-                        ↓                                       ↓
-                  Rekognition                            Bedrock (Claude)
-                        ↓                                       ↓
-                        └───────────────────┬───────────────────┘
-                                            ↓
-                                      DynamoDB + S3
-```
+- [OCR Reasoning](./backend/troubleshooting/OCR_REASONING.md) - OCR troubleshooting
+- [Pricing Troubleshooting](./backend/troubleshooting/Pricing-Troubleshooting.md) - Pricing issues
 
-### Key Components
+### [Packages Documentation](./packages/)
 
-- **Frontend:** Next.js 14 with App Router, Tailwind CSS, shadcn/ui
-- **API:** API Gateway HTTP API with JWT authentication
-- **Compute:** AWS Lambda (Node.js 20)
-- **Orchestration:** Step Functions for multi-agent workflow
-- **AI/ML:** Amazon Rekognition + Amazon Bedrock (Claude)
-- **Database:** DynamoDB (single-table design)
-- **Storage:** S3 with presigned URLs
-- **Auth:** Amazon Cognito with OAuth 2.0
+Documentation for shared packages used across the monorepo.
 
----
+**Shared Package**:
 
-## 📖 Key Concepts
+- [Shared Types & Schemas](./packages/shared/README.md) - Common types and Zod schemas
 
-### Lambda Functions
+**Telemetry Package**:
 
-CollectIQ uses 12 Lambda functions:
+- [Telemetry Overview](./packages/telemetry/README.md) - Logging, metrics, and tracing
+- [Usage Guide](./packages/telemetry/USAGE.md) - How to use telemetry
 
-**API Handlers (7):**
+### [Infrastructure Documentation](./infrastructure/)
 
-1. `upload_presign` - Generate S3 upload URLs
-2. `cards_create` - Create card records
-3. `cards_list` - List user's cards
-4. `cards_get` - Get card details
-5. `cards_delete` - Delete cards
-6. `cards_revalue` - Trigger AI analysis
-7. `healthz` - Health check
+Complete Terraform infrastructure documentation.
 
-**Orchestration (5):** 8. `rekognition_extract` - Extract visual features 9. `pricing_agent` - Fetch market pricing 10. `authenticity_agent` - Verify authenticity 11. `aggregator` - Merge results 12. `error_handler` - Handle errors
+**Getting Started**:
 
-### Step Functions Workflow
+- [Setup Guide](./infrastructure/getting-started/SETUP.md) - Infrastructure setup
+- [Environment Strategy](./infrastructure/getting-started/ENVIRONMENT_STRATEGY.md) - Environment management
 
-The AI analysis workflow runs in 3 stages:
+**Workflows**:
 
-1. **Extraction** (5-10s) - Rekognition extracts visual features
-2. **Parallel Analysis** (8-15s) - Pricing and authenticity agents run simultaneously
-3. **Aggregation** (2-3s) - Results merged and saved to DynamoDB
+- [Quick Test Workflow](./infrastructure/workflows/QUICK_TEST_WORKFLOW.md) - Testing workflow
+- [Step Functions Workflow](./infrastructure/workflows/STEP_FUNCTIONS_WORKFLOW.md) - Orchestration workflow
 
-**Total time:** 15-25 seconds
+**Deployment**:
 
-### Auto-Trigger Options
+- [Backend Auto-Trigger Deployment](./infrastructure/deployment/Backend-Auto-Trigger-Deployment.md) - Auto-trigger setup
 
-**Option 1: Frontend Trigger (Recommended for MVP)**
+**Monitoring**:
 
-- Simple implementation
-- Easy to test and debug
-- User-controlled
+- [X-Ray Tracing](./infrastructure/monitoring/XRAY_TRACING.md) - Distributed tracing
+- [OCR Reasoning Monitoring](./infrastructure/monitoring/OCR_REASONING_MONITORING.md) - OCR monitoring
 
-**Option 2: EventBridge Trigger (Recommended for Production)**
+### [Configuration Reference](./configuration/)
 
-- Decoupled architecture
-- Event-driven
-- Scalable
+Complete configuration and environment variable documentation.
 
-See [Auto-Trigger Guide](./AUTO_TRIGGER_REVALUE.md) for implementation details.
+- [Environment Variables](./configuration/Environment-Variables.md) - All environment variables
+- [Quick Reference](./configuration/Quick-Reference.md) - Quick reference guide
 
----
+### [Development Documentation](./development/)
 
-## 🔧 Configuration
+Development tools, workflows, and best practices.
 
-### Environment Variables
+- [Git Subtree Guide](./development/Git-Subtree.md) - Monorepo management
+- [Development Workflow](./development/README.md) - Development best practices
 
-**Frontend (`apps/web/.env.local`):**
+### [Frontend Documentation](./frontend/)
 
-```bash
-NEXT_PUBLIC_API_URL=https://api.collectiq.com
-NEXT_PUBLIC_COGNITO_USER_POOL_ID=us-east-1_XXXXXXXXX
-NEXT_PUBLIC_COGNITO_CLIENT_ID=XXXXXXXXXXXXXXXXXXXXXXXXXX
-NEXT_PUBLIC_AUTO_TRIGGER_REVALUE=true
-NEXT_PUBLIC_REVALUE_FORCE_REFRESH=false
-```
+Complete Next.js frontend documentation.
 
-**Backend (Lambda environment variables):**
+**Project**:
 
-```bash
-REGION=us-east-1
-DDB_TABLE=collectiq-hackathon-cards
-BUCKET_UPLOADS=collectiq-hackathon-uploads-123456789012
-STEP_FUNCTIONS_ARN=arn:aws:states:us-east-1:123456789012:stateMachine:...
-```
+- [Frontend Project Specification](./frontend/Frontend-Project-Specification.md) - Architecture and requirements
 
-### Feature Flags
+**Design & UX**:
 
-**Backend Configuration:**
+- [Design System](./frontend/Design-System.md) - Design tokens and components
+- [Wireframes & UX Flows](./frontend/Complete-Wireframes-UX-Flows.md) - User flows
+- [UI Copy](./frontend/UI-Copy.md) - Microcopy guidelines
 
-Auto-trigger is controlled via backend Lambda environment variables:
+**Features**:
 
-```bash
-# Lambda: cards_create
-AUTO_TRIGGER_REVALUE=true  # Enable auto-trigger via EventBridge
-EVENT_BUS_NAME=collectiq-hackathon-events
-```
+- [Authentication Flow](./frontend/Authentication-Flow.md) - OAuth 2.0 + PKCE
+- [Image Upload Spec](./frontend/Image-Upload-Spec.md) - Upload feature
+- [Image Upload Acceptance](./frontend/Image-Upload-Acceptance.md) - Acceptance criteria
 
-**Frontend:**
+### [Additional Frontend Documentation](../apps/web/docs/)
 
-No frontend feature flags needed - auto-trigger is handled entirely by the backend via EventBridge.
+Frontend documentation is maintained separately in the web app directory.
 
----
+- [Frontend Docs](../apps/web/docs/README.md) - Complete frontend documentation
 
-## 🧪 Testing
+## 🚀 Quick Links
 
-### Unit Tests
+### For New Developers
 
-```bash
-# Frontend
-cd apps/web
-pnpm test
+1. **Project Overview**: Start with [Project Specification](./project/specifications/Project-Specification.md)
+2. **Backend**: Start with [Backend README](./backend/README.md)
+3. **Infrastructure**: Start with [Infrastructure README](./infrastructure/README.md)
+4. **Frontend**: Start with [Frontend README](../apps/web/docs/README.md)
+5. **Configuration**: Check [Environment Variables](./configuration/Environment-Variables.md)
 
-# Backend
-cd services/backend
-pnpm test
-```
+### For Deployment
 
-### Integration Tests
+1. **Backend Deployment**: [Deployment Guide](./backend/development/DEPLOYMENT.md)
+2. **Infrastructure Setup**: [Setup Guide](./infrastructure/getting-started/SETUP.md)
+3. **Environment Configuration**: [Environment Variables](./backend/getting-started/ENVIRONMENT_VARIABLES.md)
 
-```bash
-# Frontend E2E
-cd apps/web
-pnpm test:e2e
+### For Development
 
-# Backend E2E
-cd services/backend
-pnpm test:e2e
-```
+1. **API Documentation**: [API Endpoints](./backend/development/API_ENDPOINTS.md)
+2. **Workflows**: [Backend Workflows](./backend/workflows/)
+3. **Testing**: [E2E Testing](./backend/development/TESTING.md)
+4. **Architecture**: [Adapters](./backend/architecture/ADAPTERS.md)
+5. **Setup Guides**: [Backend Setup](./backend/setup/)
 
-### Manual Testing
+### For Troubleshooting
 
-1. Upload a card image
-2. Verify auto-trigger starts analysis
-3. Wait for results (~20 seconds)
-4. Verify pricing and authenticity data
+1. **OCR Issues**: [OCR Troubleshooting](./backend/troubleshooting/OCR_REASONING.md)
+2. **Frontend Issues**: [Frontend Troubleshooting](../apps/web/docs/troubleshooting/)
+3. **Infrastructure Issues**: Check CloudWatch Logs
 
----
+## 📖 Documentation Standards
 
-## 📊 Monitoring
+### File Organization
 
-### CloudWatch Dashboards
+- **Getting Started**: Setup, configuration, quick starts
+- **Development**: Guides for developers (deployment, testing, APIs)
+- **Architecture**: System design and component documentation
+- **Features**: Feature-specific documentation
+- **Troubleshooting**: Problem-solving guides
+- **Workflows**: Process and workflow documentation
+- **Monitoring**: Observability and monitoring guides
 
-- API Gateway metrics (requests, latency, errors)
-- Lambda metrics (invocations, duration, errors)
-- Step Functions metrics (executions, success rate)
-- DynamoDB metrics (read/write capacity)
+### Naming Conventions
 
-### Key Metrics to Watch
+- Use UPPERCASE for documentation files (e.g., `README.md`, `DEPLOYMENT.md`)
+- Use descriptive names that indicate content
+- Group related docs in subdirectories
 
-- **API Gateway 5xx errors:** Should be < 1%
-- **Lambda errors:** Should be < 5%
-- **Step Functions failures:** Should be < 10%
-- **Average execution time:** Should be < 30s
+### Content Guidelines
 
-### Alarms
+- Start with a clear title and purpose
+- Include table of contents for long documents
+- Provide code examples where applicable
+- Keep documentation up-to-date with code changes
+- Use relative links for cross-references
 
-Set up CloudWatch alarms for:
+## 📊 Documentation Status
 
-- High error rates
-- High latency (p99 > 3s)
-- Throttling events
-- Failed executions
+✅ **FULLY CONSOLIDATED** - All documentation has been organized and consolidated.
 
----
+**Statistics**:
 
-## 💰 Cost Optimization
+- **Total Documentation Files**: 114 (78 consolidated + 36 strategic)
+- **Consolidated in docs/**: 78 files
+- **Backend Strategic Files**: 5 (package + technical references)
+- **Packages Documentation**: 3 (package READMEs)
+- **Infrastructure Module Docs**: 28 (module + environment specific)
+- **Duplicates Removed**: 12 files
+- **Success Rate**: 100%
 
-### Per Card Analysis
+See [Complete Consolidation Report](./COMPLETE_CONSOLIDATION_REPORT.md) for full details.
 
-| Service          | Cost         |
-| ---------------- | ------------ |
-| Rekognition      | $0.001       |
-| Bedrock (Claude) | $0.003       |
-| Lambda           | $0.0000014   |
-| Step Functions   | $0.000025    |
-| API Gateway      | $0.0000035   |
-| DynamoDB         | $0.0000001   |
-| S3               | $0.00001     |
-| **Total**        | **~$0.0041** |
+## 🔄 Recent Updates
 
-### Monthly Estimates
+- **October 22, 2025**: ✅ Completed full documentation consolidation
+- **October 22, 2025**: ✅ Removed all duplicate files (12 files)
+- **October 22, 2025**: ✅ Created comprehensive consolidation guides
+- **October 22, 2025**: ✅ Established professional documentation structure
 
-- 1,000 cards: $4.10
-- 10,000 cards: $41.00
-- 100,000 cards: $410.00
+## 📝 Contributing to Documentation
 
-### Optimization Tips
+When adding or updating documentation:
 
-1. Cache pricing data (14-day TTL)
-2. Use DynamoDB on-demand pricing
-3. Right-size Lambda memory
-4. Use VPC endpoints (avoid NAT Gateway)
-5. Enable CloudFront CDN for static assets
+1. Place it in the appropriate category directory
+2. Update this README with a link
+3. Use clear, concise language
+4. Include practical examples
+5. Add troubleshooting sections where relevant
+6. Keep cross-references up-to-date
 
----
+## 🗂️ Archive
 
-## 🔒 Security
+Historical documentation and task completion files are preserved in:
 
-### Authentication & Authorization
+- [Task Completions Archive](./archive/task-completions/) - Historical task tracking files
+- [Historical Documentation](./archive/historical/) - Completed fixes and implementations
 
-- JWT authentication via Cognito
-- User-scoped data isolation
-- Card ownership verification
-- Presigned URLs (60s expiration)
+## 📊 Meta Documentation
 
-### Data Protection
+Documentation about documentation (consolidation reports, fixes, organizational info):
 
-- S3 encryption at rest (SSE-S3)
-- DynamoDB encryption at rest
-- TLS 1.2+ for all API calls
-- Secrets in AWS Secrets Manager
-
-### Best Practices
-
-- Follow least privilege IAM policies
-- Enable CloudWatch logging
-- Set log retention to 30 days
-- Regular security audits
-- Dependency vulnerability scanning
-
----
-
-## 🚢 Deployment
-
-### Frontend (Amplify)
-
-```bash
-# Automatic on git push
-git push origin main
-
-# Manual
-cd apps/web
-pnpm build
-# Upload to Amplify console
-```
-
-### Backend (Lambda)
-
-```bash
-# Build
-cd services/backend
-pnpm build
-
-# Deploy via Terraform
-cd infra/terraform/envs/hackathon
-terraform apply
-```
-
-### Infrastructure (Terraform)
-
-```bash
-cd infra/terraform/envs/hackathon
-terraform init
-terraform plan
-terraform apply
-```
-
----
-
-## 🐛 Troubleshooting
-
-### Common Issues
-
-**Card stuck in processing:**
-
-- Check Step Functions execution status
-- Review Lambda CloudWatch logs
-- Verify DynamoDB has partial results
-
-**Upload fails:**
-
-- File too large (> 12MB)
-- Invalid format (not JPG/PNG/HEIC)
-- Presigned URL expired (> 60s)
-
-**Authentication errors:**
-
-- JWT token expired
-- User doesn't own resource
-- Cognito misconfiguration
-
-See [Quick Reference](./QUICK_REFERENCE.md) for detailed troubleshooting steps.
-
----
-
-## 📝 Contributing
-
-### Code Style
-
-- TypeScript strict mode disabled (non-strict)
-- ESLint v9 flat config
-- Prettier for formatting
-- Conventional commits
-
-### Pull Request Process
-
-1. Create feature branch
-2. Write tests
-3. Update documentation
-4. Submit PR with description
-5. Pass CI/CD checks
-6. Get approval from 2 reviewers
-
-### Documentation Updates
-
-When making changes:
-
-1. Update relevant documentation
-2. Add examples if needed
-3. Update version numbers
-4. Update "Last Updated" date
-
----
+- [Meta Documentation](./meta/) - Consolidation reports and fixes
+- [Strategic Files Reference](./STRATEGIC_FILES_REFERENCE.md) - Why certain files stay in original locations
+- [Final Organization Plan](./FINAL_ORGANIZATION_PLAN.md) - Latest organization plan
+- [Frontend Accuracy Report](../apps/web/docs/DOCUMENTATION_ACCURACY_REPORT.md) - Frontend docs audit
 
 ## 🆘 Support
 
-### Getting Help
+For questions or issues:
 
-1. Check documentation in this directory
-2. Review CloudWatch logs
-3. Check AWS Console for service status
-4. Contact DevOps team
+1. Check the relevant documentation section
+2. Review troubleshooting guides
+3. Check GitHub repository issues
+4. Contact the team
 
-### Useful Resources
+## 🔗 External Resources
 
-- [AWS Lambda Documentation](https://docs.aws.amazon.com/lambda/)
-- [Step Functions Documentation](https://docs.aws.amazon.com/step-functions/)
+- [AWS Documentation](https://docs.aws.amazon.com/)
+- [Terraform Documentation](https://www.terraform.io/docs)
 - [Next.js Documentation](https://nextjs.org/docs)
-- [Terraform AWS Provider](https://registry.terraform.io/providers/hashicorp/aws/latest/docs)
+- [TypeScript Documentation](https://www.typescriptlang.org/docs/)
 
 ---
 
-## 📅 Roadmap
-
-### Phase 1: MVP (Current)
-
-- [x] Basic upload and analysis
-- [x] Manual trigger workflow
-- [ ] Auto-trigger implementation
-- [ ] Production deployment
-
-### Phase 2: Enhancement
-
-- [ ] Batch upload
-- [ ] Real-time notifications
-- [ ] Price alerts
-- [ ] Export functionality
-
-### Phase 3: Scale
-
-- [ ] Multi-region deployment
-- [ ] GraphQL API
-- [ ] WebSocket for live updates
-- [ ] Mobile app
-
----
-
-## 📄 License
-
-Copyright © 2024 CollectIQ. All rights reserved.
-
----
-
-## 👥 Team
-
-- **Engineering:** CollectIQ Engineering Team
-- **DevOps:** CollectIQ DevOps Team
-- **Product:** CollectIQ Product Team
-
----
-
-**Last Updated:** 2024-01-15  
-**Version:** 1.0.0  
-**Documentation Maintained By:** CollectIQ Engineering Team
-
-For questions or suggestions, please contact the engineering team.
+**Last Updated**: October 22, 2025  
+**Maintained By**: CollectIQ Team
