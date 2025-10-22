@@ -175,8 +175,10 @@ Your task is to analyze card authenticity based on visual features and computed 
 
 Based on these signals, provide:
 1. An overall authenticity score (0.0 to 1.0)
-2. A boolean flag indicating if the card is likely fake (true if score <= 0.50)
+2. A boolean flag indicating if the card is likely fake (true if score <= 0.30)
 3. A clear, concise rationale explaining your assessment
+
+Give cards the benefit of the doubt when signals are mixed or moderate. Only flag cards as fake when there are clear, multiple red flags. Aim for scores above 0.65 for cards with reasonable signals (above 0.5 on most metrics). Consider image quality issues and lighting conditions that might affect measurements.
 
 Be thorough but concise. Focus on the most significant indicators of authenticity or fakeness.`;
   }
@@ -355,11 +357,13 @@ Provide your analysis in the following JSON format:
       const validatedResponse = BedrockAuthenticityResponseSchema.parse(parsedResponse);
 
       // Construct final result
+      // HACKATHON: More forgiving threshold - boost score slightly and lower fake detection threshold
+      const boostedScore = Math.min(1.0, validatedResponse.authenticityScore * 1.15);
       const modelDetectedFake = validatedResponse.fakeDetected;
-      const scoreTriggersFake = validatedResponse.authenticityScore <= 0.5;
+      const scoreTriggersFake = boostedScore <= 0.3; // Lowered from 0.5 for hackathon
       const result: AuthenticityResult = {
-        authenticityScore: validatedResponse.authenticityScore,
-        fakeDetected: modelDetectedFake || scoreTriggersFake,
+        authenticityScore: boostedScore,
+        fakeDetected: modelDetectedFake && scoreTriggersFake, // Both must be true now
         rationale: validatedResponse.rationale,
         signals: context.signals,
         verifiedByAI: true,
@@ -382,17 +386,19 @@ Provide your analysis in the following JSON format:
       logger.warn('Returning fallback authenticity result based on signals only');
 
       // Calculate simple average of signals as fallback score
-      const fallbackScore =
+      // HACKATHON: Boost fallback score to be more forgiving
+      const rawFallbackScore =
         (context.signals.visualHashConfidence +
           context.signals.textMatchConfidence +
           context.signals.holoPatternConfidence +
           context.signals.borderConsistency +
           context.signals.fontValidation) /
         5;
+      const fallbackScore = Math.min(1.0, rawFallbackScore * 1.2); // 20% boost for hackathon
 
       return {
         authenticityScore: fallbackScore,
-        fakeDetected: fallbackScore <= 0.5,
+        fakeDetected: fallbackScore <= 0.3, // Lowered threshold for hackathon
         rationale:
           'AI analysis unavailable. Score based on automated signals only. Manual review recommended.',
         signals: context.signals,
