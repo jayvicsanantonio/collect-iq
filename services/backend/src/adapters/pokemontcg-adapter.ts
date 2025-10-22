@@ -211,8 +211,16 @@ export class PokemonTCGAdapter extends BasePriceAdapter {
       // Clean up the card name (remove special characters that might confuse the API)
       const cleanName = query.cardName.replace(/[^\w\s-]/g, '').trim();
 
-      // Use wildcard search for better matching with OCR results
-      conditions.push(`name:*${cleanName}*`);
+      // Skip if card name is just a number (likely OCR error)
+      if (!/^\d+$/.test(cleanName)) {
+        // Use wildcard search for better matching with OCR results
+        conditions.push(`name:*${cleanName}*`);
+      } else {
+        logger.warn('Card name appears to be just a number, likely OCR error', {
+          cardName: query.cardName,
+          cleanName,
+        });
+      }
     }
 
     // Set name - only add if we have it
@@ -221,13 +229,16 @@ export class PokemonTCGAdapter extends BasePriceAdapter {
       conditions.push(`set.name:*${cleanSet}*`);
     }
 
-    // Card number - exact match
+    // Card number - exact match (wrap in quotes to handle special characters like /)
     if (query.number) {
-      conditions.push(`number:${query.number}`);
+      conditions.push(`number:"${query.number}"`);
     }
 
-    // Note: Rarity is not in PriceQuery type, but could be added in future
-    // For now, we search by name, set, and number which is sufficient
+    // If we have no valid conditions, return empty string
+    if (conditions.length === 0) {
+      logger.warn('No valid search conditions for Pokémon TCG API', { query });
+      return '';
+    }
 
     return conditions.join(' ');
   }
